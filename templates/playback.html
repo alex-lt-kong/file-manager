@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<link rel="shortcut icon" href="../static/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="//monitor.sz.lan/resources/w3.css">
+<link rel="stylesheet" href="//monitor.sz.lan/resources/w3-colors-2017.css">
+<link rel="stylesheet" href="//monitor.sz.lan/resources/w3-colors-highway.css">
+<link rel="stylesheet" href="//monitor.sz.lan/resources/font-awesome.min.css">
+<script src="//monitor.sz.lan/resources/monitor.js"></script>
+<html>
+<head>
+<title>Playback</title>
+</head>
+<body>
+  <div style="position: fixed; bottom: 0; right: 0;">
+    <video style="max-width:100%" autoplay controls>
+      <source src="{{video_url | safe}}">
+      <track label="English" kind="subtitles" srclang="en" src="{{subtitles_url | safe}}" default>
+    Your browser does not support the video tag.
+    </video>  
+  </div>
+</body>
+</html>
