@@ -21,6 +21,7 @@ import urllib
 
 # app_dir: the app's real address on the filesystem
 app_dir = os.path.dirname(os.path.realpath(__file__))
+app_name = 'file-manager-thumbnail-generator'
 image_extensions = None
 log_path = ''
 settings_path = os.path.join(app_dir, 'settings.json')
@@ -47,6 +48,17 @@ def main():
         data = None
         print(f'{e}')
         return
+
+    debug_mode = True
+    logging.basicConfig(
+        filename=log_path,
+        level=logging.DEBUG if debug_mode else logging.INFO,
+        format='%(asctime)s %(levelname)s %(module)s - %(funcName)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+    logging.info('[{app_name}] started')
+
     # root_dir needs a trailing slash (i.e. /root/dir/)
     for file_path in glob.iglob(root_dir + '/' + '**/*', recursive=True):
         print(file_path)

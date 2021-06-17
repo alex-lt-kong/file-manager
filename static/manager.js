@@ -1,3 +1,278 @@
+class ModalTranscode extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            appAddress: props.appAddress,
+            fileInfo: props.fileInfo,
+            crf: 30,
+            refreshFileList: props.refreshFileList,
+            show: props.show
+        };
+        this.handleCloseClick = this.handleCloseClick.bind(this);
+        this.onCRFChange = this.onCRFChange.bind(this);
+        this.handleSubmitClick = this.handleSubmitClick.bind(this);
+    }
+
+    componentDidMount() {
+        $(this.modal).modal('show');
+    }
+
+    handleSubmitClick() {
+        this.fetchDataFromServer();        
+    }
+
+    fetchDataFromServer() {                                      
+        const payload = new FormData();
+        payload.append('asset_dir', this.state.fileInfo.asset_dir);
+        payload.append('video_name', this.state.fileInfo.filename);
+        payload.append('crf', this.state.crf);
+        axios({
+            method: "post",
+            url: this.state.appAddress + "/video-transcode/",
+            data: payload,
+        })
+        .then(response => {
+            this.handleCloseClick();
+            if (this.state.refreshFileList != null) {
+                this.state.refreshFileList();
+            }
+        })
+        .catch(error => {
+            alert('Unable to rename\n' + error);
+        });
+    }
+    
+    onCRFChange(event) {
+        this.setState({
+            crf: event.target.value
+          });
+    }
+
+    handleCloseClick() {
+        $(this.modal).modal('hide');
+    }
+
+    render() {
+        
+        if (this.state.show === false) {
+            return null;
+        }
+
+        return (
+                <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div className="modal-dialog" role="document">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title" id="exampleModalLabel">Video Transcode</h5>
+                            </div>
+                            <div className="modal-body">
+                                <div className="mb-3">
+                                    <label for="exampleFormControlInput1" className="form-label">
+                                        Transcode video <b>{this.state.fileInfo.filename}</b> to WebM format (VP9) with the following CRF
+                                        (The CRF value can be from 0–63. Lower values mean better quality. Recommended values range from 15–35, with 31 being recommended for 1080p HD video.
+                                            https://developers.google.com/media/vp9/settings/vod/):
+                                    </label>
+                                    <input type="text" className="form-control"
+                                           placeholder="Input CRF" value={this.state.crf} onChange={this.onCRFChange}/>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
+                                <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        );
+    }
+}
+
+class ModalRename extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            appAddress: props.appAddress,
+            fileInfo: props.fileInfo,
+            newFilename: props.fileInfo.filename,
+            refreshFileList: props.refreshFileList,
+            show: props.show
+        };
+        this.handleCloseClick = this.handleCloseClick.bind(this);
+        this.onFilenameChange = this.onFilenameChange.bind(this);
+        this.handleSubmitClick = this.handleSubmitClick.bind(this);
+    }
+
+    componentDidMount() {
+        $(this.modal).modal('show');
+    }
+
+    handleSubmitClick() {
+        this.fetchDataFromServer();        
+    }
+
+    fetchDataFromServer() {                                      
+        const payload = new FormData();
+        payload.append('asset_dir', this.state.fileInfo.asset_dir);
+        payload.append('oldname', this.state.fileInfo.filename);
+        payload.append('newname', this.state.newFilename);
+        axios({
+            method: "post",
+            url: this.state.appAddress + "/rename/",
+            data: payload,
+        })
+        .then(response => {
+            this.handleCloseClick();
+            if (this.state.refreshFileList != null) {
+                this.state.refreshFileList();
+            }
+        })
+        .catch(error => {
+            alert('Unable to rename\n' + error);
+        });
+    }
+    
+    onFilenameChange(event) {
+        this.setState({
+            newFilename: event.target.value
+          });
+    }
+
+    handleCloseClick() {
+        $(this.modal).modal('hide');
+    }
+
+    render() {
+        
+        if (this.state.show === false) {
+            return null;
+        }
+
+        return (
+                <div className="modal fade" ref={modal=> this.modal = modal} id="exampleModal" tabIndex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div className="modal-dialog" role="document">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title" id="exampleModalLabel">Rename</h5>
+                            </div>
+                            <div className="modal-body">
+                                <div className="mb-3">
+                                    <label for="exampleFormControlInput1" className="form-label">
+                                        Rename the file from <b>{this.state.fileInfo.filename}</b> to:
+                                    </label>
+                                    <input type="text" className="form-control"
+                                           placeholder="Input new filename" value={this.state.newFilename} onChange={this.onFilenameChange}/>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
+                                <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        );
+    }
+}
+
+class ContextMenu extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {            
+            appAddress: props.appAddress,
+            modalKey: 0,
+            refreshFileList: props.refreshFileList,
+            showModal: false,
+            fileInfo: props.fileInfo
+        };
+        this.onRenameButtonClick = this.onRenameButtonClick.bind(this);
+        this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
+        this.Modal = null;
+    }
+
+    onRenameButtonClick(event) {
+        this.Modal = (
+            <ModalRename key={this.state.modalKey} 
+                   fileInfo={this.state.fileInfo}
+                   appAddress={this.state.appAddress}
+                   refreshFileList={this.state.refreshFileList}
+                   show={true}/>
+              // By adding a key attribute, Modal will be created each time, so we
+              //    can pass different show attribute to it.
+        );
+        this.setState(prevState => ({
+            showModal: true,
+            modalKey: prevState.modalKey + 1
+        }));
+    }
+    
+    onTranscodeButtonClick(event) {
+        this.Modal = (
+            <ModalTranscode key={this.state.modalKey} 
+                   fileInfo={this.state.fileInfo}
+                   appAddress={this.state.appAddress}
+                   refreshFileList={this.state.refreshFileList}
+                   show={true}/>
+              // By adding a key attribute, Modal will be created each time, so we
+              //    can pass different show attribute to it.
+        );
+        this.setState(prevState => ({
+            showModal: true,
+            modalKey: prevState.modalKey + 1
+        }));
+    }
+
+    render() {
+        return (
+            <div class="dropdown"  style={{ float: "right" }}>
+                <svg class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style={{ float: "right", cursor: "pointer" }}
+                    xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-three-dots-vertical" viewBox="0 0 16 16">
+                    <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                </svg>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item" onClick={this.onRenameButtonClick}>Rename</a></li>
+                    <li><a class="dropdown-item" onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
+                    <li><a class="dropdown-item" href="#">Something else here</a></li>
+                </ul>
+                {this.Modal}
+            </div>
+        );
+    }
+}
+
+/**
+ * Format bytes as human-readable text.
+ * 
+ * @param bytes Number of bytes.
+ * @param si True to use metric (SI) units, aka powers of 1000. False to use 
+ *           binary (IEC), aka powers of 1024.
+ * @param dp Number of decimal places to display.
+ * 
+ * @return Formatted string.
+ */
+ function humanFileSize(bytes, si=false, dp=1) {
+    const thresh = si ? 1000 : 1024;
+  
+    if (Math.abs(bytes) < thresh) {
+      return bytes + ' B';
+    }
+  
+    const units = si 
+      ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
+      : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+    let u = -1;
+    const r = 10**dp;
+  
+    do {
+      bytes /= thresh;
+      ++u;
+    } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+  
+  
+    return bytes.toFixed(dp) + ' ' + units[u];
+  }
+  
+
 class FileManager extends React.Component {
 
     constructor(props) {
@@ -34,6 +309,9 @@ class FileManager extends React.Component {
             window.history.pushState(null, document.title,  window.location.href);
         });
     }
+
+    fileListShouldRefresh = () => this.fetchDataFromServer(this.state.fileInfo.metadata.asset_dir);
+    
     
     onAddressBarChange(event) {
         this.setState({
@@ -69,6 +347,10 @@ class FileManager extends React.Component {
     };
       
     fetchDataFromServer(asset_dir) {
+        console.log('fetchDataFromServer(asset_dir)');
+        if (asset_dir === null) {
+            asset_dir = this.state.fileInfo.metadata.asset_dir;
+        }
         URL = this.state.appAddress + '/get-file-list/?asset_dir=' + encodeURIComponent(asset_dir);
         console.log('Fetching: ' + URL);
         axios.get(URL)
@@ -95,18 +377,8 @@ class FileManager extends React.Component {
         return <ListItem button component="a" {...props} />;
     }
 
-    generate(element) {
-        return [0, 1, 2].map((value) =>
-            React.cloneElement(element, {
-            key: value,
-            }),
-        );
-    }
-
     render() {
-
         if (this.state.fileInfo === null) { return null; }
-
         
         let fi = this.state.fileInfo;
         const keys = Object.keys(fi.content);
@@ -114,30 +386,59 @@ class FileManager extends React.Component {
         for (let i = 0; i < keys.length; i++) {
             const key = keys[i];
             let thumbnail = null;
+            let filesize = null;
             if (fi.content[key].file_type === 0) {
                 thumbnail = (
-                    <img src='https://media.sz.lan/static/folder.png'
-                        style={{ maxWidth: "100%", maxWidth: "5em", display:"block", float:"left" }} />);
+                    <img src='https://media.sz.lan/static/icons/folder.svg'
+                         style={{ maxWidth: "100%", width: "10em", display:"block", float:"left", cursor: "pointer" }}
+                         onClick={() => this.onClickItem(key)} />);
             }
             else if (fi.content[key].file_type === 1) {
-                if (fi.content[key].media_type === 1) {
+                if (fi.content[key].media_type === 1) { // image
                     thumbnail = (
                         <img src={`https://media.sz.lan/get-thumbnail/?filename=${key}.jpg`}
-                            style={{ maxWidth: "100%", maxHeight: "90vh", "display":"block" }} />);
-                } else if (fi.content[key].media_type === 2) {
+                             style={{ maxWidth: "100%", maxHeight: "90vh", "display":"block", cursor: "pointer" }}
+                             onClick={() => this.onClickItem(key)} />);
+                } else if (fi.content[key].media_type === 2) { // video
                     thumbnail = (
                         <img src={`https://media.sz.lan/get-thumbnail/?filename=${key}.jpg`}
-                            style={{ maxWidth: "100%", maxWidth: "5em", "display":"block", float:"left" }} />);
-                }  
+                             style={{ width: "10em", maxHeight: "50vh", "display":"block", float:"left", cursor: "pointer" }}
+                             onClick={() => this.onClickItem(key)}
+                             onError={(e)=>{e.target.onerror = null; e.target.src="https://media.sz.lan/static/icons/video.svg"}} />);
+                } else if (fi.content[key].media_type === 0) { // not a media file
+                    let url = null;
+                    if ([".doc", ".docx", ".odt", ".rtf", ".docm", ".docx", "wps"].includes(fi.content[key].extension.toLowerCase())) {
+                        url = "https://media.sz.lan/static/icons/word.svg"; 
+                    } else if ([".htm", ".html", ".mht"].includes(fi.content[key].extension.toLowerCase())) {
+                        url = "https://media.sz.lan/static/icons/html.svg"; 
+                    } else if ([".7z", ".zip", ".rar", ".tar", ".gz"].includes(fi.content[key].extension.toLowerCase())) {
+                        url = "https://media.sz.lan/static/icons/archive.svg"; 
+                    } else if ([".mp3", ".wma", ".wav", ".ogg", ".flac"].includes(fi.content[key].extension.toLowerCase())) {
+                        url = "https://media.sz.lan/static/icons/music.svg"; 
+                    } else {
+                        url = "https://media.sz.lan/static/icons/misc.svg"; 
+                    }
+                    thumbnail = (<img src={url} style={{ width: "10em", maxHeight: "50vh", "display":"block", float:"left", cursor: "pointer" }}
+                                      onClick={() => this.onClickItem(key)} />);
+                }
+                filesize = (<p style={{ position: "absolute", bottom: "1px" }}>{humanFileSize(fi.content[key].size)}</p>);
             }
             fileList[i] = (
-            <li key={i} className="list-group-item">
-                <a href="javascript:;" value={key} style={{ textDecoration: "none", display: "block" }} onClick={() => this.onClickItem(key)}>
-                {thumbnail}{key}
-                <svg style={{ float: "right" }} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-three-dots-vertical" viewBox="0 0 16 16">
-                    <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
-                </svg>
-                </a>
+            <li key={i} className="list-group-item">                      
+                <div class="row">
+                    <div class="col" style={{ maxWidth: "11em" }}>
+                        {thumbnail}
+                    </div>
+                    <div class="col">
+                        <a value={key} style={{ textDecoration: "none", display: "block", cursor: "pointer" }} onClick={() => this.onClickItem(key)}>
+                        {key}
+                        </a>
+                        {filesize}
+                    </div>
+                    <div class="col"  style={{ maxWidth: "2em" }}>
+                        <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fi.content[key]} appAddress={this.state.appAddress} /> 
+                    </div>
+                </div>         
             </li>
             );
         }
@@ -145,12 +446,12 @@ class FileManager extends React.Component {
         return (
             
             <div>
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" placeholder="Address" aria-label="Recipient's username" aria-describedby="button-addon2"
+                <div className="input-group mb-3 fixed-top">
+                    <input type="text" className="form-control" placeholder="Address" aria-label="Recipient's username" aria-describedby="button-addon2"
                     value={this.state.addressBar} onChange={this.onAddressBarChange} />
-                    <button className="btn btn-outline-secondary" type="button" onClick={this.onClickAddressBarGo} >Go</button>
+                    <button className="btn btn-primary" type="button" onClick={this.onClickAddressBarGo} >Go</button>
                 </div>
-                <ul className="list-group">
+                <ul className="list-group" style={{ marginTop: "2em"}}>
                 {fileList}
                 </ul>
             </div>

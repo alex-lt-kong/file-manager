@@ -52,28 +52,37 @@ thread_counter = 0
 video_extensions = None
 
 
-@app.route('/mv/', methods=['GET', 'POST'])
-def mv():
+@app.route('/rename/', methods=['POST'])
+def rename():
 
-    asset_dir = request.args.get('asset_dir')
-    video_name_from = request.args.get('video_name_from')
-    video_name_to = request.args.get('video_name_to')
+    if ('asset_dir' not in request.form or 'oldname' not in request.form or
+            'newname' not in request.form):
+        return Response('asset_dir, old_filepath or new_filepath is missing',
+                        400)
 
     try:
+        asset_dir = request.form['asset_dir']
+        oldname = request.form['oldname']
+        newname = request.form['newname']
         abs_path, asset_dir = get_absolute_path(asset_dir)
+        old_filepath = flask.safe_join(abs_path, oldname)
+        new_filepath = flask.safe_join(abs_path, newname)
+        print(newname)
+        # safe_join can prevent base directory escaping
 
-        video_path_from = os.path.join(abs_path, video_name_from)
-        video_path_to = os.path.join(abs_path, video_name_to)
+        if (os.path.isfile(old_filepath) is False and
+                os.path.isdir(old_filepath) is False):
+            raise FileNotFoundError('old filename not found')
+        if os.path.isfile(new_filepath) or os.path.isdir(new_filepath):
+            raise FileExistsError('new filename occupied by an existing file')
 
-        if ('/' in video_name_from or '/' in video_name_to or
-            os.path.commonprefix([os.path.realpath(video_path_from), root_dir]) != root_dir or
-            os.path.commonprefix([os.path.realpath(video_path_to) , root_dir]) != root_dir):
-            return Response('value error (video_path_from or video_path_to)', 400)
-        os.rename(video_path_from, video_path_to)
-        logging.info(f'File/Dir renamed from [{video_path_from}] to [{video_path_to}]')
-
+        os.rename(old_filepath, new_filepath)
+        logging.info('File/Dir renamed from'
+                     f'[{old_filepath}] to [{new_filepath}]')
+    except (FileNotFoundError, FileExistsError, PermissionError) as e:
+        return Response(f'Error: {e}', 400)
     except Exception as e:
-        logging.error("{}".format(sys.exc_info()))
+        logging.error(f'{e}')
         return Response(f'Internal Error: {e}', 500)
 
     return Response('success', 200)
@@ -182,29 +191,35 @@ def convert_video_format(input_path: str, output_path: str, crf: int):
             f.write('std_err:\n{}\n\n'.format(error.decode("utf-8")))
 
 
-@app.route('/convert/', methods=['GET', 'POST'])
-def convert():
+@app.route('/video-transcode/', methods=['POST'])
+def video_transcode():
 
-    asset_dir = request.args.get('asset_dir')
-    video_name = request.args.get('video_name')
-    crf = request.args.get('crf')
+    if ('asset_dir' not in request.form or 'video_name' not in request.form or
+            'crf' not in request.form):
+        return Response('asset_dir, video_name or crf is missing', 400)
 
     try:
+        asset_dir = request.form['asset_dir']
+        video_name = request.form['video_name']
+        crf = request.form['crf']
+
         crf = int(crf)
-        if crf < 0 or crf > 51:
-            return Response('value error (crf)', 400)
+        if crf < 0 or crf > 63:
+            raise ValueError(f'Invalid crf value {crf}', 400)
 
         abs_path, asset_dir = get_absolute_path(asset_dir)
 
-        video_path = os.path.join(abs_path, video_name)
+        video_path = flask.safe_join(abs_path, video_name)
+        if os.path.isfile(video_path) is False:
+            raise FileNotFoundError(f'video {video_name} not found')
+        output_path = video_path + f'_crf{crf}.webm'
+        if os.path.isfile(output_path) or os.path.isdir(output_path):
+            raise FileExistsError('target video name occupied')
+        threading.Thread(target=convert_video_format,
+                         args=(video_path, output_path, crf)).start()
 
-        if ('/' in video_name or
-            os.path.commonprefix([os.path.realpath(video_path), root_dir]) != root_dir or
-            os.path.isfile(video_path) == False):
-            return Response('value error (video_path)', 400)
-        output_path = video_path + '_crf{}.webm'.format(crf)
-        threading.Thread(target=convert_video_format, args=(video_path, output_path, crf)).start()
-
+    except (FileExistsError, FileNotFoundError, ValueError) as e:
+        return Response(f'Error: {e}', 400)
     except Exception as e:
         logging.error(f'{e}')
         return Response(f'Internal Error: {e}', 500)
@@ -283,7 +298,7 @@ def get_absolute_path(asset_dir: str):
         # remove the preceding "/" from asset_dir to make it work.
         asset_dir = asset_dir[1:]
 
-    abs_path = os.path.join(root_dir, asset_dir)
+    abs_path = flask.safe_join(root_dir, asset_dir)
     abs_path = os.path.realpath(abs_path)
     asset_dir = abs_path[len(root_dir):]
 
@@ -383,13 +398,23 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
     for entry in scanner:
         fn = entry.name
         file_info['content'][fn] = {}
+        file_info['content'][fn]['filename'] = fn
+        # Repeat the name here so that we can just pass an
+        # file_info['content'][fn] object.
         file_info['content'][fn]['file_type'] = 2
+        file_info['content'][fn]['asset_dir'] = asset_dir
         file_info['content'][fn]['media_type'] = -1
         file_info['content'][fn]['extension'] = ''
         if entry.is_file():
             file_info['content'][fn]['file_type'] = 1
-            ext = os.path.splitext(entry.name)[1]
+            basename, ext = os.path.splitext(entry.name)
+            file_info['content'][fn]['basename'] = basename
             file_info['content'][fn]['extension'] = ext
+            file_path = flask.safe_join(abs_path, fn)
+            if file_path is None:
+                # implies chroot escape attempt!
+                raise PermissionError('chroot escape attempt detected???')
+            file_info['content'][fn]['size'] = os.path.getsize(file_path)
             if ext.lower() in video_extensions:
                 file_info['content'][fn]['media_type'] = 2
             elif ext.lower() in image_extensions:
@@ -410,9 +435,11 @@ def get_file_list():
         return Response('parameter [asset_dir] not specified', 400)
     try:
         abs_path, asset_dir = get_absolute_path(request.args.get('asset_dir'))
+        file_info = generate_file_list_json(abs_path, asset_dir)
     except (FileNotFoundError, PermissionError) as e:
         return Response(f'Error: {e}', 400)
-    file_info = generate_file_list_json(abs_path, asset_dir)
+    except Exception as e:
+        return Response(f'Internal Error: {e}', 500)
 
     return flask.jsonify(file_info)
 
@@ -485,48 +512,6 @@ def cleanup(*args):
     sys.exit(0)
 
 
-def send_notification_email(delay: int, from_name: str, subject: str, mainbody: str):
-
-    global stop_signal
-
-    logging.info('Wait for {} seconds before sending the email'.format(delay))
-    sec_count = 0
-    while sec_count < delay:
-        time.sleep(1)  # This delay has to be long enough to accommodate the startup time of pfSense.
-        sec_count += 1
-        if stop_signal:
-            return
-    logging.debug('Sending [{}] notification email'.format(subject))
-
-    try:
-        with open(settings_path, 'r') as json_file:
-            json_str = json_file.read()
-            json_data = json.loads(json_str)
-    except:
-        json_data = None
-        logging.error(sys.exc_info())
-
-    sender = json_data['email']['address']
-    password = json_data['email']['password']
-    receivers = ['admin@mamsds.net']
-
-    message = ('From: {} <{}>\n'
-                'To: Mamsds Admin Account <admin@mamsds.net>\n'
-                'Content-Type: text/html; charset="UTF-8"\n'
-                'Subject: {}\n'
-                '<meta http-equiv="Content-Type"  content="text/html charset=UTF-8" /><html><font size="2" color="black">{}</font></html>'.format(from_name, sender, subject, mainbody.replace('\n', '<br>')))
-
-    try:
-        smtpObj = smtplib.SMTP(host='server172.web-hosting.com', port=587)
-        smtpObj.starttls()
-        smtpObj.login(sender, password)
-        smtpObj.sendmail(sender, receivers, message.encode('utf-8'))
-        smtpObj.quit()
-        logging.debug("Email [{}] sent successfully".format(subject))
-    except:
-        logging.error("{}".format(sys.exc_info()))
-
-
 def main():
 
     ap = argparse.ArgumentParser()
@@ -559,9 +544,11 @@ def main():
     logging.basicConfig(
         filename=log_path,
         level=logging.DEBUG if debug_mode else logging.INFO,
-        format='%(asctime)s %(levelname)s %(module)s - %(funcName)s: %(message)s',
+        format=('%(asctime)s %(levelname)s '
+                '%(module)s-%(funcName)s: %(message)s'),
         datefmt='%Y-%m-%d %H:%M:%S',
     )
+    logging.info(f'{app_name} started')
 
     if debug_mode is True:
         print('Running in debug mode')
@@ -578,8 +565,6 @@ def main():
                                         'log_path': log_path,
                                         'delay': 0 if debug_mode else 300})
     th_email.start()
-
-    logging.info(f'{app_name} started')
 
     serve(app, host="127.0.0.1", port=port)
 
