@@ -1,3 +1,10 @@
+settings.json
+plan.json
+notes.json
+resources/
+static/thumbnails
+static/videos
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
