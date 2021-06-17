@@ -37,17 +37,19 @@ thread_lock = threading.Lock()
 CORS(app)
 # This necessary for javascript to access a telemetry link without opening it:
 # https://stackoverflow.com/questions/22181384/javascript-no-access-control-allow-origin-header-is-present-on-the-requested
-app_name = 'file-manager'
-log_path = f'/var/log/mamsds/{app_name}.log'
-stop_signal = False
-settings_path = f'/root/bin/{app_name}/settings.json'
-root_dir = f'/root/bin/{app_name}/static/videos'
-thumbnails_path = f'/root/bin/{app_name}/static/thumbnails/'
-thread_counter = 0
 
-video_extensions = ['.mp4', '.wmv', '.webm', '.avi', '.mkv', '.flv', '.mov',
-                    '.rm', '.rmvb', '.mpg', '.mpeg', '.m4v', '.f4v', '.3gp', '.asf']
-image_extensions = ['.jpg', '.jpeg', '.tiff', '.tif', '.gif', '.bmp', '.png', '.webp']
+# app_dir: the app's real address on the filesystem
+app_dir = os.path.dirname(os.path.realpath(__file__))
+app_name = 'file-manager'
+external_script_dir = ''
+image_extensions = None
+log_path = f'/var/log/mamsds/{app_name}.log'
+root_dir = ''
+stop_signal = False
+settings_path = os.path.join(app_dir, 'settings.json')
+thumbnails_path = ''
+thread_counter = 0
+video_extensions = None
 
 
 @app.route('/mv/', methods=['GET', 'POST'])
@@ -234,9 +236,9 @@ def get_thumbnail():
 
     if 'filename' not in request.args:
         return Response('Parameter filename not specified', 400)
-    filename = request.args.get('filename')
 
-    return flask.send_from_directory(directory='/root/bin/video-manager/static/thumbnails',
+    filename = request.args.get('filename')
+    return flask.send_from_directory(directory=thumbnails_path,
                                      filename=filename,
                                      as_attachment=False,
                                      attachment_filename=filename)
@@ -532,14 +534,34 @@ def main():
     args = vars(ap.parse_args())
     debug_mode = args['debug']
 
+    port = -1
+    global app_address, root_dir, thumbnails_path
+    global external_script_dir, log_path
+    global image_extensions, video_extensions
+
+    try:
+        with open(settings_path, 'r') as json_file:
+            json_str = json_file.read()
+            data = json.loads(json_str)
+        port = data['flask']['port']
+        external_script_dir = data['app']['external_script_dir']
+        image_extensions = data['app']['image_extensions']
+        root_dir = data['app']['root_dir']
+        thumbnails_path = data['app']['thumbnails_path']
+        log_path = data['app']['log_path']
+        video_extensions = data['app']['video_extensions']
+        logging.debug(f'data: {data}')
+    except Exception as e:
+        data = None
+        print(f'{e}')
+        return
+
     logging.basicConfig(
         filename=log_path,
         level=logging.DEBUG if debug_mode else logging.INFO,
-        format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+        format='%(asctime)s %(levelname)s %(module)s - %(funcName)s: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
     )
-    logging.info('meal planner started')
-    start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     if debug_mode is True:
         print('Running in debug mode')
@@ -557,9 +579,9 @@ def main():
                                         'delay': 0 if debug_mode else 300})
     th_email.start()
 
-    logging.info('meal planner server')
+    logging.info(f'{app_name} started')
 
-    serve(app, host="127.0.0.1", port=92)
+    serve(app, host="127.0.0.1", port=port)
 
 
 if __name__ == '__main__':
