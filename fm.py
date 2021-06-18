@@ -6,7 +6,7 @@ from flask import request
 from PIL import Image, ImageFile
 from waitress import serve
 
-import argparse
+import click
 import base64
 import datetime
 import flask
@@ -16,6 +16,7 @@ import math
 import mimetypes
 import os
 import re
+import shutil
 import signal
 import smtplib
 import socket
@@ -24,6 +25,7 @@ import sys
 import threading
 import time
 import urllib
+import werkzeug
 
 import importlib.machinery
 loader = importlib.machinery.SourceFileLoader('emailer',
@@ -52,38 +54,46 @@ thread_counter = 0
 video_extensions = None
 
 
-@app.route('/rename/', methods=['POST'])
-def rename():
+@app.route('/move/', methods=['POST'])
+def move():
 
-    if ('asset_dir' not in request.form or 'oldname' not in request.form or
-            'newname' not in request.form):
-        return Response('asset_dir, old_filepath or new_filepath is missing',
-                        400)
+    if ('old_filepath' not in request.form or
+            'new_filepath' not in request.form):
+        return Response('old_filepath or new_filepath not specified', 400)
 
     try:
-        asset_dir = request.form['asset_dir']
-        oldname = request.form['oldname']
-        newname = request.form['newname']
-        abs_path, asset_dir = get_absolute_path(asset_dir)
-        old_filepath = flask.safe_join(abs_path, oldname)
-        new_filepath = flask.safe_join(abs_path, newname)
-        print(newname)
+        old_filepath = request.form['old_filepath']
+        new_filepath = request.form['new_filepath']
+        old_real_filepath = flask.safe_join(root_dir, old_filepath[1:])
+        new_real_filepath = flask.safe_join(root_dir, new_filepath[1:])
         # safe_join can prevent base directory escaping
+        # [1:] is used to get ride of the initial /:
+        # On the client side, old_filepath/new_filepath are considered real
+        # root path, so they have to start with a slash. However, when we need
+        # to convert them into real_filepath on the server, a preceding slash
+        # will make flask to think that it is an escape attempt and raise a
+        # NotFound exception.
+        if (os.path.isfile(old_real_filepath) is False and
+                os.path.isdir(old_real_filepath) is False):
+            raise Response(f'{old_filepath} not found', 400)
+        if (os.path.isfile(new_real_filepath) or
+                os.path.isdir(new_real_filepath)):
+            raise Response(f'{new_filepath} occupied by an existing file', 400)
 
-        if (os.path.isfile(old_filepath) is False and
-                os.path.isdir(old_filepath) is False):
-            raise FileNotFoundError('old filename not found')
-        if os.path.isfile(new_filepath) or os.path.isdir(new_filepath):
-            raise FileExistsError('new filename occupied by an existing file')
-
-        os.rename(old_filepath, new_filepath)
-        logging.info('File/Dir renamed from'
-                     f'[{old_filepath}] to [{new_filepath}]')
-    except (FileNotFoundError, FileExistsError, PermissionError) as e:
-        return Response(f'Error: {e}', 400)
-    except Exception as e:
-        logging.error(f'{e}')
-        return Response(f'Internal Error: {e}', 500)
+        shutil.move(src=old_real_filepath, dst=new_real_filepath)
+        # If the destination is on the current filesystem, then os.rename()
+        # is used. Otherwise, src is copied to dst and then removed. In case
+        # of symlinks, a new symlink pointing to the target of src will be
+        # created in or as dst and src will be removed.
+        logging.debug('File moved from'
+                      f'[{old_real_filepath}] to [{new_real_filepath}]')
+    except (FileNotFoundError, FileExistsError, PermissionError,
+            werkzeug.exceptions.NotFound):
+        logging.exception('')
+        return Response('Client-side error', 400)
+    except Exception:
+        logging.exception('')
+        return Response('Internal Error', 500)
 
     return Response('success', 200)
 
@@ -447,77 +457,20 @@ def get_file_list():
 @app.route('/', methods=['GET', 'POST'])
 def index():
 
-    if 'page' in request.args:
-        if request.args['page'] == 'new':
-            return render_template('index.html')
-
-    try:
-        abs_path, asset_dir = get_absolute_path(request.args.get('asset_dir'))
-
-        file_list = []
-        filesize_list = []
-        video_list = []
-        videosize_list = []
-        image_list = []
-        imagesize_list = []
-        dir_list = []
-
-        scanner = os.scandir(abs_path)
-        for entry in scanner:
-            if entry.is_file():
-                extension = os.path.splitext(entry.name)[1]
-                if extension.lower() in video_extensions:
-                    video_list.append(entry.name)
-                elif extension.lower() in image_extensions:
-                    image_list.append(entry.name)
-                else:
-                    file_list.append(entry.name)
-            elif entry.is_dir():
-                dir_list.append(entry.name)
-        scanner.close()
-
-        video_list.sort()
-        image_list.sort()
-        file_list.sort()
-        dir_list.sort()
-
-        for videopath in video_list:
-            videosize_list.append(int(os.path.getsize(os.path.join(abs_path, videopath)) / 1024 / 1024))
-        for imagepath in image_list:
-            imagesize_list.append(int(os.path.getsize(os.path.join(abs_path, imagepath)) / 1024))
-        for filepath in file_list:
-            filesize_list.append(int(os.path.getsize(os.path.join(abs_path, filepath)) / 1024 / 1024))
-
-        threading.Thread(target=generate_thumbnail, args=(abs_path, video_list, videosize_list)).start()
-        threading.Thread(target=generate_thumbnail, args=(abs_path, image_list, imagesize_list)).start()
-
-        return render_template('manager.html',
-                asset_dir = asset_dir,
-                video_list = video_list, videosize_list = videosize_list,
-                image_list = image_list, imagesize_list = imagesize_list,
-                file_list = file_list, filesize_list = filesize_list,
-                dir_list = dir_list)
-    except FileNotFoundError as e:
-        return Response(f'Error: {e}', 400)
-    except Exception as e:
-        logging.error("{}".format(sys.exc_info()))
-        return Response(f'Internal Error: {e}', 500)
+    return render_template('index.html')
 
 
-def cleanup(*args):
+def stop_signal_handler(*args):
 
     global stop_signal
     stop_signal = True
-    logging.info('Stop signal received, exiting')
+    logging.info(f'Signal [{args[0]}] received, exiting')
     sys.exit(0)
 
 
-def main():
-
-    ap = argparse.ArgumentParser()
-    ap.add_argument('--debug', dest='debug', action='store_true')
-    args = vars(ap.parse_args())
-    debug_mode = args['debug']
+@click.command()
+@click.option('--debug', is_flag=True)
+def main(debug):
 
     port = -1
     global app_address, root_dir, thumbnails_path
@@ -535,7 +488,6 @@ def main():
         thumbnails_path = data['app']['thumbnails_path']
         log_path = data['app']['log_path']
         video_extensions = data['app']['video_extensions']
-        logging.debug(f'data: {data}')
     except Exception as e:
         data = None
         print(f'{e}')
@@ -543,27 +495,27 @@ def main():
 
     logging.basicConfig(
         filename=log_path,
-        level=logging.DEBUG if debug_mode else logging.INFO,
+        level=logging.DEBUG if debug else logging.INFO,
         format=('%(asctime)s %(levelname)s '
                 '%(module)s-%(funcName)s: %(message)s'),
         datefmt='%Y-%m-%d %H:%M:%S',
     )
     logging.info(f'{app_name} started')
 
-    if debug_mode is True:
+    if debug:
         print('Running in debug mode')
         logging.info('Running in debug mode')
     else:
         logging.info('Running in production mode')
 
-    signal.signal(signal.SIGINT, cleanup)
-    signal.signal(signal.SIGTERM, cleanup)
+    signal.signal(signal.SIGINT, stop_signal_handler)
+    signal.signal(signal.SIGTERM, stop_signal_handler)
 
     th_email = threading.Thread(target=emailer.send_service_start_notification,
                                 kwargs={'settings_path': settings_path,
                                         'service_name': f'{app_name}',
                                         'log_path': log_path,
-                                        'delay': 0 if debug_mode else 300})
+                                        'delay': 0 if debug else 300})
     th_email.start()
 
     serve(app, host="127.0.0.1", port=port)

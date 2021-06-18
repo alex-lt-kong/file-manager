@@ -43,7 +43,6 @@ def main():
         thumbnails_path = data['app']['thumbnails_path']
         log_path = data['app']['log_path']
         video_extensions = data['app']['video_extensions']
-        logging.debug(f'data: {data}')
     except Exception as e:
         data = None
         print(f'{e}')

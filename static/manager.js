@@ -87,18 +87,18 @@ class ModalTranscode extends React.Component {
     }
 }
 
-class ModalRename extends React.Component {
+class ModalMove extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             appAddress: props.appAddress,
             fileInfo: props.fileInfo,
-            newFilename: props.fileInfo.filename,
+            newFilepath: props.fileInfo.asset_dir + props.fileInfo.filename,
             refreshFileList: props.refreshFileList,
             show: props.show
         };
         this.handleCloseClick = this.handleCloseClick.bind(this);
-        this.onFilenameChange = this.onFilenameChange.bind(this);
+        this.onFilepathChange = this.onFilepathChange.bind(this);
         this.handleSubmitClick = this.handleSubmitClick.bind(this);
     }
 
@@ -112,12 +112,12 @@ class ModalRename extends React.Component {
 
     fetchDataFromServer() {                                      
         const payload = new FormData();
-        payload.append('asset_dir', this.state.fileInfo.asset_dir);
-        payload.append('oldname', this.state.fileInfo.filename);
-        payload.append('newname', this.state.newFilename);
+       // payload.append('asset_dir', this.state.fileInfo.asset_dir);
+        payload.append('old_filepath', this.state.fileInfo.asset_dir + this.state.fileInfo.filename);
+        payload.append('new_filepath', this.state.newFilepath);
         axios({
             method: "post",
-            url: this.state.appAddress + "/rename/",
+            url: this.state.appAddress + "/move/",
             data: payload,
         })
         .then(response => {
@@ -127,13 +127,13 @@ class ModalRename extends React.Component {
             }
         })
         .catch(error => {
-            alert('Unable to rename\n' + error);
+            alert('Unable to move\n' + error);
         });
     }
     
-    onFilenameChange(event) {
+    onFilepathChange(event) {
         this.setState({
-            newFilename: event.target.value
+            newFilepath: event.target.value
           });
     }
 
@@ -152,15 +152,23 @@ class ModalRename extends React.Component {
                     <div className="modal-dialog" role="document">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h5 className="modal-title" id="exampleModalLabel">Rename</h5>
+                                <h5 className="modal-title" id="exampleModalLabel">Move File</h5>
                             </div>
                             <div className="modal-body">
                                 <div className="mb-3">
                                     <label for="exampleFormControlInput1" className="form-label">
-                                        Rename the file from <b>{this.state.fileInfo.filename}</b> to:
+                                        Move the file from <b>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</b> to:
                                     </label>
                                     <input type="text" className="form-control"
-                                           placeholder="Input new filename" value={this.state.newFilename} onChange={this.onFilenameChange}/>
+                                           placeholder="Input new filename" value={this.state.newFilepath} onChange={this.onFilepathChange}/>   
+                                    <div style={{ marginTop: "1em"}}>
+                                        Notes:<br />
+                                        1. After parameters validation, the server calls&nbsp;<a href="https://docs.python.org/3/library/shutil.html#shutil.move" target="_blank">
+                                        shutil.move()</a>&nbsp;to do the move;<br />
+                                        2. If the destination is on a different filesystem, source file is copied to destination and then removed.
+                                        (It could take a long time, consider a duplicate->move->remove approach instead!)<br />
+                                        3. In case of symlinks, a new symlink pointing to the target of src will be created in or as dst and src will be removed.
+                                    </div>
                                 </div>
                             </div>
                             <div className="modal-footer">
@@ -185,14 +193,14 @@ class ContextMenu extends React.Component {
             showModal: false,
             fileInfo: props.fileInfo
         };
-        this.onRenameButtonClick = this.onRenameButtonClick.bind(this);
+        this.onMoveButtonClick = this.onMoveButtonClick.bind(this);
         this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
         this.Modal = null;
     }
 
-    onRenameButtonClick(event) {
+    onMoveButtonClick(event) {
         this.Modal = (
-            <ModalRename key={this.state.modalKey} 
+            <ModalMove key={this.state.modalKey} 
                    fileInfo={this.state.fileInfo}
                    appAddress={this.state.appAddress}
                    refreshFileList={this.state.refreshFileList}
@@ -230,7 +238,7 @@ class ContextMenu extends React.Component {
                     <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
                 </svg>
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    <li><a class="dropdown-item" onClick={this.onRenameButtonClick}>Rename</a></li>
+                    <li><a class="dropdown-item" onClick={this.onMoveButtonClick}>Move</a></li>
                     <li><a class="dropdown-item" onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
                     <li><a class="dropdown-item" href="#">Something else here</a></li>
                 </ul>
