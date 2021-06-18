@@ -7,24 +7,15 @@ from PIL import Image, ImageFile
 from waitress import serve
 
 import click
-import base64
-import datetime
 import flask
 import json
 import logging
-import math
-import mimetypes
 import os
-import re
 import shutil
 import signal
-import smtplib
-import socket
 import subprocess
 import sys
 import threading
-import time
-import urllib
 import werkzeug
 
 import importlib.machinery
@@ -40,6 +31,9 @@ CORS(app)
 # This necessary for javascript to access a telemetry link without opening it:
 # https://stackoverflow.com/questions/22181384/javascript-no-access-control-allow-origin-header-is-present-on-the-requested
 
+allowed_ext = None
+# app_address: the app's address on the Internet
+app_address = ''
 # app_dir: the app's real address on the filesystem
 app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager'
@@ -52,6 +46,38 @@ settings_path = os.path.join(app_dir, 'settings.json')
 thumbnails_path = ''
 thread_counter = 0
 video_extensions = None
+
+
+@app.route('/upload/', methods=['POST'])
+def upload():
+
+    if 'asset_dir' not in request.form:
+        return Response('asset_dir not specified', 400)
+
+    if 'selected_files' not in request.files:
+        return Response('No files are received', 400)
+    if request.files['selected_files'] is None:
+        return Response('No files are received', 400)
+
+    asset_dir = request.form['asset_dir']
+    selected_files = flask.request.files.getlist("selected_files")
+    for selected_file in selected_files:
+        basename, ext = os.path.splitext(selected_file.filename)
+        if (ext.lower() not in allowed_ext):
+            return Response(f'{ext} is not among the allowed extensions: '
+                            f'{allowed_ext}', 400)
+
+        filepath = flask.safe_join(root_dir,
+                                   asset_dir[1:] + selected_file.filename)
+        # safe_join can prevent base directory escaping
+        # [1:] is used to get ride of the initial /
+
+        selected_file.seek(0)
+        # seek(0) means to go back to the start of the file.
+        # but I am not quite sure why we are not at the start before seeking...
+        selected_file.save(filepath)
+
+    return Response('Upload done', 200)
 
 
 @app.route('/move/', methods=['POST'])
@@ -69,10 +95,14 @@ def move():
         # safe_join can prevent base directory escaping
         # [1:] is used to get ride of the initial /:
         # On the client side, old_filepath/new_filepath are considered real
-        # root path, so they have to start with a slash. However, when we need
+        # path, so they have to start with a slash. However, when we need
         # to convert them into real_filepath on the server, a preceding slash
-        # will make flask to think that it is an escape attempt and raise a
+        # will make flask think that it is an escape attempt and raise a
         # NotFound exception.
+        if os.path.ismount(old_real_filepath):
+            return Response(
+                (f'{old_filepath} is a mountpoint.The move of mountpoint is '
+                 'disabled to prevent accidental massive data loss'), 400)
         if (os.path.isfile(old_real_filepath) is False and
                 os.path.isdir(old_real_filepath) is False):
             raise Response(f'{old_filepath} not found', 400)
@@ -98,107 +128,99 @@ def move():
     return Response('success', 200)
 
 
-@app.route('/rm/', methods=['GET', 'POST'])
-def rm():
+@app.route('/remove/', methods=['POST'])
+def remove():
 
-    asset_dir = request.args.get('asset_dir')
-    video_name = request.args.get('video_name')
+    if ('filepath' not in request.form):
+        return Response('filepath not specified', 400)
+    filepath = request.form['filepath']
 
     try:
-        abs_path, asset_dir = get_absolute_path(asset_dir)
+        real_filepath = flask.safe_join(root_dir, filepath[1:])
+        # safe_join can prevent base directory escaping
+        # [1:] is used to get ride of the initial /:
+        # On the client side, filepath is considered real path, so it has
+        # to start with a slash. However, when we need to convert it into
+        # real_filepath on the server, a preceding slash will make flask
+        # think that it is an escape attempt and raise a NotFound exception.
 
-        file_path = os.path.join(abs_path, video_name)
-
-        if ('/' in video_name or
-            os.path.commonprefix([os.path.realpath(file_path), root_dir]) != root_dir):
-            return Response('value error (file_path)', 400)
-
-        if os.path.isfile(file_path):
-            os.remove(file_path)
-            logging.info(f'File removed: [{file_path}]')
-        elif os.path.isdir(file_path):
-            os.rmdir(file_path)
-            logging.info(f'Dir removed: [{file_path}]')
+        if os.path.ismount(real_filepath):
+            return Response(
+                (f'{filepath} is a mountpoint.The removal of mountpoint is '
+                 'disabled to prevent accidental massive data loss'), 400)
+            logging.info(f'Mountpoint [{real_filepath}] NOT removed')
+        elif os.path.islink(real_filepath):
+            os.unlink(real_filepath)
+            logging.debug(f'Symlink removed: [{real_filepath}]')
+        elif os.path.isfile(real_filepath):
+            os.remove(real_filepath)
+            logging.debug(f'File removed: [{real_filepath}]')
+        elif os.path.isdir(real_filepath):
+            shutil.rmtree(real_filepath)
+            logging.debug(f'Directory removed: [{real_filepath}]')
         else:
-            return Response('File/Dir does not exist!', 400)
+            return Response(f'{filepath} does not exist or'
+                            'cannot be handled by the server', 400)
 
-    except Exception as e:
-        logging.error("{}".format(sys.exc_info()))
-        return Response(f'Internal Error: {e}', 500)
-
-    return Response('success', 200)
-
-
-def scale_video_resolution(input_path: str, resolution: int):
-
-    extension = os.path.splitext(input_path)[1]
-    output_path = input_path[:-1 * len(extension)] + '_{}p{}'.format(resolution, extension)
-    output_log_path = input_path + '.log'
-    ffmpeg_cmd = [
-            '/usr/bin/ffmpeg',
-            '-y',
-            '-i', input_path,
-            '-filter:v', 'scale={}:-1'.format(resolution),
-            '-c:a', 'copy',
-            '-crf', '23',
-            '-threads', '2',
-            output_path]
-    p = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # the 'max_muxing_queue_size' parameter can be used to solve the error of 'Too many packets buffered for output stream'
-    output, error = p.communicate()
-    if p.returncode != 0:
-        with open(output_log_path, 'w+') as f:
-            f.write('return_code: {}\n\n'.format(p.returncode))
-            f.write('std_output:\n{}\n\n'.format(output.decode("utf-8")))
-            f.write('std_err:\n{}\n\n'.format(error.decode("utf-8")))
-
-
-@app.route('/scale/', methods=['GET', 'POST'])
-def scale():
-
-    asset_dir = request.args.get('asset_dir')
-    video_name = request.args.get('video_name')
-    resolution = request.args.get('resolution')
-
-    try:
-
-        resolution = int(resolution)
-        abs_path, asset_dir = get_absolute_path(asset_dir)
-
-        video_path = os.path.join(abs_path, video_name)
-
-        if ('/' in video_name or
-            os.path.commonprefix([os.path.realpath(video_path), root_dir]) != root_dir or
-            os.path.isfile(video_path) == False):
-            return Response('value error (video_path)', 400)
-        threading.Thread(target=scale_video_resolution, args=(video_path, resolution)).start()
-
-    except Exception as e:
-        logging.error("{}".format(sys.exc_info()))
-        return Response(f'Internal Error: {e}', 500)
+    except (FileNotFoundError, PermissionError, werkzeug.exceptions.NotFound):
+        logging.exception('')
+        return Response('Client-side error', 400)
+    except Exception:
+        logging.exception('')
+        return Response('Internal Error', 500)
 
     return Response('success', 200)
 
-def convert_video_format(input_path: str, output_path: str, crf: int):
 
+def convert_video_format(input_path: str, output_path: str,
+                         crf: int, resolution: int):
 
-    ffmpeg_cmd = ['/usr/bin/ffmpeg',
-            '-y',
-            '-i', input_path,
-            '-map', '0:v', '-map', '0:a', '-c:v', 'libvpx-vp9',
-            '-crf', str(crf),
-            '-b:v', '0',
-            '-max_muxing_queue_size', '8192', # the 'max_muxing_queue_size' parameter can be used to solve the error of 'Too many packets buffered for output stream'
-            '-threads', '2',
-            output_path]
-    p = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ffmpeg_cmd = ['/usr/bin/ffmpeg', '-y',  # -y: overwrite output file
+                  '-i', input_path, '-vf', f'scale={resolution}:-1',
+                  '-map', '0:v',
+                  '-map', '0:a?',
+                  # -map 0:a: ffmpeg will keep all the audio streams, the
+                  # trailing ? means ffmpeg will ignore this option if there
+                  # are no audio streams, otherwise ffmpeg will complaint
+                  # and quit
+                  # https://trac.ffmpeg.org/wiki/Map#Examples
+                  '-c:v', 'libvpx-vp9', '-c:a', 'libopus',
+                  # use libvpx-vp9 video encoder and libopus audio codec
+                  # for whatever reason the terms for them are different...
+                  '-crf', str(crf), '-b:v', '0',
+                  # to use crf to control a video's compression level,
+                  # you must use a combination of -crf and -b:v 0.
+                  # Note that -b:v MUST be 0.
+                  # Also note that in ffmpeg, crf could be interpreted
+                  # differently among different video encoders.
+                  '-max_muxing_queue_size', '8192',
+                  # the 'max_muxing_queue_size' parameter can be used to
+                  # solve the error of
+                  # 'Too many packets buffered for output stream'
+                  '-threads', '2',
+                  output_path]
+    # According to this link: https://trac.ffmpeg.org/wiki/Encode/VP9 , VP9
+    # supports a so-called two-pass mode. But according to the following link:
+    # https://superuser.com/questions/1362800/ffmpeg-2-pass-encoding
+    # specifying a CRF value is usually good enough
+
+    p = subprocess.Popen(args=ffmpeg_cmd,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = p.communicate()
-    output_log_path = output_path + '.log'
-    if p.returncode != 0:
-        with open(output_log_path, 'w+') as f:
-            f.write('return_code: {}\n\n'.format(p.returncode))
-            f.write('std_output:\n{}\n\n'.format(output.decode("utf-8")))
-            f.write('std_err:\n{}\n\n'.format(error.decode("utf-8")))
+    # communicate() returns a tuple (stdout_data, stderr_data).
+    # The data will be strings if streams were opened in text mode;
+    # otherwise, bytes.
+    # To get anything other than None in the result tuple,
+    # you need to give stdout=PIPE and/or stderr=PIPE.
+    output_log_path = output_path + '.txt'
+
+    # if p.returncode != 0:
+    # Seems that ffmpeg's exit code canNOT be used to reliably check
+    # if the conversion is a failure. So let's just output all the log!
+    with open(output_log_path, 'w+') as f:
+        f.write(f'===== return_code =====\n{p.returncode}\n\n\n')
+        f.write(f'===== std_output =====\n{output.decode("utf-8")}\n\n\n')
+        f.write(f'===== std_err =====\n{error.decode("utf-8")}')
 
 
 @app.route('/video-transcode/', methods=['POST'])
@@ -206,40 +228,47 @@ def video_transcode():
 
     if ('asset_dir' not in request.form or 'video_name' not in request.form or
             'crf' not in request.form):
-        return Response('asset_dir, video_name or crf is missing', 400)
+        return Response('asset_dir, video_name, crf or resolution is missing',
+                        400)
 
     try:
         asset_dir = request.form['asset_dir']
         video_name = request.form['video_name']
-        crf = request.form['crf']
+        crf = int(request.form['crf'])
+        res = int(request.form['resolution'])
 
-        crf = int(crf)
         if crf < 0 or crf > 63:
             raise ValueError(f'Invalid crf value {crf}', 400)
+        if res < 144 or res > 1080:
+            res = -1
+        # Why the treatments of crf and res are different?
+        # For crf, we have to pass a positive integer to ffmpeg and there
+        # isn't a universal default value for all resolutions
+        # For resolution, however, we can simply pass -1 to ffmpeg, meaning
+        # that we keep the original resolution of the video.
 
         abs_path, asset_dir = get_absolute_path(asset_dir)
 
         video_path = flask.safe_join(abs_path, video_name)
         if os.path.isfile(video_path) is False:
             raise FileNotFoundError(f'video {video_name} not found')
-        output_path = video_path + f'_crf{crf}.webm'
+        if res == -1:
+            output_path = video_path + f'_crf{crf}.webm'
+        else:
+            output_path = video_path + f'_{res}p_crf{crf}.webm'
         if os.path.isfile(output_path) or os.path.isdir(output_path):
             raise FileExistsError('target video name occupied')
         threading.Thread(target=convert_video_format,
-                         args=(video_path, output_path, crf)).start()
+                         args=(video_path, output_path, crf, res)).start()
 
-    except (FileExistsError, FileNotFoundError, ValueError) as e:
-        return Response(f'Error: {e}', 400)
-    except Exception as e:
-        logging.error(f'{e}')
-        return Response(f'Internal Error: {e}', 500)
+    except (FileExistsError, FileNotFoundError, ValueError):
+        logging.exception('')
+        return Response('Client-side error', 400)
+    except Exception:
+        logging.exception('')
+        return Response('Internal error', 500)
 
     return Response('success', 200)
-
-
-@app.route('/image_list/', methods=['GET', 'POST'])
-def image_list():
-    return
 
 
 @app.route('/play-video/', methods=['GET'])
@@ -252,8 +281,8 @@ def play_video():
     video_name = request.args.get('video_name')
 
     return render_template('playback.html',
-                           video_url=f'https://media.sz.lan/download/?asset_dir={asset_dir}&filename={video_name}&as_attachment=0',
-                           subtitles_url=f'https://media.sz.lan/download/?asset_dir={asset_dir}&filename={video_name}.vtt')
+                           video_url=f'{app_address}/download/?asset_dir={asset_dir}&filename={video_name}&as_attachment=0',
+                           subtitles_url=f'{app_address}/download/?asset_dir={asset_dir}&filename={video_name}.vtt')
 
 
 @app.route('/get-thumbnail/', methods=['GET'])
@@ -327,60 +356,6 @@ def get_absolute_path(asset_dir: str):
         raise PermissionError(f'[{asset_dir}] tries to do chroot escape!')
 
     return abs_path, asset_dir
-
-
-def generate_thumbnail(abs_path, file_list, filesize_list):
-
-    for i in range(len(file_list)):
-
-        file_name = file_list[i]
-        file_input_path = os.path.join(abs_path, file_name)
-        img_output_path = os.path.join(thumbnails_path, file_name) + '.jpg'
-        video_size = filesize_list[i]
-        extension = os.path.splitext(file_input_path)[1]
-
-        if os.path.isfile(img_output_path):
-            logging.debug('Thumbnail for [{}] exists'.format(file_input_path))
-            continue
-
-        if extension.lower() in video_extensions:
-            logging.info(f'Generating thumbnail for video [{file_name}]')
-            if video_size < 1024 * 1024 * 10:
-                timestamp = '00:00:10.000'
-            elif video_size < 1024 * 1024 * 50:
-                timestamp = '00:00:30.000'
-            elif video_size < 1024 * 1024 * 100:
-                timestamp = '00:01:30.000'
-            else:
-                timestamp = '00:01:50.000'
-            time.sleep(video_size / 1024 / 1024 / 100)
-            subprocess.call(['/usr/bin/ffmpeg', '-i', file_input_path, '-loglevel', 'fatal', '-ss', timestamp, '-vframes', '1', img_output_path])
-
-            if os.path.isfile(img_output_path):
-                try:
-                    basewidth = 320
-                    img = Image.open(img_output_path)
-                    wpercent = (basewidth/float(img.size[0]))
-                    hsize = int((float(img.size[1])*float(wpercent)))
-                    img = img.resize((basewidth,hsize), Image.ANTIALIAS)
-                    if img.mode in ("RGBA", "P"):
-                        img = img.convert("RGB")
-                    img.save(img_output_path)
-                except:
-                    logging.error("{}".format(sys.exc_info()))
-        if extension.lower() in image_extensions:
-            try:
-                logging.info(f'Generating thumbnail for image [{file_name}]')
-                basewidth = 640
-                img = Image.open(file_input_path)
-                wpercent = (basewidth/float(img.size[0]))
-                hsize = int((float(img.size[1])*float(wpercent)))
-                img = img.resize((basewidth,hsize), Image.ANTIALIAS)
-                if img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB")
-                img.save(img_output_path)
-            except Exception as e:
-                logging.error(f"{e}")
 
 
 def generate_file_list_json(abs_path: str, asset_dir: str):
@@ -473,7 +448,7 @@ def stop_signal_handler(*args):
 def main(debug):
 
     port = -1
-    global app_address, root_dir, thumbnails_path
+    global allowed_ext, app_address, root_dir, thumbnails_path
     global external_script_dir, log_path
     global image_extensions, video_extensions
 
@@ -482,6 +457,8 @@ def main(debug):
             json_str = json_file.read()
             data = json.loads(json_str)
         port = data['flask']['port']
+        allowed_ext = data['app']['allowed_ext']
+        app_address = data['app']['address']
         external_script_dir = data['app']['external_script_dir']
         image_extensions = data['app']['image_extensions']
         root_dir = data['app']['root_dir']
