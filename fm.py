@@ -16,6 +16,7 @@ import signal
 import subprocess
 import sys
 import threading
+
 import werkzeug
 
 import importlib.machinery
@@ -48,6 +49,32 @@ thread_counter = 0
 video_extensions = None
 
 
+@app.route('/create-folder/', methods=['POST'])
+def create_folder():
+
+    if 'asset_dir' not in request.form or 'folder_name' not in request.form:
+        return Response('asset_dir or not folder_name specified', 400)
+    asset_dir = request.form['asset_dir']
+    folder_name = request.form['folder_name']
+
+    try:
+        folder_path = flask.safe_join(root_dir, asset_dir[1:], folder_name)
+    except werkzeug.exceptions.NotFound:
+        return Response('Potential chroot escape', 400)
+
+    if (os.path.isfile(folder_path) or os.path.isdir(folder_path) or
+            os.path.islink(folder_path) or os.path.ismount(folder_path)):
+        return Response('Folder name occupied', 400)
+
+    try:
+        os.mkdir(folder_path)
+    except Exception:
+        logging.exception('')
+        return Response('Internal error', 500)
+
+    return Response('Folder created', 200)
+
+
 @app.route('/upload/', methods=['POST'])
 def upload():
 
@@ -67,8 +94,11 @@ def upload():
             return Response(f'{ext} is not among the allowed extensions: '
                             f'{allowed_ext}', 400)
 
-        filepath = flask.safe_join(root_dir,
-                                   asset_dir[1:] + selected_file.filename)
+        try:
+            filepath = flask.safe_join(root_dir, asset_dir[1:],
+                                       selected_file.filename)
+        except werkzeug.exceptions.NotFound:
+            return Response('Potential chroot escape', 400)
         # safe_join can prevent base directory escaping
         # [1:] is used to get ride of the initial /
 
@@ -280,9 +310,13 @@ def play_video():
     asset_dir = request.args.get('asset_dir')
     video_name = request.args.get('video_name')
 
-    return render_template('playback.html',
-                           video_url=f'{app_address}/download/?asset_dir={asset_dir}&filename={video_name}&as_attachment=0',
-                           subtitles_url=f'{app_address}/download/?asset_dir={asset_dir}&filename={video_name}.vtt')
+    tricky_paras = werkzeug.url_encode({'asset_dir': asset_dir,
+                                        'filename': video_name})
+    # you need this URL encoding to handle some tricky characters...
+    return render_template(
+        'playback.html',
+        video_url=f'{app_address}/download/?{tricky_paras}&as_attachment=0',
+        subtitles_url=f'{app_address}/download/?{tricky_paras}.vtt')
 
 
 @app.route('/get-thumbnail/', methods=['GET'])
@@ -312,11 +346,15 @@ def download():
         as_attachment = True
 
     try:
-        abs_path, asset_dir = get_absolute_path(asset_dir)
-    except (FileNotFoundError, PermissionError) as e:
-        return Response(f'Error: {e}', 400)
+        file_dir = flask.safe_join(root_dir, asset_dir[1:])
+        # safe_join can prevent base directory escaping
+        # [1:] is used to get ride of the initial /:
+        # otherwise safe_join will consider it a chroot escape attempt
+    except werkzeug.exceptions.NotFound:
+        logging.exception(f'Parameters are {root_dir}, {asset_dir}')
+        return Response('Potential chroot escape', 400)
 
-    return flask.send_from_directory(directory=abs_path, filename=filename,
+    return flask.send_from_directory(directory=file_dir, filename=filename,
                                      as_attachment=as_attachment,
                                      attachment_filename=filename,
                                      conditional=True)
