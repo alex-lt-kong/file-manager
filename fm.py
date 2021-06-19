@@ -408,45 +408,16 @@ def download():
 # That is, allowing users to seek an html5 video.)
 
 
-def get_absolute_path(asset_dir: str):
-
-    if asset_dir is None:
-        asset_dir = ''
-
-    if len(asset_dir) > 0 and asset_dir[0] == '/':
-        # This removal is necessary: The idea is that, on the client side,
-        # we treat asset_dir as real root, so it should start with a slash.
-        # However, on the server side, we try to get the abs_path, i.e., the
-        # real path of file on the server using os.path.join(). We have to
-        # remove the preceding "/" from asset_dir to make it work.
-        asset_dir = asset_dir[1:]
-
-    abs_path = flask.safe_join(root_dir, asset_dir)
-    abs_path = os.path.realpath(abs_path)
-    asset_dir = abs_path[len(root_dir):]
-
-    if asset_dir.endswith('/') is False:
-        # We should add the / back!
-        # This parameter will be returned to client!
-        asset_dir += '/'
-    if os.path.isdir(abs_path) is False:
-        raise FileNotFoundError(f'Path [{asset_dir}] does not exist')
-
-    if os.path.commonprefix([abs_path, root_dir]) != root_dir:
-        # os.path.realpath(): Return the canonical path of the specified
-        # filename, eliminating any symbolic links encountered in the path.
-        # also tested myself, if you input "/tmp/../" the method will return
-        # "/"
-        raise PermissionError(f'[{asset_dir}] tries to do chroot escape!')
-
-    return abs_path, asset_dir
-
-
 def generate_file_list_json(abs_path: str, asset_dir: str):
 
     # file_type == 0: ordinary directory
     # file_type == 1: ordinary file
-    # file_type == 2: others
+    # file_type == 2: mountpoint
+    # file_type == 3: symbolic link
+    # file_type == 4: unknown
+    # A mountpoint is also a directory, but we will mark it as a mountpoint.
+    # What if a mountpoint is also a symbolic link? Emmm...I think this is
+    # impossible... But if that does happen, it will be marked as a mountpoint
 
     # media_type == -1: not an ordinary file
     # media_type == 0: not a media file
@@ -465,16 +436,24 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
 
     scanner = os.scandir(abs_path)
     for entry in scanner:
+        # entry has is_dir(), is_file() and is_symlink() methods but it does
+        # not has a is_mountpoint() method. To keep the result consistent,
+        # here we use method under os.path to do the job.
         fn = entry.name
         file_info['content'][fn] = {}
         file_info['content'][fn]['filename'] = fn
         # Repeat the name here so that we can just pass an
         # file_info['content'][fn] object.
-        file_info['content'][fn]['file_type'] = 2
+        file_info['content'][fn]['file_type'] = 4
         file_info['content'][fn]['asset_dir'] = asset_dir
         file_info['content'][fn]['media_type'] = -1
         file_info['content'][fn]['extension'] = ''
-        if entry.is_file():
+
+        if os.path.ismount(entry.path):
+            file_info['content'][fn]['file_type'] = 2
+        elif os.path.islink(entry.path):
+            file_info['content'][fn]['file_type'] = 3
+        elif os.path.isfile(entry.path):
             file_info['content'][fn]['file_type'] = 1
             basename, ext = os.path.splitext(entry.name)
             file_info['content'][fn]['basename'] = basename
@@ -490,7 +469,7 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
                 file_info['content'][fn]['media_type'] = 1
             else:
                 file_info['content'][fn]['media_type'] = 0
-        elif entry.is_dir():
+        elif os.path.isdir(entry.path):
             file_info['content'][fn]['file_type'] = 0
     scanner.close()
 
@@ -505,7 +484,17 @@ def get_file_list():
     try:
         asset_dir = request.args.get('asset_dir')
         abs_path = flask.safe_join(root_dir, asset_dir[1:])
-      #  abs_path, asset_dir = get_absolute_path(request.args.get('asset_dir'))
+        asset_dir = abs_path[len(root_dir):]
+
+        if asset_dir == '/.':
+            asset_dir = '/'
+        elif asset_dir[-1:] != '/':
+            asset_dir += '/'
+        # Due to the different understanding of asset_dir (i.e., on the
+        # client side, it is considered the real root; on the server side,
+        # it is just an ordinary directory), some special treatment seems
+        # to be unavoidable...
+
         file_info = generate_file_list_json(abs_path, asset_dir)
     except werkzeug.exceptions.NotFound:
         logging.exception('')
