@@ -76,7 +76,9 @@ def main():
 
         if file_ext in video_extensions:
             logging.info(f'Generating thumbnail for video [{file_name}]')
-            if file_size < 1024 * 1024 * 10:
+            if file_size < 1024 * 1024 * 5:
+                timestamp = '00:00:02.000'
+            elif file_size < 1024 * 1024 * 10:
                 timestamp = '00:00:20.000'
             elif file_size < 1024 * 1024 * 50:
                 timestamp = '00:00:60.000'

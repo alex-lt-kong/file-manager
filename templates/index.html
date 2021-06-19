@@ -25,8 +25,22 @@
 <head>
 <style>
 </style>
-<title>Media Manager</title>
+<title>File Manager</title>
 </head>
+<style>
+  body {
+    padding-right: 0 !important;
+  }
+  .modal {
+    padding-right: 0px !important;
+  }
+</style>
+<!-- 
+  This style is used to fixed the bug mentioned in the following link:
+  https://github.com/twbs/bootstrap/issues/27071
+  But the solution is found from this link:
+  https://stackoverflow.com/questions/32862394/bootstrap-modals-keep-adding-padding-right-to-body-after-closed
+-->
 <body>
   <div id="root"></div>
 </body>

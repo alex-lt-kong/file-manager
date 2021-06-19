@@ -56,35 +56,34 @@ class ModalMkdir extends React.Component {
     }
 
     render() {
-        console.log('ModalMkdir.render()');
         return (
-                <div className="modal fade" ref={modal=> this.modal = modal} tabIndex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                    <div className="modal-dialog" role="document">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title" id="exampleModalLabel">New Folder</h5>
-                            </div>
-                            <div className="modal-body">
-                                <div className="mb-3">
-                                    <label htmlFor="folder-name-input" className="form-label">
-                                        Input the name of the folder to be created:
-                                    </label>
-                                    <input id="folder-name-input" type="text" className="form-control"
-                                           placeholder="Input folder name" value={this.state.folderName} onChange={this.onFolderNameChange}/>   
-                                    <div style={{ marginTop: "1em"}}>
-                                        Notes:<br />
-                                        1. The server calls returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
-                                        os.path.ismount()</a> returns true;<br />
-                                    </div>
+            <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div className="modal-dialog" role="document">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="exampleModalLabel">New Folder</h5>
+                        </div>
+                        <div className="modal-body">
+                            <div className="mb-3">
+                                <label htmlFor="folder-name-input" className="form-label">
+                                    Input the name of the folder to be created:
+                                </label>
+                                <input id="folder-name-input" type="text" className="form-control"
+                                        placeholder="Input folder name" value={this.state.folderName} onChange={this.onFolderNameChange}/>   
+                                <div style={{ marginTop: "1em"}}>
+                                    Notes:<br />
+                                    1. The server calls returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
+                                    os.path.ismount()</a> returns true;<br />
                                 </div>
                             </div>
-                            <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
-                                <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>Submit</button>
-                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
+                            <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>Submit</button>
                         </div>
                     </div>
                 </div>
+            </div>
         );
     }
 }
@@ -153,12 +152,13 @@ class ModalRemove extends React.Component {
                                     </span>
                                     <div class="accordion my-2" id="accordionRemove">
                                         <div class="accordion-item">
-                                            <h2 class="accordion-header" id="headingOne">
-                                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                                                Notes to removal operation
+                                            <h2 class="accordion-header" id="headingRemove">
+                                            <button class="accordion-button collapsed" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
+                                                What's Happening Under the Hood?
                                             </button>
                                             </h2>
-                                            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionRemove">
+                                            <div id="collapseRemoveOne" class="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
                                                 <div class="accordion-body">
                                                     1. The server returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
                                                     os.path.ismount()</a> returns true;<br />
@@ -278,9 +278,9 @@ class ModalTranscode extends React.Component {
                                     </div>
 
                                     <div class="input-group mb-3">
-                                        <label class="input-group-text" htmlFor="inputGroupSelect01">Resolution</label>
-                                        <select class="form-select" id="inputGroupSelect01" defaultValue={-1}
-                                                onChange={this.onResolutionChange} value={this.state.resolution}>
+                                        <label class="input-group-text" htmlFor="inputSelectResolution">Resolution</label>
+                                        <select class="form-select" id="inputSelectResolution" defaultValue={-1}
+                                                onChange={this.onResolutionChange} >
                                             <option value="-1">Original</option>
                                             <option value="1080" >1080p</option>
                                             <option value="720">720p</option>
@@ -290,26 +290,29 @@ class ModalTranscode extends React.Component {
                                             <option value="144">144p</option>
                                         </select>
                                     </div>
-                                    <div class="accordion my-2">
+
+                                    <div class="accordion my-2" id="accordionRemove">
                                         <div class="accordion-item">
-                                            <h2 class="accordion-header" id="headingOne">
-                                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                                Notes to transcode operation
+                                            <h2 class="accordion-header" id="headingRemove">
+                                            <button class="accordion-button collapsed" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
+                                                What's Happening Under the Hood?
                                             </button>
                                             </h2>
-                                            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                                            <div id="collapseRemoveOne" class="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
                                                 <div class="accordion-body">
-                                                1. The server will start a separate ffmpeg process to do the conversion in a separate thread;<br />
-                                        2. FFMPEG will overwrite the existing file with the same name;
-                                        3. A log file will be generated at the end of the conversion;
-                                           Note that FFMPEG will output all the log to stderr instead of stdout for whateve reason.<br />
-                                        4. The constant rate factor (CRF) can be from 0-63. Lower values mean better quality;
-                                           According to <a href="https://trac.ffmpeg.org/wiki/Encode/VP9" target="_blank">FFMPEG's manual</a>, for
-                                           WebM format (VP9 video encoder), recommended values range from 15-35;<br />
-                                        5. According to <a href="https://developers.google.com/media/vp9/settings/vod/" target="_blank">
-                                           Google's recommendation</a>, the CRF for different resolutions are: 36 for 360p, 33 for 480p, 32 for 720p and 31 for 1080p;<br />
-                                        6. According to <a href="https://developers.google.com/media/vp9/the-basics" target="_blank">
-                                           Google's manual</a>, for VP9, 480p is considered a safe resolution for a broad range of mobile and web devices.
+                                                    <ol>
+                                                        <li>The server will start a separate ffmpeg process to do the conversion in a separate thread;</li>
+                                                        <li>FFMPEG will overwrite the existing file with the same name;</li>
+                                                        <li>A log file will be generated at the end of the conversion; Note that FFMPEG will output all the log to stderr instead of stdout for whateve reason.</li>
+                                                        <li>The constant rate factor (CRF) can be from 0-63. Lower values mean better quality;
+                                                        According to <a href="https://trac.ffmpeg.org/wiki/Encode/VP9" target="_blank">FFMPEG's manual</a>, for
+                                                        WebM format (VP9 video encoder), recommended values range from 15-35;</li>
+                                                        <li>According to <a href="https://developers.google.com/media/vp9/settings/vod/" target="_blank">
+                                                        Google's recommendation</a>, the CRF for different resolutions are: 36 for 360p, 33 for 480p, 32 for 720p and 31 for 1080p;</li>
+                                                        <li>According to <a href="https://developers.google.com/media/vp9/the-basics" target="_blank">
+                                                        Google's manual</a>, for VP9, 480p is considered a safe resolution for a broad range of mobile and web devices.</li>
+                                                    </ol>
                                                 </div>
                                             </div>
                                         </div>
@@ -388,7 +391,7 @@ class ModalMove extends React.Component {
         }
 
         return (
-                <div className="modal fade" ref={modal=> this.modal = modal} id="exampleModal" tabIndex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div className="modal fade" ref={modal=> this.modal = modal} id="exampleModal" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                     <div className="modal-dialog" role="document">
                         <div className="modal-content">
                             <div className="modal-header">
@@ -400,17 +403,29 @@ class ModalMove extends React.Component {
                                         Move the file from <b>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</b> to:
                                     </label>
                                     <input id="move-destination-input" type="text" className="form-control"
-                                           placeholder="Input new filename" value={this.state.newFilepath} onChange={this.onFilepathChange}/>   
-                                    <div style={{ marginTop: "1em"}}>
-                                        Notes:<br />
-                                        1. The server calls returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
-                                        os.path.ismount()</a> returns true;<br />
-                                        2. the server calls <a href="https://docs.python.org/3/library/shutil.html#shutil.move" target="_blank">
-                                        shutil.move()</a> to do the move;<br />
-                                        3. If the destination is on a different filesystem, source file is copied to destination and then removed.
-                                        (It could take a long time, consider a duplicate->move->remove approach instead!)<br />
-                                        4. In case of symlinks, a new symlink pointing to the target of src will be created in or as dst and src will be removed.
+                                           placeholder="Input new filename" value={this.state.newFilepath} onChange={this.onFilepathChange}/>
+                                    <div class="accordion my-2" id="accordionMove">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingRemove">
+                                            <button class="accordion-button collapsed" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseMoveOne" aria-expanded="false" aria-controls="collapseMoveOne">
+                                                What's Happening Under the Hood?
+                                            </button>
+                                            </h2>
+                                            <div id="collapseMoveOne" class="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionMove">
+                                                <div class="accordion-body">
+                                                1. The server calls returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
+                                                os.path.ismount()</a> returns true;<br />
+                                                2. The server calls <a href="https://docs.python.org/3/library/shutil.html#shutil.move" target="_blank">
+                                                shutil.move()</a> to do the move;<br />
+                                                3. If the destination is on a different filesystem, source file is copied to destination and then removed.
+                                                (It could take a long time!)<br />
+                                                4. In case of symlinks, a new symlink pointing to the target of src will be created in or as dst and src will be removed.
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
+
                                 </div>
                             </div>
                             <div className="modal-footer">
@@ -550,25 +565,38 @@ class FileManager extends React.Component {
             currentPath: '/',
             fileInfo: null,
             pathStack: [],
+            serverInfo: null,
             showNewFolderModal: false,
             username: null
         };
 
+        this.handleUploadAttachmentButtonClick = this.handleUploadAttachmentButtonClick.bind(this);  
         this.onAddressBarChange = this.onAddressBarChange.bind(this);
         this.onClickItem = this.onClickItem.bind(this);
         this.onClickMore = this.onClickMore.bind(this);
         this.onClickAddressBarGo = this.onClickAddressBarGo.bind(this);
+        this.onAddressBarEnterPress = this.onAddressBarEnterPress.bind(this);
         this.onFileUpload = this.onFileUpload.bind(this);
         this.onFileChange = this.onFileChange.bind(this);
-        this.onNewFolderClick = this.onNewFolderClick.bind(this);
-        this.handleUploadAttachmentButtonClick = this.handleUploadAttachmentButtonClick.bind(this);  
+        this.onNewFolderClick = this.onNewFolderClick.bind(this);        
+        this.onServerInfoClick = this.onServerInfoClick.bind(this);
+        
         this.Modal = null;
+        this.serverInfoPanel = (
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+        );
     }
 
     handleUploadAttachmentButtonClick(event) {
         $('#input-fileupload-attachment').click();
         // It is used to apply unified button style to file upload button...
         // It is jQuery...but ...it works!
+    }
+
+    onServerInfoClick(event) { 
+        this.fetchServerInfo();
     }
 
     onFileChange(event) { 
@@ -661,6 +689,11 @@ class FileManager extends React.Component {
         this.fetchDataFromServer(this.state.addressBar);
     } 
     
+    onAddressBarEnterPress(event) {
+        console.log('onAddressBarEnterPress');
+        this.fetchDataFromServer(this.state.addressBar);
+    } 
+    
     onClickItem(value) { 
         if (this.state.fileInfo.content[value].file_type === 0) {
             this.setState(prevState => ({
@@ -685,6 +718,50 @@ class FileManager extends React.Component {
         console.log('onClickMore!');
     };
       
+    fetchServerInfo() {
+
+        URL = this.state.appAddress + '/get-server-info/';
+        axios.get(URL)
+          .then(response => {
+            this.setState({
+                serverInfo: null
+              // make it empty before fill it in again to force a re-rendering.
+            });
+            this.setState({
+                serverInfo: response.data
+              // make it empty before fill it in again to force a re-rendering.
+            });
+
+            const ffmpegItems = this.state.serverInfo.ffmpeg.map((ffmpegItem) =>
+                <li key={ffmpegItem.pid}>
+                <b>{ffmpegItem.pid} (since {ffmpegItem.since}):</b> {ffmpegItem.cmdline} 
+                </li>
+            );
+
+            this.serverInfoPanel = (
+                <div>
+                    <p><b>Refresh at:</b> {this.state.serverInfo.metadata.timestamp}</p>
+                    <p><b>CPU Usage:</b> {this.state.serverInfo.cpu.percent}%</p>
+                    <p><b>Memory:</b> {this.state.serverInfo.memory.physical_total / 1024 / 1024} MB in total,&nbsp;
+                                   {Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024)} MB available</p>
+                    <b>System:</b>
+                    <ul>
+                        <li><b>OS:</b> {this.state.serverInfo.version.os}</li>
+                        <li><b>Python:</b> {this.state.serverInfo.version.python}</li>
+                        <li><b>Flask:</b> {this.state.serverInfo.version.flask}</li>
+                    </ul>
+                    <b>FFMPEG:</b>
+                    <ul>{ffmpegItems}</ul>
+                </div>
+            );
+
+            this.forceUpdate();
+          })
+          .catch(error => {
+            alert('Unable to fetch server info\n' + error);
+          });
+    }
+    
     fetchDataFromServer(asset_dir) {
         if (asset_dir === null) {
             asset_dir = this.state.fileInfo.metadata.asset_dir;
@@ -716,8 +793,6 @@ class FileManager extends React.Component {
     }
 
     render() {
-        console.log('FileManager.render()');
-        console.log(this.Modal);
         if (this.state.fileInfo === null) { return null; }
 
         let fi = this.state.fileInfo;
@@ -727,24 +802,42 @@ class FileManager extends React.Component {
             const key = keys[i];
             let thumbnail = null;
             let filesize = null;
+            /* The following block is about thumbnail generation and formatting. It is tricky because:
+                1. For those files with preview, we want the thumbnail to be large so that we can take a good look;
+                2. For those files withOUT preview, we want the thumbnaul to be small since we dont have anything to look anyway;
+                3. The aspect ratios of preview and default icons are different--default icons tend to have a lower aspect ratio
+                   movies and images tend to have a higher aspect ratio...If we fixed the width of thumbnail according to one type of
+                   typical 
+                4. We want the layout to be consistent.
+                These three goals cannot be achieved in the same time. The compromise turns out to be hard to find.
+            */
             if (fi.content[key].file_type === 0) {
                 thumbnail = (
                     <img src='https://media.sz.lan/static/icons/folder.svg'
-                         style={{ maxWidth: "100%", width: "10em", display:"block", float:"left", cursor: "pointer" }}
+                         style={{ width: "100%", cursor: "pointer" }}
                          onClick={() => this.onClickItem(key)} />);
+                    // For svg <img>, we specify width: 100%;
+                    // For ordinary image we specify maxWidth: 100%
             }
             else if (fi.content[key].file_type === 1) {
                 if (fi.content[key].media_type === 1) { // image
                     thumbnail = (
                         <img src={`https://media.sz.lan/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
                              style={{ maxWidth: "100%", maxHeight: "90vh", "display":"block", cursor: "pointer" }}
-                             onClick={() => this.onClickItem(key)} />);
+                             onClick={() => this.onClickItem(key)}
+                             onError={(e)=>{e.target.onerror = null; e.target.src="https://media.sz.lan/static/icons/image.svg"; e.target.style="width: 100%"}} />);
+                            // For svg <img>, we specify width: 100%;
+                            // For ordinary image we specify maxWidth: 100%;
+                            // Note for onError we need to specify a special style;
                 } else if (fi.content[key].media_type === 2) { // video
                     thumbnail = (
                         <img src={`https://media.sz.lan/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
-                             style={{ width: "10em", maxHeight: "50vh", "display":"block", float:"left", cursor: "pointer" }}
+                             style={{ maxWidth: "100%", cursor: "pointer" }}
                              onClick={() => this.onClickItem(key)}
-                             onError={(e)=>{e.target.onerror = null; e.target.src="https://media.sz.lan/static/icons/video.svg"}} />);
+                             onError={(e)=>{e.target.onerror = null; e.target.src="https://media.sz.lan/static/icons/video.svg"; e.target.style="width: 100%"}} />);
+                            // For svg <img>, we specify width: 100%;
+                            // For ordinary image we specify maxWidth: 100%;
+                            // Note for onError we need to specify a special style;
                 } else if (fi.content[key].media_type === 0) { // not a media file
                     let url = null;
                     if ([".doc", ".docx", ".odt", ".rtf", ".docm", ".docx", "wps"].includes(fi.content[key].extension.toLowerCase())) {
@@ -758,24 +851,33 @@ class FileManager extends React.Component {
                     } else {
                         url = "https://media.sz.lan/static/icons/misc.svg"; 
                     }
-                    thumbnail = (<img src={url} style={{ width: "10em", maxHeight: "50vh", "display":"block", float:"left", cursor: "pointer" }}
+                    thumbnail = (<img src={url} style={{ width: "100%", "display":"block", float:"left", cursor: "pointer" }}
                                       onClick={() => this.onClickItem(key)} />);
+                                // For svg <img>, we specify width: 100%;
+                                // For ordinary image we specify maxWidth: 100%
                 }
-                filesize = (<p style={{ position: "absolute", bottom: "1px" }}>{humanFileSize(fi.content[key].size)}</p>);
+                filesize = (<footer>{humanFileSize(fi.content[key].size)}</footer>);
             }
             fileList[i] = (
             <li key={i} className="list-group-item">                      
-                <div class="row">
-                    <div class="col" style={{ maxWidth: "11em" }}>
+                <div className="row" style={{ display: "grid", gridTemplateColumns: "8em 8fr 2em" }} >
+                    {/* Note that for gridTemplateColumns we canNOT use relative width for thumbnail. The reason is that
+                        common monitors are wide screen but smartphones are usually tall screen, so the preferred thumbnail
+                        size is not the same. */}
+                    <div className="col d-flex align-items-center justify-content-center">
                         {thumbnail}
                     </div>
-                    <div class="col">
-                        <a value={key} style={{ textDecoration: "none", display: "block", cursor: "pointer" }} onClick={() => this.onClickItem(key)}>
-                        {key}
-                        </a>
+                    <div className="col" style={{ display: "flex", flexFlow: "column" }} >
+                        <div style={{flex: "1 1 auto"}}>
+                            <a value={key} style={{ textDecoration: "none", display: "block", cursor: "pointer" }} onClick={() => this.onClickItem(key)}>
+                            {key}
+                            </a>
+                        </div>
+                        <div style={{  flex: "0 1 1.5em"}} >
                         {filesize}
+                        </div>
                     </div>
-                    <div class="col"  style={{ maxWidth: "2em" }}>
+                    <div className="col">
                         <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fi.content[key]} appAddress={this.state.appAddress} /> 
                     </div>
                 </div>         
@@ -790,41 +892,36 @@ class FileManager extends React.Component {
                     <div className="row container-fluid">
                         <div className="col-md-auto">
                         {/* Use col-{breakpoint}-auto classes to size columns based on the natural width of their content. */}
-
                             <input id="input-fileupload-attachment" onChange={this.onFileChange} type="file" style={{ display: "none" }} multiple></input>
                             <button id="button-addfile-attachment" type="button" className="btn btn-primary mx-2 my-1"
                                     onClick={this.handleUploadAttachmentButtonClick} >
                                 <i className="bi bi-upload"></i> Upload
                             </button>
                             {/* button and input is bound using jQuery... */}
-
-                            <button type="button" className="btn btn-primary mx-2 my-1" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i> New Folder</button>
-                            <button type="button" className="btn btn-primary mx-2 my-1"><i className="bi bi-gear"></i> Info</button>
-                            
-                            <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">
+                            <button type="button" className="btn btn-primary mx-2 my-1" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i> New</button>                           
+                            <button class="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom"
+                                    onClick={this.onServerInfoClick}>
                                 <i className="bi bi-gear"></i> Info
                             </button>
-
-                            <div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+                            <div class="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
                             <div class="offcanvas-header">
-                                <h5 class="offcanvas-title" id="offcanvasBottomLabel">Offcanvas bottom</h5>
-                                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                                <h5 class="offcanvas-title" id="offcanvasBottomLabel">Server Info</h5>
+                                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
                             </div>
-                            <div class="offcanvas-body small">
-                                ...
+                            <div class="offcanvas-body d-flex align-items-center justify-content-center">
+                                {/* d-flex align-items-center justify-content-center: used to center
+                                this.serverInfoPanel horizontally and vertically */}
+                                {this.serverInfoPanel}
                             </div>
                             </div>
-
-
-
                         </div>
                         <div className="col">
                             <div className="input-group d-flex justify-content-between mx-2 my-1">
                                 {/* d-flex and justify-content-between keep components in one line*/}
                                 <span className="input-group-text" id="basic-addon1">Path</span>
-                                <input type="text" style={{ }} className="form-control" placeholder="Address"
+                                <input type="text" className="form-control" placeholder="Address"
                                         aria-label="Recipient's username" aria-describedby="button-addon2"
-                                        value={this.state.addressBar} onChange={this.onAddressBarChange} id="address-input" />
+                                        value={this.state.addressBar} onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress}  id="address-input" />
                                 <button className="btn btn-primary" type="button" onClick={this.onClickAddressBarGo} htmlFor="address-input" >
                                     <i className="bi bi-caret-right-fill"></i>
                                 </button>

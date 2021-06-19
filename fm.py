@@ -7,10 +7,13 @@ from PIL import Image, ImageFile
 from waitress import serve
 
 import click
+import datetime as dt
 import flask
 import json
 import logging
 import os
+import platform
+import psutil
 import shutil
 import signal
 import subprocess
@@ -47,6 +50,49 @@ settings_path = os.path.join(app_dir, 'settings.json')
 thumbnails_path = ''
 thread_counter = 0
 video_extensions = None
+
+
+@app.route('/get-server-info/', methods=['GET'])
+def get_server_info():
+
+    info = {}
+
+    info['metadata'] = {}
+    info['metadata']['timestamp'] = dt.datetime.now().strftime(
+        "%Y-%m-%d %H:%M:%S")
+
+    info['cpu'] = {}
+    info['cpu']['percent'] = psutil.cpu_percent(interval=1)
+
+    mem = psutil.virtual_memory()
+    info['memory'] = {}
+    info['memory']['physical_total'] = mem.total
+    info['memory']['physical_available'] = mem.available
+
+    info['ffmpeg'] = []
+    proc_name = 'ffmpeg'
+    for p in psutil.process_iter(['name', 'cmdline']):
+        if proc_name != p.info['name']:
+            continue
+        try:
+            info['ffmpeg'].append({
+                'pid': p.pid,
+                'cmdline': (" ".join(p.cmdline()).
+                            replace(root_dir, '[root]').
+                            replace(thumbnails_path, '[thumbnail]')
+                            ),
+                'since': dt.datetime.fromtimestamp(
+                    p.create_time()).strftime("%Y-%m-%d %H:%M")
+            })
+        except (psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+
+    info['version'] = {}
+    info['version']['os'] = platform.version()
+    info['version']['python'] = platform.python_version()
+    info['version']['flask'] = flask.__version__
+
+    return flask.jsonify(info)
 
 
 @app.route('/create-folder/', methods=['POST'])
@@ -277,7 +323,7 @@ def video_transcode():
         # For resolution, however, we can simply pass -1 to ffmpeg, meaning
         # that we keep the original resolution of the video.
 
-        abs_path, asset_dir = get_absolute_path(asset_dir)
+        abs_path = flask.safe_join(root_dir, asset_dir[1:])
 
         video_path = flask.safe_join(abs_path, video_name)
         if os.path.isfile(video_path) is False:
@@ -457,10 +503,13 @@ def get_file_list():
     if 'asset_dir' not in request.args:
         return Response('parameter [asset_dir] not specified', 400)
     try:
-        abs_path, asset_dir = get_absolute_path(request.args.get('asset_dir'))
+        asset_dir = request.args.get('asset_dir')
+        abs_path = flask.safe_join(root_dir, asset_dir[1:])
+      #  abs_path, asset_dir = get_absolute_path(request.args.get('asset_dir'))
         file_info = generate_file_list_json(abs_path, asset_dir)
-    except (FileNotFoundError, PermissionError) as e:
-        return Response(f'Error: {e}', 400)
+    except werkzeug.exceptions.NotFound:
+        logging.exception('')
+        return Response('Error:', 400)
     except Exception as e:
         return Response(f'Internal Error: {e}', 500)
 
