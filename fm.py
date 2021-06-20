@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from collections import OrderedDict
 from flask import Flask, render_template, Response, request, redirect, url_for
 from flask_cors import CORS
 from flask import request
@@ -19,8 +20,9 @@ import signal
 import subprocess
 import sys
 import threading
-
 import werkzeug
+import zlib
+
 
 import importlib.machinery
 loader = importlib.machinery.SourceFileLoader('emailer',
@@ -42,6 +44,8 @@ app_address = ''
 app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager'
 external_script_dir = ''
+files_statistics = None
+fs_path = ''
 image_extensions = None
 log_path = f'/var/log/mamsds/{app_name}.log'
 root_dir = ''
@@ -50,6 +54,22 @@ settings_path = os.path.join(app_dir, 'settings.json')
 thumbnails_path = ''
 thread_counter = 0
 video_extensions = None
+
+
+def get_file_id(path: str):
+
+    if os.path.isfile(path) is False:
+        raise ValueError(f'File {path} does not exist')
+
+    filename = os.path.basename(path)
+    # Note that os.path.basename() is generally used to handle file path
+    # under the same OS. That is, it handles *nix path well under *nix system
+    # and Windows path well under Windows. It may NOT be able to handle
+    # Windows path correctly under *nix environment or vice versa.
+    filesize = os.path.getsize(path)
+    file_id = f'{filesize}-{filename}'
+
+    return file_id
 
 
 @app.route('/get-server-info/', methods=['GET'])
@@ -282,7 +302,7 @@ def convert_video_format(input_path: str, output_path: str,
 
     p = subprocess.Popen(args=ffmpeg_cmd,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output, error = p.communicate()
+    stdout, stderr = p.communicate()
     # communicate() returns a tuple (stdout_data, stderr_data).
     # The data will be strings if streams were opened in text mode;
     # otherwise, bytes.
@@ -295,8 +315,107 @@ def convert_video_format(input_path: str, output_path: str,
     # if the conversion is a failure. So let's just output all the log!
     with open(output_log_path, 'w+') as f:
         f.write(f'===== return_code =====\n{p.returncode}\n\n\n')
-        f.write(f'===== std_output =====\n{output.decode("utf-8")}\n\n\n')
-        f.write(f'===== std_err =====\n{error.decode("utf-8")}')
+        f.write(f'===== std_output =====\n{stdout.decode("utf-8")}\n\n\n')
+        f.write(f'===== std_err =====\n{stderr.decode("utf-8")}')
+
+
+def raw_info_to_video_info(ri):
+
+    st = OrderedDict()
+    st['type'] = ri['codec_type']
+    st['format'] = ri['codec_name']
+
+    if ri['codec_type'] == 'video':
+        # Note that video includes both videos and images
+        st['width'] = ri['width']
+        st['height'] = ri['height']
+    else:
+        if ri['codec_type'] == 'audio' or ri['codec_type'] == 'subtitle':
+            if 'tags' in ri and 'language' in ri['tags']:
+                st['language'] = ri['tags']['language']
+            else:
+                st['language'] = ''
+        elif ri['codec_type'] == 'attachment':
+            if 'tags' in ri and 'filename' in ri['tags']:
+                st['filename'] = ri['tags']['filename']
+            else:
+                st['filename'] = 'unknown'
+        else:
+            st = f'Unknown codec_type: {ri["codec_type"]}'
+
+    return st
+
+
+@app.route('/get-video-info/', methods=['GET'])
+def get_video_info():
+
+    if 'asset_dir' not in request.args or 'video_name' not in request.args:
+        return Response('Parameters asset_dir or video_name not specified',
+                        400)
+    asset_dir = request.args.get('asset_dir')
+    video_name = request.args.get('video_name')
+
+    try:
+        video_path = flask.safe_join(root_dir, asset_dir[1:], video_name)
+        # safe_join can prevent base directory escaping
+        # [1:] is used to get ride of the initial /;
+        # otherwise safe_join will consider it a chroot escape attempt
+    except werkzeug.exceptions.NotFound:
+        logging.exception(f'Parameters are {asset_dir}, {video_name}')
+        return Response('Potential chroot escape', 400)
+    if os.path.isfile(video_path) is False:
+        return Response('Video file does not exist', 400)
+
+    ffmpeg_cmd = ['/usr/bin/ffprobe', '-v', 'quiet',
+                  '-print_format', 'json', '-show_format', '-show_streams',
+                  video_path]
+    p = subprocess.Popen(
+            args=ffmpeg_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+    stdout, stderr = p.communicate()
+
+    if p.returncode != 0:
+        logging.error('ffprobe execution error')
+        logging.error(ffmpeg_cmd)
+        logging.error(stdout.decode('utf-8'))
+        logging.error(stderr.decode('utf-8'))
+        # It seems that
+        return Response('Internal error: ffprobe returns non-zero result', 500)
+
+    raw_info = json.loads(stdout.decode("utf-8"))
+    # You canNOT simply return raw_info: it contains a lot of unexpected
+    # sensitive information such as real filesystem path.
+
+    video_info = OrderedDict()
+    video_info['content'] = OrderedDict()
+    vic = video_info['content']
+
+    rif = raw_info['format']
+    if 'duration' in rif:
+        vic['duration'] = str(dt.timedelta(seconds=float(rif['duration'])))
+    else:
+        vic['duration'] = 'unknown'
+    if 'tags' in rif and 'creation_time' in rif['tags']:
+        vic['creation_time'] = rif['tags']['creation_time']
+    else:
+        vic['creation_time'] = 'unknown'
+    vic['information_accuracy'] = rif['probe_score']
+    # My understanding is that ffprobe gets information by actually
+    # playing a short sample (e.g. 5 second) of the target video.
+    # Given the short duration, it may not be 100% sure about the attributes
+    # it reports. To gauge this uncertainty, it reports a probe_score--
+    # 100 means it is very sure that the information it reports is accurate.
+
+    if 'streams' not in raw_info:
+        return Response(
+            'Internal error: ffprobe runs successfully but the'
+            'server is not able to understand the return value of it', 500)
+    vic['streams'] = list(map(raw_info_to_video_info, raw_info['streams']))
+
+    return flask.jsonify(video_info)
+# json.dumps(video_info)# flask.jsonify(video_info)
 
 
 @app.route('/video-transcode/', methods=['POST'])
@@ -396,10 +515,36 @@ def download():
         # safe_join can prevent base directory escaping
         # [1:] is used to get ride of the initial /:
         # otherwise safe_join will consider it a chroot escape attempt
+        fid = get_file_id(flask.safe_join(file_dir, filename))
     except werkzeug.exceptions.NotFound:
         logging.exception(f'Parameters are {root_dir}, {asset_dir}')
         return Response('Potential chroot escape', 400)
 
+    if fid in files_statistics['content']:
+        last_download = dt.datetime.strptime(
+            files_statistics['content'][fid]['last_download'],
+            '%Y-%m-%d %H:%M:%S')
+        diff = (dt.datetime.now() - last_download).total_seconds()
+        if diff > 3600:
+            files_statistics['content'][fid]['downloads'] += 1
+    else:
+        files_statistics['content'][fid] = {}
+        files_statistics['content'][fid]['downloads'] = 1
+    files_statistics['content'][fid]['last_download'] = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # Note that logic here is:
+    # A download is counted only if it happens at least one hour after the last
+    # download. But we will update the last_download no matter if a download
+    # is counted or not.
+    # The result is that if you download the file 10 times with a ten-minute
+    # interval between any two of them, only the 1st download will be counted
+    # as a new download but the last_download timestamp will be the time of
+    # the 10th download instead of the 1st download.
+    try:
+        with open(fs_path, 'w') as f:
+            json.dump(files_statistics, f, indent=2, sort_keys=True)
+    except Exception:
+        logging.exception('')
+        return Response('Internal error: unable to save files statistics', 500)
     return flask.send_from_directory(directory=file_dir, filename=filename,
                                      as_attachment=as_attachment,
                                      attachment_filename=filename,
@@ -455,20 +600,34 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
             file_info['content'][fn]['file_type'] = 3
         elif os.path.isfile(entry.path):
             file_info['content'][fn]['file_type'] = 1
-            basename, ext = os.path.splitext(entry.name)
+            basename, ext = os.path.splitext(fn)
             file_info['content'][fn]['basename'] = basename
             file_info['content'][fn]['extension'] = ext
             file_path = flask.safe_join(abs_path, fn)
             if file_path is None:
                 # implies chroot escape attempt!
                 raise PermissionError('chroot escape attempt detected???')
-            file_info['content'][fn]['size'] = os.path.getsize(file_path)
+            filesize = os.path.getsize(file_path)
+            file_info['content'][fn]['size'] = filesize
             if ext.lower() in video_extensions:
                 file_info['content'][fn]['media_type'] = 2
             elif ext.lower() in image_extensions:
                 file_info['content'][fn]['media_type'] = 1
             else:
                 file_info['content'][fn]['media_type'] = 0
+
+            fid = get_file_id(file_path)
+            # Tried using crc32 and partial crc32 here...
+            # It turned out that any content-based checksum is just too
+            # expensive to use...
+            file_info['content'][fn]['stat'] = {}
+            if fid not in files_statistics['content']:
+                file_info['content'][fn]['stat']['downloads'] = 0
+                file_info['content'][fn]['stat']['last_download'] = ''
+            else:
+                file_info['content'][fn]['stat']['downloads'] = files_statistics['content'][fid]['downloads']
+                file_info['content'][fn]['stat']['last_download'] = files_statistics['content'][fid]['last_download']
+
         elif os.path.isdir(entry.path):
             file_info['content'][fn]['file_type'] = 0
     scanner.close()
@@ -498,9 +657,10 @@ def get_file_list():
         file_info = generate_file_list_json(abs_path, asset_dir)
     except werkzeug.exceptions.NotFound:
         logging.exception('')
-        return Response('Error:', 400)
-    except Exception as e:
-        return Response(f'Internal Error: {e}', 500)
+        return Response('Potential chroot escape', 400)
+    except Exception:
+        logging.exception('')
+        return Response(f'Internal Error', 500)
 
     return flask.jsonify(file_info)
 
@@ -525,25 +685,33 @@ def main(debug):
 
     port = -1
     global allowed_ext, app_address, root_dir, thumbnails_path
-    global external_script_dir, log_path
+    global external_script_dir, files_statistics, fs_path, log_path
     global image_extensions, video_extensions
 
     try:
         with open(settings_path, 'r') as json_file:
             json_str = json_file.read()
-            data = json.loads(json_str)
-        port = data['flask']['port']
-        allowed_ext = data['app']['allowed_ext']
-        app_address = data['app']['address']
-        external_script_dir = data['app']['external_script_dir']
-        image_extensions = data['app']['image_extensions']
-        root_dir = data['app']['root_dir']
-        thumbnails_path = data['app']['thumbnails_path']
-        log_path = data['app']['log_path']
-        video_extensions = data['app']['video_extensions']
+            settings = json.loads(json_str)
+        port = settings['flask']['port']
+        allowed_ext = settings['app']['allowed_ext']
+        app_address = settings['app']['address']
+        external_script_dir = settings['app']['external_script_dir']
+        fs_path = settings['app']['files_statistics']
+        image_extensions = settings['app']['image_extensions']
+        root_dir = settings['app']['root_dir']
+        thumbnails_path = settings['app']['thumbnails_path']
+        log_path = settings['app']['log_path']
+        video_extensions = settings['app']['video_extensions']
     except Exception as e:
-        data = None
-        print(f'{e}')
+        print(f'Unable to read settings: {e}')
+        return
+
+    try:
+        with open(fs_path, 'r') as json_file:
+            json_str = json_file.read()
+            files_statistics = json.loads(json_str)
+    except Exception as e:
+        print(f'Unable to read statistics: {e}')
         return
 
     logging.basicConfig(

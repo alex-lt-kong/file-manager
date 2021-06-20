@@ -1,3 +1,73 @@
+class ModalVideoInfo extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      appAddress: props.appAddress,
+      assetDir: props.assetDir,
+      videoName: props.videoName,
+      videoInfo: null,
+      show: props.show
+    };
+    this.handleCloseClick = this.handleCloseClick.bind(this);
+  }
+
+  componentDidMount() {
+    $(this.modal).modal('show');
+    this.fetchDataFromServer();
+  }
+
+  fetchDataFromServer() {                    
+    URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
+    console.log('Fetching: ' + URL);
+     axios.get(URL)
+       .then(response => {
+         this.setState({
+          videoInfo: null
+           // make it empty before fill it in again to force a re-rendering.
+         });
+         this.setState({
+          videoInfo: response.data
+         });
+       })
+       .catch(error => {
+         alert('Unable to fetch videoInfo:\n' + error.response.data);
+         console.log(error);
+       });
+  }
+
+  handleCloseClick() {
+    $(this.modal).modal('hide');
+  }
+
+  render() {
+    
+    if (this.state.show === false || this.state.videoInfo === false) {
+      return null;
+    }
+
+    return (
+    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div className="modal-dialog" role="document">
+        <div className="modal-content">
+            <div className="modal-header">
+            <h5 className="modal-title" >Remove File</h5>
+            </div>
+            <div className="modal-body">
+            <div className="mb-3">
+                {JSON.stringify(this.state.videoInfo, undefined, 4)}
+            </div>
+            </div>
+            <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>No</button>
+            <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>YES!</button>
+            </div>
+        </div>
+        </div>
+    </div>
+    );
+  }
+}
+
 class ModalMkdir extends React.Component {
 
   constructor(props) {
@@ -457,8 +527,9 @@ class ContextMenu extends React.Component {
       fileInfo: props.fileInfo
     };
     this.onMoveButtonClick = this.onMoveButtonClick.bind(this);
-    this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);
+    this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);    
     this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
+    this.onVideoInfoButtonClick = this.onVideoInfoButtonClick.bind(this);
     this.Modal = null;
   }
   
@@ -468,6 +539,23 @@ class ContextMenu extends React.Component {
            fileInfo={this.state.fileInfo}
            appAddress={this.state.appAddress}
            refreshFileList={this.state.refreshFileList}
+           show={true}/>
+        // By adding a key attribute, Modal will be created each time, so we
+        //  can pass different show attribute to it.
+    );
+    this.setState(prevState => ({
+      showModal: true,
+      modalKey: prevState.modalKey + 1
+    }));
+  }
+  
+  onVideoInfoButtonClick(event) {
+    this.Modal = (
+      <ModalVideoInfo
+           key={this.state.modalKey} 
+           assetDir={this.state.fileInfo.asset_dir}
+           videoName={this.state.fileInfo.filename}
+           appAddress={this.state.appAddress}
            show={true}/>
         // By adding a key attribute, Modal will be created each time, so we
         //  can pass different show attribute to it.
@@ -521,6 +609,7 @@ class ContextMenu extends React.Component {
           <li><a className="dropdown-item" style={{ float: "right", cursor: "pointer" }} onClick={this.onMoveButtonClick}>Move</a></li>
           <li><a className="dropdown-item" style={{ float: "right", cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
           <li><a className="dropdown-item" style={{ float: "right", cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
+          <li><a className="dropdown-item" style={{ float: "right", cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
         </ul>
         {this.Modal}
       </div>
@@ -700,10 +789,13 @@ class FileManager extends React.Component {
   
   onClickItem(value) { 
     if (this.state.fileInfo.content[value].file_type != 1) {
-      this.setState(prevState => ({
+      this.fetchDataFromServer(this.state.currentPath + value + '/');
+    /*  this.setState(prevState => ({
         currentPath: prevState.currentPath + value + '/'
       }), () => this.fetchDataFromServer(this.state.currentPath));
-       // console.log(prevState.currentPath + value + '/');
+
+      No, you canNOT set currentPath here--sometimes tthe fetchDataFromServer() will fail.
+      In this situtaion, we want to keep the original currentPath. */
     } else if (this.state.fileInfo.content[value].file_type === 1) {
       console.log('ordinary file [' + value + '] clicked');
       if (this.state.fileInfo.content[value].media_type < 2) {
@@ -738,7 +830,7 @@ class FileManager extends React.Component {
 
       const ffmpegItems = this.state.serverInfo.ffmpeg.map((ffmpegItem) =>
         <li key={ffmpegItem.pid}>
-        <b>{ffmpegItem.pid} (since {ffmpegItem.since}):</b> {ffmpegItem.cmdline} 
+          {ffmpegItem.cmdline} <b>(since {ffmpegItem.since})</b>
         </li>
       );
 
@@ -755,7 +847,7 @@ class FileManager extends React.Component {
             <li><b>Flask:</b> {this.state.serverInfo.version.flask}</li>
           </ul>
           <b>FFMPEG:</b>
-          <ul>{ffmpegItems}</ul>
+          <ol>{ffmpegItems}</ol>            
         </div>
       );
 
@@ -768,11 +860,11 @@ class FileManager extends React.Component {
   }
   
   fetchDataFromServer(asset_dir) {
-    if (asset_dir === null) {
-      asset_dir = this.state.fileInfo.metadata.asset_dir;
-    }
+   // if (asset_dir === null) {
+   //   asset_dir = this.state.fileInfo.metadata.asset_dir;
+  //  }
     URL = this.state.appAddress + '/get-file-list/?asset_dir=' + encodeURIComponent(asset_dir);
-    console.log('Fetching: ' + URL);
+   // console.log('Fetching: ' + URL);
     axios.get(URL)
       .then(response => {
         // handle success
@@ -861,7 +953,7 @@ class FileManager extends React.Component {
                 // For svg <img>, we specify width: 100%;
                 // For ordinary image we specify maxWidth: 100%
         }
-        fileMetaData = (<div>{humanFileSize(fi.content[key].size)}</div>);
+        fileMetaData = (<div>{humanFileSize(fi.content[key].size)}, {fi.content[key].stat.downloads} views</div>);
       } else if (fi.content[key].file_type === 2) { // file_type == 2: mountpoint
         fileMetaData = (<div>mountpoint</div>);
         thumbnail = (
@@ -893,7 +985,7 @@ class FileManager extends React.Component {
             {thumbnail}
           </div>
           <div className="col" style={{ display: "flex", flexFlow: "column" }} >
-            <div style={{flex: "1 1 auto"}}>
+            <div style={{flex: "1 1 auto", wordBreak: "break-all" }}>
               <a value={key} style={{ textDecoration: "none", display: "block", cursor: "pointer" }} onClick={() => this.onClickItem(key)}>
               {key}
               </a>
@@ -930,12 +1022,15 @@ class FileManager extends React.Component {
               </button>
               <div class="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
               <div class="offcanvas-header">
-                <h5 class="offcanvas-title" id="offcanvasBottomLabel">Server Info</h5>
+                <h5 class="offcanvas-title" id="offcanvasBottomLabel"><b>Server Info</b></h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
               </div>
-              <div class="offcanvas-body d-flex align-items-center justify-content-center">
+              <div class="offcanvas-body" style={{ fontSize: "0.85em" }}>
                 {/* d-flex align-items-center justify-content-center: used to center
-                this.serverInfoPanel horizontally and vertically */}
+                this.serverInfoPanel horizontally and vertically 
+                    However, after adding d-flex align-items-center justify-content-center,
+                    the scroll function of offcanvas will be broken. So now these attributes are
+                    NOT added. */}
                 {this.serverInfoPanel}
               </div>
               </div>
