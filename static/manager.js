@@ -8,13 +8,35 @@ class ModalVideoInfo extends React.Component {
       videoInfo: null,
       show: props.show
     };
-    this.handleCloseClick = this.handleCloseClick.bind(this);
+    this.handleOKClick = this.handleOKClick.bind(this);
   }
 
   componentDidMount() {
     $(this.modal).modal('show');
     this.fetchDataFromServer();
   }
+
+  syntaxHighlight(json) {
+    // This method needs corresponding css settings to work.
+
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const pretty_json = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        var cls = 'number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'key';
+            } else {
+                cls = 'string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'boolean';
+        } else if (/null/.test(match)) {
+            cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    })
+    return {__html: pretty_json};
+}
 
   fetchDataFromServer() {                    
     URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
@@ -35,7 +57,7 @@ class ModalVideoInfo extends React.Component {
        });
   }
 
-  handleCloseClick() {
+  handleOKClick() {
     $(this.modal).modal('hide');
   }
 
@@ -47,19 +69,18 @@ class ModalVideoInfo extends React.Component {
 
     return (
     <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div className="modal-dialog" role="document">
+        <div className="modal-dialog modal-dialog-scrollable" role="document">
         <div className="modal-content">
             <div className="modal-header">
-            <h5 className="modal-title" >Remove File</h5>
+            <h5 className="modal-title" >Video Information</h5>
             </div>
             <div className="modal-body">
             <div className="mb-3">
-                {JSON.stringify(this.state.videoInfo, undefined, 4)}
+              <pre dangerouslySetInnerHTML={this.syntaxHighlight(JSON.stringify(this.state.videoInfo, null, 2))}></pre>
             </div>
             </div>
             <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>No</button>
-            <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>YES!</button>
+            <button type="button" className="btn btn-primary" onClick={this.handleOKClick}>OK</button>
             </div>
         </div>
         </div>
@@ -336,7 +357,7 @@ class ModalTranscode extends React.Component {
 
     return (
         <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-          <div className="modal-dialog" role="document">
+          <div className="modal-dialog modal-dialog-scrollable" role="document">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Video Transcode</h5>
@@ -468,7 +489,7 @@ class ModalMove extends React.Component {
 
     return (
         <div className="modal fade" ref={modal=> this.modal = modal} id="exampleModal" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-          <div className="modal-dialog" role="document">
+          <div className="modal-dialog modal-dialog-scrollable" role="document">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="exampleModalLabel">Move File</h5>
@@ -478,8 +499,8 @@ class ModalMove extends React.Component {
                   <label htmlFor="move-destination-input" className="form-label">
                     Move the file from <b>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</b> to:
                   </label>
-                  <input id="move-destination-input" type="text" className="form-control"
-                       placeholder="Input new filename" value={this.state.newFilepath} onChange={this.onFilepathChange}/>
+                  <textarea id="move-destination-input" type="text" className="form-control" row="3"
+                            placeholder="Input new filename" value={this.state.newFilepath} onChange={this.onFilepathChange} />
                   <div className="accordion my-2" id="accordionMove">
                     <div className="accordion-item">
                       <h2 className="accordion-header" id="headingRemove">
@@ -662,10 +683,10 @@ class FileManager extends React.Component {
       pathStack: [],
       serverInfo: null,
       showNewFolderModal: false,
+      uploadProgress: 0,
       username: null
     };
 
-    this.handleUploadAttachmentButtonClick = this.handleUploadAttachmentButtonClick.bind(this);  
     this.onAddressBarChange = this.onAddressBarChange.bind(this);
     this.onClickItem = this.onClickItem.bind(this);
     this.onClickMore = this.onClickMore.bind(this);
@@ -678,17 +699,13 @@ class FileManager extends React.Component {
     
     this.Modal = null;
     this.serverInfoPanel = (
+      <div className="d-flex align-items-center justify-content-center">
       <div className="spinner-border text-primary" role="status">
         <span className="visually-hidden">Loading...</span>
-      </div>
+      </div></div>
     );
   }
 
-  handleUploadAttachmentButtonClick(event) {
-    $('#input-fileupload-attachment').click();
-    // It is used to apply unified button style to file upload button...
-    // It is jQuery...but ...it works!
-  }
 
   onServerInfoClick(event) { 
     this.fetchServerInfo();
@@ -696,8 +713,8 @@ class FileManager extends React.Component {
 
   onFileChange(event) { 
     for (let i = 0; i < event.target.files.length; i++) {
-      if(event.target.files[0].size > 1024000000){
-        alert("The file to be uploaded canNOT be larger than 1024 MB");
+      if(event.target.files[0].size > 2048000000){
+        alert("The file to be uploaded canNOT be larger than 2048 MB");
         return;
         };
       this.onFileUpload(event.target.files[i]);
@@ -710,11 +727,11 @@ class FileManager extends React.Component {
     payload.append('asset_dir', this.state.currentPath); 
     var config = {
       onUploadProgress: function(progressEvent) {
-        var percentCompleted = Math.round( (progressEvent.loaded * 100) / progressEvent.total );
-         // if (percentCompleted < 100)
-          //this.setState({uploadProgress: percentCompleted}); //How set state with percentCompleted?
-        //else
-          //this.setState({uploadProgress: null});
+        var percentCompleted = (progressEvent.loaded * 100) / progressEvent.total;
+        if (percentCompleted < 100)
+          this.setState({uploadProgress: percentCompleted}); //How set state with percentCompleted?
+        else
+          this.setState({uploadProgress: null});
         console.log(percentCompleted);
       }.bind(this)
     };
@@ -819,43 +836,43 @@ class FileManager extends React.Component {
     URL = this.state.appAddress + '/get-server-info/';
     axios.get(URL)
       .then(response => {
-      this.setState({
-        serverInfo: null
-        // make it empty before fill it in again to force a re-rendering.
-      });
-      this.setState({
-        serverInfo: response.data
-        // make it empty before fill it in again to force a re-rendering.
-      });
+        this.setState({
+          serverInfo: null
+          // make it empty before fill it in again to force a re-rendering.
+        });
+        this.setState({
+          serverInfo: response.data
+          // make it empty before fill it in again to force a re-rendering.
+        });
 
-      const ffmpegItems = this.state.serverInfo.ffmpeg.map((ffmpegItem) =>
-        <li key={ffmpegItem.pid}>
-          {ffmpegItem.cmdline} <b>(since {ffmpegItem.since})</b>
-        </li>
-      );
+        const ffmpegItems = this.state.serverInfo.ffmpeg.map((ffmpegItem) =>
+          <li key={ffmpegItem.pid}>
+            {ffmpegItem.cmdline} <b>(since {ffmpegItem.since})</b>
+          </li>
+        );
 
-      this.serverInfoPanel = (
-        <div>
-          <p><b>Refresh at:</b> {this.state.serverInfo.metadata.timestamp}</p>
-          <p><b>CPU Usage:</b> {this.state.serverInfo.cpu.percent}%</p>
-          <p><b>Memory:</b> {this.state.serverInfo.memory.physical_total / 1024 / 1024} MB in total,&nbsp;
-                   {Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024)} MB available</p>
-          <b>System:</b>
-          <ul>
-            <li><b>OS:</b> {this.state.serverInfo.version.os}</li>
-            <li><b>Python:</b> {this.state.serverInfo.version.python}</li>
-            <li><b>Flask:</b> {this.state.serverInfo.version.flask}</li>
-          </ul>
-          <b>FFMPEG:</b>
-          <ol>{ffmpegItems}</ol>            
-        </div>
-      );
+        this.serverInfoPanel = (
+          <div>
+            <p><b>Refresh at:</b> {this.state.serverInfo.metadata.timestamp}</p>
+            <p><b>CPU Usage:</b> {this.state.serverInfo.cpu.percent}%</p>
+            <p><b>Memory:</b> {this.state.serverInfo.memory.physical_total / 1024 / 1024} MB in total,&nbsp;
+                    {Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024)} MB available</p>
+            <b>System:</b>
+            <ul>
+              <li><b>OS:</b> {this.state.serverInfo.version.os}</li>
+              <li><b>Python:</b> {this.state.serverInfo.version.python}</li>
+              <li><b>Flask:</b> {this.state.serverInfo.version.flask}</li>
+            </ul>
+            <b>FFMPEG:</b>
+            <ol>{ffmpegItems}</ol>            
+          </div>
+        );
 
-      this.forceUpdate();
-      })
+        this.forceUpdate();
+        })
       .catch(error => {
-      alert('Unable to fetch server info:\n' + error.response.data);
-      console.log(error);
+        alert('Unable to fetch server info:\n' + error.response.data);
+        console.log(error);
       });
   }
   
@@ -1009,20 +1026,45 @@ class FileManager extends React.Component {
           <div className="row container-fluid">
             <div className="col-md-auto">
             {/* Use col-{breakpoint}-auto classes to size columns based on the natural width of their content. */}
-              <input id="input-fileupload-attachment" onChange={this.onFileChange} type="file" style={{ display: "none" }} multiple></input>
-              <button id="button-addfile-attachment" type="button" className="btn btn-primary mx-2 my-1"
-                  onClick={this.handleUploadAttachmentButtonClick} >
+              
+            <button class="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom" >
                 <i className="bi bi-upload"></i> Upload
               </button>
+              <div class="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+                <div class="offcanvas-header">
+                  <h5 class="offcanvas-title" id="offcanvasBottomLabel"><b>File Upload</b></h5>
+                  <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
+                </div>
+                <div class="offcanvas-body" style={{ fontSize: "0.85em" }}>
+                  {/* d-flex align-items-center justify-content-center: used to center
+                  this.serverInfoPanel horizontally and vertically 
+                      However, after adding d-flex align-items-center justify-content-center,
+                      the scroll function of offcanvas will be broken. So now these attributes are
+                      NOT added. */}
+                      <div class="progress">
+                        <div class="progress-bar" role="progressbar"
+                             style={{ width: this.state.uploadProgress != null ? this.state.uploadProgress.toFixed(2) + "%" : "0%"  }}
+                             aria-valuenow={this.state.uploadProgress} aria-valuemin="0" aria-valuemax="100">
+                               {this.state.uploadProgress != null ? this.state.uploadProgress.toFixed(2) + "%" : "" }
+                               </div>
+                      </div>
+                      <div>
+                        <input onChange={this.onFileChange} type="file" className="my-3"></input>
+                        <p>Note: Interestingly, while it may appear that the page only supports single-file upload, you can actually upload more
+                           files even if previous files are still uploading. (But multiple upload processes will share the same progress bar ¯\_(ツ)_/¯)</p>
+                      </div>                    
+                </div>
+              </div>
+
               {/* button and input is bound using jQuery... */}
               <button type="button" className="btn btn-primary mx-2 my-1" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i> New</button>               
-              <button class="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom"
+              <button class="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo" aria-controls="offcanvasBottomServerInfo"
                   onClick={this.onServerInfoClick}>
                 <i className="bi bi-gear"></i> Info
               </button>
-              <div class="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+              <div class="offcanvas offcanvas-bottom h-auto" id="offcanvasBottomServerInfo" aria-labelledby="offcanvasBottomServerInfoLabel">
               <div class="offcanvas-header">
-                <h5 class="offcanvas-title" id="offcanvasBottomLabel"><b>Server Info</b></h5>
+                <h5 class="offcanvas-title" id="offcanvasBottomServerInfoLabel"><b>Server Info</b></h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
               </div>
               <div class="offcanvas-body" style={{ fontSize: "0.85em" }}>
