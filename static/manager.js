@@ -18,9 +18,18 @@ class ModalVideoInfo extends React.Component {
 
   syntaxHighlight(json) {
     // This method needs corresponding css settings to work.
+    if (json === 'null') {
+      return (
+        <div className="d-flex align-items-center justify-content-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        );
+    }
 
     json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const pretty_json = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+    let pretty_json = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
         var cls = 'number';
         if (/^"/.test(match)) {
             if (/:$/.test(match)) {
@@ -35,8 +44,9 @@ class ModalVideoInfo extends React.Component {
         }
         return '<span class="' + cls + '">' + match + '</span>';
     })
-    return {__html: pretty_json};
-}
+    pretty_json = {__html: pretty_json}
+    return  <pre dangerouslySetInnerHTML={pretty_json}></pre>;
+  }
 
   fetchDataFromServer() {                    
     URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
@@ -67,23 +77,24 @@ class ModalVideoInfo extends React.Component {
       return null;
     }
 
+    let json_html = this.syntaxHighlight(JSON.stringify(this.state.videoInfo, null, 2));
+
     return (
-    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div className="modal-dialog modal-dialog-scrollable" role="document">
+    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="videoInformationModalTitle" aria-hidden="true">
+        <div className="modal-dialog" role="document">
+          {/* Turned out that modal-dialog-scrollable is buggy on smartphone devices... */}
         <div className="modal-content">
             <div className="modal-header">
-            <h5 className="modal-title" >Video Information</h5>
+            <h5 className="modal-title" id="videoInformationModalTitle" >Video Information</h5>
             </div>
             <div className="modal-body">
-            <div className="mb-3">
-              <pre dangerouslySetInnerHTML={this.syntaxHighlight(JSON.stringify(this.state.videoInfo, null, 2))}></pre>
-            </div>
+              <div className="mb-3">{json_html}</div>
             </div>
             <div className="modal-footer">
             <button type="button" className="btn btn-primary" onClick={this.handleOKClick}>OK</button>
             </div>
         </div>
-        </div>
+      </div>
     </div>
     );
   }
@@ -150,7 +161,7 @@ class ModalMkdir extends React.Component {
   render() {
     return (
       <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div className="modal-dialog" role="document">
+        <div className="modal-dialog modal-dialog-scrollable" role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="exampleModalLabel">New Folder</h5>
@@ -233,7 +244,7 @@ class ModalRemove extends React.Component {
 
     return (
     <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div className="modal-dialog" role="document">
+        <div className="modal-dialog modal-dialog-scrollable" role="document">
         <div className="modal-content">
             <div className="modal-header">
             <h5 className="modal-title" >Remove File</h5>
@@ -243,16 +254,16 @@ class ModalRemove extends React.Component {
                 <span className="form-label" style={{ wordWrap: "break-word" }}>
                 Remove file <strong>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong>?
                 </span>
-                <div class="accordion my-2" id="accordionRemove">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingRemove">
-                    <button class="accordion-button collapsed" type="button"
+                <div className="accordion my-2" id="accordionRemove">
+                <div className="accordion-item">
+                    <h2 className="accordion-header" id="headingRemove">
+                    <button className="accordion-button collapsed" type="button"
                         data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
                     What's Happening Under the Hood?
                     </button>
                     </h2>
-                    <div id="collapseRemoveOne" class="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
-                    <div class="accordion-body">
+                    <div id="collapseRemoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
+                    <div className="accordion-body">
                       <ol>
                         <li>The server returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
                         os.path.ismount()</a> returns true;</li>
@@ -621,16 +632,16 @@ class ContextMenu extends React.Component {
 
   render() {
     return (
-      <div className="dropdown"  style={{ float: "right" }}>
-        <svg className="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style={{ float: "right", cursor: "pointer" }}
+      <div className="dropdown dropup">
+        <svg id="dropdownContextMenuButton" className="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style={{ cursor: "pointer" }}
           xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-three-dots-vertical" viewBox="0 0 16 16">
           <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
         </svg>
-        <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-          <li><a className="dropdown-item" style={{ float: "right", cursor: "pointer" }} onClick={this.onMoveButtonClick}>Move</a></li>
-          <li><a className="dropdown-item" style={{ float: "right", cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
-          <li><a className="dropdown-item" style={{ float: "right", cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
-          <li><a className="dropdown-item" style={{ float: "right", cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
+        <ul className="dropdown-menu" aria-labelledby="dropdownContextMenuButton">
+          <li><a className="dropdown-item" style={{ cursor: "pointer" }}  onClick={this.onMoveButtonClick}>Move</a></li>
+          <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
+          <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
+          <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
         </ul>
         {this.Modal}
       </div>
@@ -700,9 +711,10 @@ class FileManager extends React.Component {
     this.Modal = null;
     this.serverInfoPanel = (
       <div className="d-flex align-items-center justify-content-center">
-      <div className="spinner-border text-primary" role="status">
-        <span className="visually-hidden">Loading...</span>
-      </div></div>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
     );
   }
 
@@ -727,7 +739,11 @@ class FileManager extends React.Component {
     payload.append('asset_dir', this.state.currentPath); 
     var config = {
       onUploadProgress: function(progressEvent) {
-        var percentCompleted = (progressEvent.loaded * 100) / progressEvent.total;
+        var percentCompleted = Math.ceil((progressEvent.loaded * 100) / progressEvent.total);
+        // Here we ceil() the percentage point to an integer. If we don't round it, the number will change very freqneutly.
+        // As a result, the page will be re-render()ed and for whatever reason the context menu may jump a little bit 
+        // if it is clicked when the page is render()ed.
+        // Note that we use Math.ceil() instead of round() so that the page will show 1% immediately after the upload starts
         if (percentCompleted < 100)
           this.setState({uploadProgress: percentCompleted}); //How set state with percentCompleted?
         else
@@ -855,8 +871,12 @@ class FileManager extends React.Component {
           <div>
             <p><b>Refresh at:</b> {this.state.serverInfo.metadata.timestamp}</p>
             <p><b>CPU Usage:</b> {this.state.serverInfo.cpu.percent}%</p>
-            <p><b>Memory:</b> {this.state.serverInfo.memory.physical_total / 1024 / 1024} MB in total,&nbsp;
-                    {Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024)} MB available</p>
+            <p>
+              <b>Memory:</b>
+              {Math.round(this.state.serverInfo.memory.physical_total / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB in total,&nbsp;
+              {Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB available
+              {/* The fancy regex is used to add a thousands separator */}
+            </p>
             <b>System:</b>
             <ul>
               <li><b>OS:</b> {this.state.serverInfo.version.os}</li>
@@ -970,9 +990,9 @@ class FileManager extends React.Component {
                 // For svg <img>, we specify width: 100%;
                 // For ordinary image we specify maxWidth: 100%
         }
-        fileMetaData = (<div>{humanFileSize(fi.content[key].size)}, {fi.content[key].stat.downloads} views</div>);
+        fileMetaData = (<span><b>size:</b> {humanFileSize(fi.content[key].size)}, <b>views</b>: {fi.content[key].stat.downloads}</span>);
       } else if (fi.content[key].file_type === 2) { // file_type == 2: mountpoint
-        fileMetaData = (<div>mountpoint</div>);
+        fileMetaData = 'mountpoint';
         thumbnail = (
           <img src='https://media.sz.lan/static/icons/special-folder.svg' style={{ width: "100%", cursor: "pointer" }}
                onClick={() => this.onClickItem(key)} />
@@ -980,13 +1000,13 @@ class FileManager extends React.Component {
           // For svg <img>, we specify width: 100%;
           // For ordinary image we specify maxWidth: 100%
       } else if (fi.content[key].file_type === 3) { // file_type == 3: symbolic link
-        fileMetaData = (<div>symbolic link</div>);
+        fileMetaData = 'symbolic link';
         thumbnail = (
           <img src='https://media.sz.lan/static/icons/special-folder.svg' style={{ width: "100%", cursor: "pointer" }}
                onClick={() => this.onClickItem(key)} />
           );
       } else {
-        fileMetaData = (<div>??Unknown file type??</div>);
+        fileMetaData = '??Unknown file type??';
         thumbnail = (
           <img src='https://media.sz.lan/static/icons/special-folder.svg' style={{ width: "100%", cursor: "pointer" }}
                onClick={() => this.onClickItem(key)} />
@@ -994,7 +1014,7 @@ class FileManager extends React.Component {
       }
       fileList[i] = (
       <li key={i} className="list-group-item">            
-        <div className="row" style={{ display: "grid", gridTemplateColumns: "8em 8fr 2em" }} >
+        <div className="row" style={{ display: "grid", gridTemplateColumns: "8em 8fr 2.5em" }} >
           {/* Note that for gridTemplateColumns we canNOT use relative width for thumbnail. The reason is that
             common monitors are wide screen but smartphones are usually tall screen, so the preferred thumbnail
             size is not the same. */}
@@ -1008,7 +1028,7 @@ class FileManager extends React.Component {
               </a>
             </div>
             <div style={{  flex: "0 1 1.5em"}} >
-            {fileMetaData}
+            <div style={{ fontSize: "0.8em", color: "#808080" }}>{fileMetaData}</div>
             </div>
           </div>
           <div className="col">
@@ -1027,25 +1047,29 @@ class FileManager extends React.Component {
             <div className="col-md-auto">
             {/* Use col-{breakpoint}-auto classes to size columns based on the natural width of their content. */}
               
-            <button class="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom" >
+            <button className="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom" >
                 <i className="bi bi-upload"></i> Upload
               </button>
-              <div class="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
-                <div class="offcanvas-header">
-                  <h5 class="offcanvas-title" id="offcanvasBottomLabel"><b>File Upload</b></h5>
-                  <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
+              <div className="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+                <div className="offcanvas-header">
+                  <h5 className="offcanvas-title" id="offcanvasBottomLabel"><b>File Upload</b></h5>
+                  <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
                 </div>
-                <div class="offcanvas-body" style={{ fontSize: "0.85em" }}>
+                <div className="offcanvas-body" style={{ fontSize: "0.85em" }}>
                   {/* d-flex align-items-center justify-content-center: used to center
                   this.serverInfoPanel horizontally and vertically 
                       However, after adding d-flex align-items-center justify-content-center,
                       the scroll function of offcanvas will be broken. So now these attributes are
                       NOT added. */}
-                      <div class="progress">
-                        <div class="progress-bar" role="progressbar"
-                             style={{ width: this.state.uploadProgress != null ? this.state.uploadProgress.toFixed(2) + "%" : "0%"  }}
+                      <div className="">
+                        <p>File Name:</p>
+                        <p>Size:</p>
+                      </div>
+                      <div className="progress">
+                        <div className="progress-bar" role="progressbar"
+                             style={{ width: this.state.uploadProgress != null ? this.state.uploadProgress + "%" : "0%"  }}
                              aria-valuenow={this.state.uploadProgress} aria-valuemin="0" aria-valuemax="100">
-                               {this.state.uploadProgress != null ? this.state.uploadProgress.toFixed(2) + "%" : "" }
+                               {this.state.uploadProgress != null ? this.state.uploadProgress + "%" : "" }
                                </div>
                       </div>
                       <div>
@@ -1058,16 +1082,16 @@ class FileManager extends React.Component {
 
               {/* button and input is bound using jQuery... */}
               <button type="button" className="btn btn-primary mx-2 my-1" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i> New</button>               
-              <button class="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo" aria-controls="offcanvasBottomServerInfo"
+              <button className="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo" aria-controls="offcanvasBottomServerInfo"
                   onClick={this.onServerInfoClick}>
                 <i className="bi bi-gear"></i> Info
               </button>
-              <div class="offcanvas offcanvas-bottom h-auto" id="offcanvasBottomServerInfo" aria-labelledby="offcanvasBottomServerInfoLabel">
-              <div class="offcanvas-header">
-                <h5 class="offcanvas-title" id="offcanvasBottomServerInfoLabel"><b>Server Info</b></h5>
-                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
+              <div className="offcanvas offcanvas-bottom h-auto" id="offcanvasBottomServerInfo" aria-labelledby="offcanvasBottomServerInfoLabel">
+              <div className="offcanvas-header">
+                <h5 className="offcanvas-title" id="offcanvasBottomServerInfoLabel"><b>Server Info</b></h5>
+                <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
               </div>
-              <div class="offcanvas-body" style={{ fontSize: "0.85em" }}>
+              <div className="offcanvas-body" style={{ fontSize: "0.85em" }}>
                 {/* d-flex align-items-center justify-content-center: used to center
                 this.serverInfoPanel horizontally and vertically 
                     However, after adding d-flex align-items-center justify-content-center,

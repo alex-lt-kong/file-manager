@@ -171,7 +171,13 @@ def upload():
         selected_file.seek(0)
         # seek(0) means to go back to the start of the file.
         # but I am not quite sure why we are not at the start before seeking...
-        selected_file.save(filepath)
+        try:
+            selected_file.save(filepath)
+            # At least there could be one error:
+            # OSError: [Errno 28] No space left on device
+        except Exception:
+            return Response('Internal error', 500)
+            logging.exception('')
 
     return Response('Upload done', 200)
 
