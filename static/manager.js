@@ -632,7 +632,7 @@ class ContextMenu extends React.Component {
 
   render() {
     return (
-      <div className="dropdown dropup">
+      <div className="dropdown"  href = "javascript:return false;" style={{position: "relative" }} >
         <svg id="dropdownContextMenuButton" className="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style={{ cursor: "pointer" }}
           xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-three-dots-vertical" viewBox="0 0 16 16">
           <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
@@ -692,6 +692,7 @@ class FileManager extends React.Component {
       currentPath: '/',
       fileInfo: null,
       pathStack: [],
+      selectedFile: null,
       serverInfo: null,
       showNewFolderModal: false,
       uploadProgress: 0,
@@ -709,13 +710,7 @@ class FileManager extends React.Component {
     this.onServerInfoClick = this.onServerInfoClick.bind(this);
     
     this.Modal = null;
-    this.serverInfoPanel = (
-      <div className="d-flex align-items-center justify-content-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
+    this.serverInfoPanel;
   }
 
 
@@ -729,25 +724,40 @@ class FileManager extends React.Component {
         alert("The file to be uploaded canNOT be larger than 2048 MB");
         return;
         };
+        this.setState(
+          {
+            selectedFile: event.target.files[i]
+          }
+        );
       this.onFileUpload(event.target.files[i]);
     }    
   }; 
 
   onFileUpload(selectedFiles) {
-    const payload = new FormData(); 
+    const payload = new FormData();
+    
+
     payload.append('selected_files', selectedFiles);
     payload.append('asset_dir', this.state.currentPath); 
     var config = {
       onUploadProgress: function(progressEvent) {
-        var percentCompleted = Math.ceil((progressEvent.loaded * 100) / progressEvent.total);
+        var percentCompleted = ((progressEvent.loaded * 100) / progressEvent.total).toFixed(2);
         // Here we ceil() the percentage point to an integer. If we don't round it, the number will change very freqneutly.
         // As a result, the page will be re-render()ed and for whatever reason the context menu may jump a little bit 
         // if it is clicked when the page is render()ed.
         // Note that we use Math.ceil() instead of round() so that the page will show 1% immediately after the upload starts
+
+        // However, the above issue appears to have been solved by limiting the height of filelist ul to 100vh. So now
+        // we keep two decimal places to make the update more frequent--so that users will notice smaller upload progress
+        // if the file being uploaded is large.
         if (percentCompleted < 100)
           this.setState({uploadProgress: percentCompleted}); //How set state with percentCompleted?
         else
-          this.setState({uploadProgress: null});
+          this.setState({
+            selectedFile: null,
+            uploadProgress: null
+            
+          });
         console.log(percentCompleted);
       }.bind(this)
     };
@@ -850,6 +860,15 @@ class FileManager extends React.Component {
   fetchServerInfo() {
 
     URL = this.state.appAddress + '/get-server-info/';
+    this.serverInfoPanel = (
+      <div className="d-flex align-items-center justify-content-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+    this.forceUpdate();
+    // You set it to a spinner before fetching data from the server.
     axios.get(URL)
       .then(response => {
         this.setState({
@@ -869,10 +888,10 @@ class FileManager extends React.Component {
 
         this.serverInfoPanel = (
           <div>
-            <p><b>Refresh at:</b> {this.state.serverInfo.metadata.timestamp}</p>
-            <p><b>CPU Usage:</b> {this.state.serverInfo.cpu.percent}%</p>
+            <p><b>Refresh at: </b>{this.state.serverInfo.metadata.timestamp}</p>
+            <p><b>CPU Usage: </b>{this.state.serverInfo.cpu.percent}%</p>
             <p>
-              <b>Memory:</b>
+              <b>Memory: </b>
               {Math.round(this.state.serverInfo.memory.physical_total / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB in total,&nbsp;
               {Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB available
               {/* The fancy regex is used to add a thousands separator */}
@@ -1062,8 +1081,8 @@ class FileManager extends React.Component {
                       the scroll function of offcanvas will be broken. So now these attributes are
                       NOT added. */}
                       <div className="">
-                        <p>File Name:</p>
-                        <p>Size:</p>
+                        <p style={{ wordBreak: "break-all" }}><b>Name: </b>{this.state.selectedFile === null ? "NA" : this.state.selectedFile.name}</p>
+                        <p><b>Size: </b>{this.state.selectedFile === null ? "0" : (this.state.selectedFile.size / 1024 / 1024).toFixed(2) + "MB"}</p>
                       </div>
                       <div className="progress">
                         <div className="progress-bar" role="progressbar"
@@ -1075,7 +1094,7 @@ class FileManager extends React.Component {
                       <div>
                         <input onChange={this.onFileChange} type="file" className="my-3"></input>
                         <p>Note: Interestingly, while it may appear that the page only supports single-file upload, you can actually upload more
-                           files even if previous files are still uploading. (But multiple upload processes will share the same progress bar ¯\_(ツ)_/¯)</p>
+                           files even if previous ones are still being transferred. (But multiple upload processes will share the same progress bar ¯\_(ツ)_/¯)</p>
                       </div>                    
                 </div>
               </div>
@@ -1116,7 +1135,14 @@ class FileManager extends React.Component {
           </div>
         </div>
         <div>
-          <ul className="list-group" style={{ maxWidth: "1000px", marginLeft: "auto", marginRight: "auto" }}>
+          <ul className="list-group overflow-auto" style={{ maxWidth: "1000px", maxHeight: "100%", marginLeft: "auto", marginRight: "auto" }}>
+            {/* The maxHeight: 100% is used to solve a very nasty bug. The bug is like this:
+                First, it only happens on smartphone and will not happen on desktop browser. On a mobile device, if you have a long file list and
+                you try to open the context menu for the file items shown on the last page of the list (i.e. not necessarily the last one, but the ones
+                could be shown on the last page of the screen) you will notice that the poge will scroll up a little bit at the moment you click the
+                "more" button. I failed to find any solutions or even references to this bug online.
+                After a lot of trial-and-error, it turns out that if we set the maxHeight of the file list to the height of the monitor,
+                the bug disappears... */}
           {fileList}
           </ul>
         </div>
@@ -1125,3 +1151,10 @@ class FileManager extends React.Component {
     );
   }
 }
+
+ReactDOM.render(
+  <div>
+      <FileManager />
+  </div>,
+  document.querySelector('#root'),
+);

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<link rel="shortcut icon" href="{{app_address}}/static/favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://media.sz.lan/static/playback.css">
+<link rel="shortcut icon" href="{{app_address}}/static/favicon.svg">
+<link rel="stylesheet" href="{{app_address}}/static/manager.css">
 <link rel="stylesheet" href="{{app_address}}/static/lib/bootstrap-icons.{{mode}}-1.5.0.css">
 <link rel="stylesheet" href="{{app_address}}/static/lib/bootstrap.{{mode}}-5.0.1.css">
 <script src="{{app_address}}/static/lib/axios.{{mode}}-0.21.1.js"></script>
@@ -10,17 +10,24 @@
 <script src="{{app_address}}/static/lib/jquery-3.6.0.{{mode}}.js"></script>
 <script src="{{app_address}}/static/lib/react.{{mode}}-17.0.2.js"></script>
 <script src="{{app_address}}/static/lib/react-dom.{{mode}}-17.0.2.js"></script>
-<script src="https://media.sz.lan/static/common.js" type="text/jsx"></script>
-<script src="https://media.sz.lan/static/playback.js" type="text/jsx"></script>
+<script src="{{app_address}}/static/manager.js" type="text/jsx"></script>
 <html>
 <head>
-<title>Playback</title>
+<style>
+</style>
+<title>File Manager</title>
 </head>
-<script>
-  window.app_address = "{{ app_address | safe }}";
-  window.asset_dir = "{{ asset_dir | safe }}";
-  window.video_name = "{{ video_name | safe }}";
-</script>
+<style>
+  body {
+    padding-right: 0 !important;
+  }
+</style>
+<!-- 
+  This style is used to fixed the bug mentioned in the following link:
+  https://github.com/twbs/bootstrap/issues/27071
+  But the solution is found from this link:
+  https://stackoverflow.com/questions/32862394/bootstrap-modals-keep-adding-padding-right-to-body-after-closed
+-->
 <body>
   <div id="root"></div>
 </body>

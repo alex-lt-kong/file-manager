@@ -3,8 +3,7 @@
 from collections import OrderedDict
 from flask import Flask, render_template, Response, request, redirect, url_for
 from flask_cors import CORS
-from flask import request
-from PIL import Image, ImageFile
+from PIL import ImageFile
 from waitress import serve
 
 import click
@@ -21,7 +20,6 @@ import subprocess
 import sys
 import threading
 import werkzeug
-import zlib
 
 
 import importlib.machinery
@@ -43,8 +41,9 @@ app_address = ''
 # app_dir: the app's real address on the filesystem
 app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager'
+debug_mode = False
 external_script_dir = ''
-files_statistics = None
+file_stat = None
 fs_path = ''
 image_extensions = None
 log_path = f'/var/log/mamsds/{app_name}.log'
@@ -340,7 +339,7 @@ def raw_info_to_video_info(ri):
             if 'tags' in ri and 'language' in ri['tags']:
                 st['language'] = ri['tags']['language']
             else:
-                st['language'] = ''
+                st['language'] = 'unknown'
         elif ri['codec_type'] == 'attachment':
             if 'tags' in ri and 'filename' in ri['tags']:
                 st['filename'] = ri['tags']['filename']
@@ -407,7 +406,11 @@ def get_video_info():
         vic['creation_time'] = rif['tags']['creation_time']
     else:
         vic['creation_time'] = 'unknown'
-    vic['information_accuracy'] = rif['probe_score']
+    if 'bit_rate' in rif:
+        vic['bit_rate'] = str(round(float(rif['bit_rate']) / 1024 / 1024, 2)) + ' Mbps'
+    else:
+        vic['bit_rate'] = 'unknown'
+    vic['probe_score'] = rif['probe_score']
     # My understanding is that ffprobe gets information by actually
     # playing a short sample (e.g. 5 second) of the target video.
     # Given the short duration, it may not be 100% sure about the attributes
@@ -481,13 +484,13 @@ def play_video():
     asset_dir = request.args.get('asset_dir')
     video_name = request.args.get('video_name')
 
-    tricky_paras = werkzeug.url_encode({'asset_dir': asset_dir,
-                                        'filename': video_name})
-    # you need this URL encoding to handle some tricky characters...
-    return render_template(
-        'playback.html',
-        video_url=f'{app_address}/download/?{tricky_paras}&as_attachment=0',
-        subtitles_url=f'{app_address}/download/?{tricky_paras}.vtt')
+    global debug_mode
+
+    return render_template('playback.html',
+                           app_address=app_address,
+                           asset_dir=asset_dir,
+                           video_name=video_name,
+                           mode='development' if debug_mode else 'production')
 
 
 @app.route('/get-thumbnail/', methods=['GET'])
@@ -525,18 +528,21 @@ def download():
     except werkzeug.exceptions.NotFound:
         logging.exception(f'Parameters are {root_dir}, {asset_dir}')
         return Response('Potential chroot escape', 400)
+    except Exception:
+        logging.exception('')
+        return Response('Parameter error', 400)
 
-    if fid in files_statistics['content']:
+    if fid in file_stat['content']:
         last_download = dt.datetime.strptime(
-            files_statistics['content'][fid]['last_download'],
+            file_stat['content'][fid]['last_download'],
             '%Y-%m-%d %H:%M:%S')
         diff = (dt.datetime.now() - last_download).total_seconds()
         if diff > 3600:
-            files_statistics['content'][fid]['downloads'] += 1
+            file_stat['content'][fid]['downloads'] += 1
     else:
-        files_statistics['content'][fid] = {}
-        files_statistics['content'][fid]['downloads'] = 1
-    files_statistics['content'][fid]['last_download'] = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        file_stat['content'][fid] = {}
+        file_stat['content'][fid]['downloads'] = 1
+    file_stat['content'][fid]['last_download'] = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     # Note that logic here is:
     # A download is counted only if it happens at least one hour after the last
     # download. But we will update the last_download no matter if a download
@@ -547,7 +553,7 @@ def download():
     # the 10th download instead of the 1st download.
     try:
         with open(fs_path, 'w') as f:
-            json.dump(files_statistics, f, indent=2, sort_keys=True)
+            json.dump(file_stat, f, indent=2, sort_keys=True)
     except Exception:
         logging.exception('')
         return Response('Internal error: unable to save files statistics', 500)
@@ -592,50 +598,52 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
         # here we use method under os.path to do the job.
         fn = entry.name
         file_info['content'][fn] = {}
-        file_info['content'][fn]['filename'] = fn
+        fic = file_info['content'][fn]
+        fic['filename'] = fn
         # Repeat the name here so that we can just pass an
         # file_info['content'][fn] object.
-        file_info['content'][fn]['file_type'] = 4
-        file_info['content'][fn]['asset_dir'] = asset_dir
-        file_info['content'][fn]['media_type'] = -1
-        file_info['content'][fn]['extension'] = ''
+        fic['file_type'] = 4
+        fic['asset_dir'] = asset_dir
+        fic['media_type'] = -1
+        fic['extension'] = ''
 
         if os.path.ismount(entry.path):
-            file_info['content'][fn]['file_type'] = 2
+            fic['file_type'] = 2
         elif os.path.islink(entry.path):
-            file_info['content'][fn]['file_type'] = 3
+            fic['file_type'] = 3
         elif os.path.isfile(entry.path):
             file_info['content'][fn]['file_type'] = 1
             basename, ext = os.path.splitext(fn)
-            file_info['content'][fn]['basename'] = basename
-            file_info['content'][fn]['extension'] = ext
+            fic['basename'] = basename
+            fic['extension'] = ext
             file_path = flask.safe_join(abs_path, fn)
             if file_path is None:
                 # implies chroot escape attempt!
                 raise PermissionError('chroot escape attempt detected???')
             filesize = os.path.getsize(file_path)
-            file_info['content'][fn]['size'] = filesize
+            fic['size'] = filesize
             if ext.lower() in video_extensions:
-                file_info['content'][fn]['media_type'] = 2
+                fic['media_type'] = 2
             elif ext.lower() in image_extensions:
-                file_info['content'][fn]['media_type'] = 1
+                fic['media_type'] = 1
             else:
-                file_info['content'][fn]['media_type'] = 0
+                fic['media_type'] = 0
 
             fid = get_file_id(file_path)
             # Tried using crc32 and partial crc32 here...
             # It turned out that any content-based checksum is just too
             # expensive to use...
             file_info['content'][fn]['stat'] = {}
-            if fid not in files_statistics['content']:
-                file_info['content'][fn]['stat']['downloads'] = 0
-                file_info['content'][fn]['stat']['last_download'] = ''
+
+            if fid not in file_stat['content']:
+                fic['stat']['downloads'] = 0
+                fic['stat']['last_download'] = ''
             else:
-                file_info['content'][fn]['stat']['downloads'] = files_statistics['content'][fid]['downloads']
-                file_info['content'][fn]['stat']['last_download'] = files_statistics['content'][fid]['last_download']
+                fic['stat']['downloads'] = file_stat['content'][fid]['downloads']
+                fic['stat']['last_download'] = file_stat['content'][fid]['last_download']
 
         elif os.path.isdir(entry.path):
-            file_info['content'][fn]['file_type'] = 0
+            fic['file_type'] = 0
     scanner.close()
 
     return file_info
@@ -666,7 +674,7 @@ def get_file_list():
         return Response('Potential chroot escape', 400)
     except Exception:
         logging.exception('')
-        return Response(f'Internal Error', 500)
+        return Response('Internal Error', 500)
 
     return flask.jsonify(file_info)
 
@@ -674,7 +682,10 @@ def get_file_list():
 @app.route('/', methods=['GET', 'POST'])
 def index():
 
-    return render_template('index.html')
+    global app_address, debug_mode
+    return render_template('manager.html',
+                           app_address=app_address,
+                           mode='development' if debug_mode else 'production')
 
 
 def stop_signal_handler(*args):
@@ -690,10 +701,11 @@ def stop_signal_handler(*args):
 def main(debug):
 
     port = -1
-    global allowed_ext, app_address, root_dir, thumbnails_path
-    global external_script_dir, files_statistics, fs_path, log_path
+    global allowed_ext, app_address, debug_mode, root_dir, thumbnails_path
+    global external_script_dir, file_stat, fs_path, log_path
     global image_extensions, video_extensions
 
+    debug_mode = debug
     try:
         with open(settings_path, 'r') as json_file:
             json_str = json_file.read()
@@ -715,7 +727,7 @@ def main(debug):
     try:
         with open(fs_path, 'r') as json_file:
             json_str = json_file.read()
-            files_statistics = json.loads(json_str)
+            file_stat = json.loads(json_str)
     except Exception as e:
         print(f'Unable to read statistics: {e}')
         return
@@ -729,7 +741,7 @@ def main(debug):
     )
     logging.info(f'{app_name} started')
 
-    if debug:
+    if debug_mode:
         print('Running in debug mode')
         logging.info('Running in debug mode')
     else:
@@ -742,7 +754,7 @@ def main(debug):
                                 kwargs={'settings_path': settings_path,
                                         'service_name': f'{app_name}',
                                         'log_path': log_path,
-                                        'delay': 0 if debug else 300})
+                                        'delay': 0 if debug_mode else 300})
     th_email.start()
 
     serve(app, host="127.0.0.1", port=port)
