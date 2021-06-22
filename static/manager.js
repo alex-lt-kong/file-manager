@@ -16,38 +16,6 @@ class ModalVideoInfo extends React.Component {
     this.fetchDataFromServer();
   }
 
-  syntaxHighlight(json) {
-    // This method needs corresponding css settings to work.
-    if (json === 'null') {
-      return (
-        <div className="d-flex align-items-center justify-content-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-        );
-    }
-
-    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    let pretty_json = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        var cls = 'number';
-        if (/^"/.test(match)) {
-            if (/:$/.test(match)) {
-                cls = 'key';
-            } else {
-                cls = 'string';
-            }
-        } else if (/true|false/.test(match)) {
-            cls = 'boolean';
-        } else if (/null/.test(match)) {
-            cls = 'null';
-        }
-        return '<span class="' + cls + '">' + match + '</span>';
-    })
-    pretty_json = {__html: pretty_json}
-    return  <pre dangerouslySetInnerHTML={pretty_json}></pre>;
-  }
-
   fetchDataFromServer() {                    
     URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
     console.log('Fetching: ' + URL);
@@ -73,11 +41,23 @@ class ModalVideoInfo extends React.Component {
 
   render() {
     
-    if (this.state.show === false || this.state.videoInfo === false) {
+    if (this.state.show === false) {
       return null;
     }
 
-    let json_html = this.syntaxHighlight(JSON.stringify(this.state.videoInfo, null, 2));
+    let json_html = null;
+    if (this.state.videoInfo === null) { 
+      json_html = (
+        <div className="d-flex align-items-center justify-content-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      );
+    }
+    else { 
+      json_html = syntaxHighlight(JSON.stringify(this.state.videoInfo.content, null, 2));
+    }
 
     return (
     <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="videoInformationModalTitle" aria-hidden="true">
@@ -1058,15 +1038,14 @@ class FileManager extends React.Component {
       );
     }
 
-    return (
-      
+    return (      
       <div>
         <div className="navbar navbar-expand-lg navbar-light bg-light sticky-top">
           <div className="row container-fluid">
             <div className="col-md-auto">
             {/* Use col-{breakpoint}-auto classes to size columns based on the natural width of their content. */}
               
-            <button className="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom" >
+            <button className="btn btn-primary mx-1 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom" >
                 <i className="bi bi-upload"></i> Upload
               </button>
               <div className="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
@@ -1100,8 +1079,8 @@ class FileManager extends React.Component {
               </div>
 
               {/* button and input is bound using jQuery... */}
-              <button type="button" className="btn btn-primary mx-2 my-1" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i> New</button>               
-              <button className="btn btn-primary mx-2 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo" aria-controls="offcanvasBottomServerInfo"
+              <button type="button" className="btn btn-primary mx-1 my-1" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i> New</button>               
+              <button className="btn btn-primary mx-1 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo" aria-controls="offcanvasBottomServerInfo"
                   onClick={this.onServerInfoClick}>
                 <i className="bi bi-gear"></i> Info
               </button>
@@ -1121,7 +1100,7 @@ class FileManager extends React.Component {
               </div>
             </div>
             <div className="col">
-              <div className="input-group d-flex justify-content-between mx-2 my-1">
+              <div className="input-group d-flex justify-content-between mx-1 my-1">
                 {/* d-flex and justify-content-between keep components in one line*/}
                 <span className="input-group-text" id="basic-addon1">Path</span>
                 <input type="text" className="form-control" placeholder="Address"

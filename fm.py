@@ -399,15 +399,20 @@ def get_video_info():
 
     rif = raw_info['format']
     if 'duration' in rif:
-        vic['duration'] = str(dt.timedelta(seconds=float(rif['duration'])))
+        vic['duration'] = str(dt.timedelta(
+            seconds=float(rif['duration'])))[:-7]
     else:
         vic['duration'] = 'unknown'
-    if 'tags' in rif and 'creation_time' in rif['tags']:
-        vic['creation_time'] = rif['tags']['creation_time']
-    else:
-        vic['creation_time'] = 'unknown'
+    try:
+        vic['creation'] = rif['tags']['creation_time'][:10]
+        # Z is related to timezone information. But it is not quite relevant
+        # here so we just ignore it!
+    except Exception as e:
+        print(e)
+        vic['creation'] = 'unknown'
     if 'bit_rate' in rif:
-        vic['bit_rate'] = str(round(float(rif['bit_rate']) / 1024 / 1024, 2)) + ' Mbps'
+        vic['bit_rate'] = str(
+            round(float(rif['bit_rate']) / 1024 / 1024, 2)) + ' Mbps'
     else:
         vic['bit_rate'] = 'unknown'
     vic['probe_score'] = rif['probe_score']
@@ -484,12 +489,25 @@ def play_video():
     asset_dir = request.args.get('asset_dir')
     video_name = request.args.get('video_name')
 
+    try:
+        fid = get_file_id(flask.safe_join(root_dir, asset_dir[1:], video_name))
+    except Exception:
+        logging.exception(f'parameters: {root_dir}, {asset_dir}, {video_name}')
+        return Response('Parameters error')
+    if fid in file_stat['content']:
+        views = file_stat['content'][fid]['downloads']
+        last_view = file_stat['content'][fid]['last_download']
+    else:
+        views = 0
+        last_view = 'No record'
+
     global debug_mode
 
     return render_template('playback.html',
                            app_address=app_address,
                            asset_dir=asset_dir,
                            video_name=video_name,
+                           views=views, last_view=last_view,
                            mode='development' if debug_mode else 'production')
 
 
@@ -537,14 +555,15 @@ def download():
             file_stat['content'][fid]['last_download'],
             '%Y-%m-%d %H:%M:%S')
         diff = (dt.datetime.now() - last_download).total_seconds()
-        if diff > 3600:
+        if diff > 7200:
             file_stat['content'][fid]['downloads'] += 1
     else:
         file_stat['content'][fid] = {}
         file_stat['content'][fid]['downloads'] = 1
-    file_stat['content'][fid]['last_download'] = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    file_stat['content'][fid]['last_download'] = dt.datetime.now().strftime(
+        '%Y-%m-%d %H:%M:%S')
     # Note that logic here is:
-    # A download is counted only if it happens at least one hour after the last
+    # A download is counted only if it happens at least 2 hours after the last
     # download. But we will update the last_download no matter if a download
     # is counted or not.
     # The result is that if you download the file 10 times with a ten-minute
