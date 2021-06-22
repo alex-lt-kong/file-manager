@@ -339,7 +339,7 @@ class ModalRemove extends React.Component {
             </div>
             <div className="modal-body">
             <div className="mb-3">
-                <span className="form-label" style={{ wordWrap: "break-word" }}>
+                <span className="form-label" style={{ wordWrap: "break-word", wordBreak: "break-all" }}>
                 Remove file <strong>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong>?
                 </span>
                 <div className="accordion my-2" id="accordionRemove">
@@ -439,6 +439,18 @@ class ModalTranscode extends React.Component {
     this.setState({
       resolution: event.target.value
     });
+
+    var autoCRF = 0;
+    if (event.target.value === '1080') { autoCRF = 31; }
+    else if (event.target.value === '720') { autoCRF = 32; }
+    else if (event.target.value === '480') { autoCRF = 33; }
+    else if (event.target.value === '360') { autoCRF = 36; }
+    else if (event.target.value === '240') { autoCRF = 37; }
+    if (autoCRF != 0) {
+      this.setState({
+        crf: autoCRF
+      });
+    }
   }
 
   onCRFChange(event) {
@@ -510,12 +522,11 @@ class ModalTranscode extends React.Component {
                         <div className="accordion-body">
                           <ol>
                             <li>The server will start a separate ffmpeg process to do the conversion in a separate thread;</li>
-                            <li>A log file will be generated at the end of the conversion; Note that FFMPEG will output all the log to stderr instead of stdout for whateve reason.</li>
                             <li>The constant rate factor (CRF) can be from 0-63. Lower values mean better quality;
                             According to <a href="https://trac.ffmpeg.org/wiki/Encode/VP9" target="_blank">FFMPEG's manual</a>, for
                             WebM format (VP9 video encoder), recommended values range from 15-35;</li>
-                            <li>According to <a href="https://developers.google.com/media/vp9/settings/vod/" target="_blank">
-                            Google's recommendation</a>, the CRF for different resolutions are: 36 for 360p, 33 for 480p, 32 for 720p and 31 for 1080p;</li>
+                            <li>A CRF value will be set according to <a href="https://developers.google.com/media/vp9/settings/vod/" target="_blank">
+                            Google's recommendation</a>, after selecting the video quality;</li>
                             <li>According to <a href="https://developers.google.com/media/vp9/the-basics" target="_blank">
                             Google's manual</a>, for VP9, 480p is considered a safe resolution for a broad range of mobile and web devices.</li>
                             <li>Since modern browsers will pick the first audio stream (ID==0) and usually manual audio stream selection is not allowed,
@@ -756,16 +767,14 @@ class ContextMenu extends React.Component {
   render() {
     return (
       <div className="dropdown"  href = "javascript:return false;" style={{position: "relative" }} >
-        <svg id="dropdownContextMenuButton" className="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style={{ cursor: "pointer" }}
-          xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-three-dots-vertical" viewBox="0 0 16 16">
-          <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
-        </svg>
+        <i id="dropdownContextMenuButton" className="bi bi-three-dots-vertical" data-bs-toggle="dropdown"
+           aria-expanded="false" style={{ cursor: "pointer", fontSize: "1.2em" }} ></i>
         <ul className="dropdown-menu" aria-labelledby="dropdownContextMenuButton">
-          <li><a className="dropdown-item" style={{ cursor: "pointer" }}  onClick={this.onMoveButtonClick}>Move</a></li>
-          <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
-          <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
-          <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
-          <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</a></li>
+          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onMoveButtonClick}>Move</a></li>
+          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
+          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
+          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
+          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</a></li>
         </ul>
         {this.Modal}
       </div>

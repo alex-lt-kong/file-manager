@@ -1,7 +1,9 @@
 settings.json
 plan.json
 notes.json
-resources/
+resources/files/
+resources/thumbnails/
+resources/files.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
