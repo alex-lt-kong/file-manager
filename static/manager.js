@@ -80,6 +80,114 @@ class ModalVideoInfo extends React.Component {
   }
 }
 
+class ModalExtractSubtitles extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      appAddress: props.appAddress,
+      assetDir: props.assetDir,
+      refreshFileList: props.refreshFileList,
+      streamNo: 0,
+      videoName: props.videoName,
+      modalClose: props.closed
+    };
+    this.handleCloseClick = this.handleCloseClick.bind(this);
+    this.onstreamNoChange = this.onstreamNoChange.bind(this);
+    this.handleSubmitClick = this.handleSubmitClick.bind(this);
+  }
+
+  componentDidMount() {
+    $(this.modal).modal('show');     
+  }
+
+  handleSubmitClick() {
+    this.postDataToServer();    
+  }
+
+  postDataToServer() {                    
+    const payload = new FormData();
+    payload.append('asset_dir', this.state.assetDir);
+    payload.append('video_name', this.state.videoName);
+    payload.append('stream_no', this.state.streamNo);
+    axios({
+      method: "post",
+      url: this.state.appAddress + "/extract-subtitles/",
+      data: payload,
+    })
+    .then(response => {
+      this.handleCloseClick();
+      if (this.state.refreshFileList != null) {
+        this.state.refreshFileList();
+      }
+    })
+    .catch(error => {
+      alert('Unable to extract subtitles:\n' + error.response.data);
+      console.log(error);
+    });
+  }
+  
+  onstreamNoChange(event) {
+    this.setState({
+      streamNo: event.target.value
+    });
+  }
+
+  handleCloseClick() {
+    $(this.modal).modal('hide');
+    if (this.state.modalClose != null) {
+      this.state.modalClose();
+    }
+  }
+
+  render() {
+    return (
+      <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-scrollable" role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title" id="exampleModalLabel">Extract Subtitles</h5>
+            </div>
+            <div className="modal-body">
+              <div className="mb-3">
+                <label htmlFor="folder-name-input" className="form-label">
+                  Specify the stream ID (starting from 0) of the subtitles to be extracted:
+                </label>
+                <input id="folder-name-input" type="text" className="form-control"
+                    placeholder="Input folder name" value={this.state.streamNo} onChange={this.onstreamNoChange}/>   
+                <div className="accordion my-2" id="accordionRemove">
+                  <div className="accordion-item">
+                      <h2 className="accordion-header" id="headingRemove">
+                      <button className="accordion-button collapsed" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
+                      What's Happening Under the Hood?
+                      </button>
+                      </h2>
+                      <div id="collapseRemoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
+                      <div className="accordion-body">
+                        <ol>
+                          <li>Subtitle extraction is much less expensive compared with transcoding. You could expect the result within minutes;</li>
+                          <li>You can check the ID of a stream by using the Video Info function;</li>
+                          <li>Internally, the server uses ffmpeg to do the extraction. If ffmepg returns non-zero exit code, a log file will be generated.</li>
+                        </ol>
+                      </div>
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
+              <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>Submit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+
 class ModalMkdir extends React.Component {
 
   constructor(props) {
@@ -235,32 +343,32 @@ class ModalRemove extends React.Component {
                 Remove file <strong>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong>?
                 </span>
                 <div className="accordion my-2" id="accordionRemove">
-                <div className="accordion-item">
-                    <h2 className="accordion-header" id="headingRemove">
-                    <button className="accordion-button collapsed" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
-                    What's Happening Under the Hood?
-                    </button>
-                    </h2>
-                    <div id="collapseRemoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
-                    <div className="accordion-body">
-                      <ol>
-                        <li>The server returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
-                        os.path.ismount()</a> returns true;</li>
-                        <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.unlink" target="_blank">
-                        os.unlink()</a> if <a href="https://docs.python.org/3/library/os.path.html#os.path.islink" target="_blank">
-                        os.path.islink()</a> returns true;</li>
-                        <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.remove" target="_blank">
-                        os.remove()</a> if <a href="https://docs.python.org/3/library/os.path.html#os.path.isfile" target="_blank">
-                        os.path.isfile()</a> returns true;</li>
-                        <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.rmdir" target="_blank">
-                        shutil.rmtree()</a> if <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" target="_blank">
-                        os.path.isdir()</a> returns true;</li>
-                        <li>The serve returns an error if all of the above conditions are not met.</li>
-                      </ol>
-                    </div>
-                    </div>
-                </div>
+                  <div className="accordion-item">
+                      <h2 className="accordion-header" id="headingRemove">
+                      <button className="accordion-button collapsed" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
+                      What's Happening Under the Hood?
+                      </button>
+                      </h2>
+                      <div id="collapseRemoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
+                      <div className="accordion-body">
+                        <ol>
+                          <li>The server returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
+                          os.path.ismount()</a> returns true;</li>
+                          <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.unlink" target="_blank">
+                          os.unlink()</a> if <a href="https://docs.python.org/3/library/os.path.html#os.path.islink" target="_blank">
+                          os.path.islink()</a> returns true;</li>
+                          <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.remove" target="_blank">
+                          os.remove()</a> if <a href="https://docs.python.org/3/library/os.path.html#os.path.isfile" target="_blank">
+                          os.path.isfile()</a> returns true;</li>
+                          <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.rmdir" target="_blank">
+                          shutil.rmtree()</a> if <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" target="_blank">
+                          os.path.isdir()</a> returns true;</li>
+                          <li>The serve returns an error if all of the above conditions are not met.</li>
+                        </ol>
+                      </div>
+                      </div>
+                  </div>
                 </div>
             </div>
             </div>
@@ -278,14 +386,16 @@ class ModalRemove extends React.Component {
 class ModalTranscode extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
+    this.state = {      
       appAddress: props.appAddress,
+      audioID: -1,
       fileInfo: props.fileInfo,
       crf: 30,
       refreshFileList: props.refreshFileList,
       resolution: -1,
       show: props.show
     };
+    this.onAudioIDChange = this.onAudioIDChange.bind(this);
     this.handleCloseClick = this.handleCloseClick.bind(this);
     this.onCRFChange = this.onCRFChange.bind(this);
     this.onResolutionChange = this.onResolutionChange.bind(this);
@@ -304,6 +414,7 @@ class ModalTranscode extends React.Component {
   postDataToServer() {                    
     const payload = new FormData();
     payload.append('asset_dir', this.state.fileInfo.asset_dir);
+    payload.append('audio_id', this.state.audioID);
     payload.append('video_name', this.state.fileInfo.filename);
     payload.append('crf', this.state.crf);
     payload.append('resolution', this.state.resolution);
@@ -336,6 +447,12 @@ class ModalTranscode extends React.Component {
       });
   }
 
+  onAudioIDChange(event) {
+    this.setState({
+      audioID: event.target.value
+      });
+  }
+  
   handleCloseClick() {
     $(this.modal).modal('hide');
   }
@@ -361,7 +478,10 @@ class ModalTranscode extends React.Component {
                   <div className="input-group mb-3">
                     <span className="input-group-text">CRF</span>
                     <input type="text" className="form-control"
-                    placeholder="CRF Here" value={this.state.crf} onChange={this.onCRFChange}/>
+                           placeholder="CRF Here" value={this.state.crf} onChange={this.onCRFChange} />
+                    <span class="input-group-text">Audio ID</span>
+                    <input type="text" class="form-control"
+                           placeholder="Audio stream ID" value={this.state.audioID} onChange={this.onAudioIDChange} />
                   </div>
 
                   <div className="input-group mb-3">
@@ -390,7 +510,6 @@ class ModalTranscode extends React.Component {
                         <div className="accordion-body">
                           <ol>
                             <li>The server will start a separate ffmpeg process to do the conversion in a separate thread;</li>
-                            <li>FFMPEG will overwrite the existing file with the same name;</li>
                             <li>A log file will be generated at the end of the conversion; Note that FFMPEG will output all the log to stderr instead of stdout for whateve reason.</li>
                             <li>The constant rate factor (CRF) can be from 0-63. Lower values mean better quality;
                             According to <a href="https://trac.ffmpeg.org/wiki/Encode/VP9" target="_blank">FFMPEG's manual</a>, for
@@ -399,6 +518,9 @@ class ModalTranscode extends React.Component {
                             Google's recommendation</a>, the CRF for different resolutions are: 36 for 360p, 33 for 480p, 32 for 720p and 31 for 1080p;</li>
                             <li>According to <a href="https://developers.google.com/media/vp9/the-basics" target="_blank">
                             Google's manual</a>, for VP9, 480p is considered a safe resolution for a broad range of mobile and web devices.</li>
+                            <li>Since modern browsers will pick the first audio stream (ID==0) and usually manual audio stream selection is not allowed,
+                                when doing transcoding, you can pick the preferred one by specifying its ID so that it becomes the only audio stream which
+                                will definitely be played by browsers. You can find the ID using Video Info function.</li>
                           </ol>
                         </div>
                       </div>
@@ -538,6 +660,7 @@ class ContextMenu extends React.Component {
       showModal: false,
       fileInfo: props.fileInfo
     };
+    this.onExtractSubtitlesButtonClick = this.onExtractSubtitlesButtonClick.bind(this);
     this.onMoveButtonClick = this.onMoveButtonClick.bind(this);
     this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);    
     this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
@@ -561,6 +684,26 @@ class ContextMenu extends React.Component {
     }));
   }
   
+  onExtractSubtitlesButtonClick(event) {
+
+    this.Modal = (
+      <ModalExtractSubtitles
+           appAddress={this.state.appAddress}
+           key={this.state.modalKey} 
+           assetDir={this.state.fileInfo.asset_dir}
+           videoName={this.state.fileInfo.filename}           
+           refreshFileList={this.state.refreshFileList}
+           show={true} />
+        // By adding a key attribute, Modal will be created each time, so we
+        //  can pass different show attribute to it.
+    );
+    this.setState(prevState => ({
+      showModal: true,
+      modalKey: prevState.modalKey + 1
+    }));
+  }
+  
+
   onVideoInfoButtonClick(event) {
     this.Modal = (
       <ModalVideoInfo
@@ -622,6 +765,7 @@ class ContextMenu extends React.Component {
           <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
           <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
           <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
+          <li><a className="dropdown-item" style={{ cursor: "pointer" }} onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</a></li>
         </ul>
         {this.Modal}
       </div>

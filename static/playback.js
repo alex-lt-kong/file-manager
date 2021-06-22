@@ -9,10 +9,14 @@ class PlayBack extends React.Component {
       lastView: props.lastView,
       videoInfo: null,
       videoName: props.videoName,
+      videoPlaybackRate: 1,
       views: props.views,
       username: null
     };
-    
+
+    this.onPlaybackSpeedInputChange = this.onPlaybackSpeedInputChange.bind(this);
+    this.onPlayFasterButtonClick = this.onPlayFasterButtonClick.bind(this);
+    this.onPlaySlowerButtonClick = this.onPlaySlowerButtonClick.bind(this);
     this.onSubtitlesURLTextareaChange = this.onSubtitlesURLTextareaChange.bind(this);
     this.onCanPlayEvent = this.onCanPlayEvent.bind(this);
     this.videoURL = this.state.appAddress + '/download/?asset_dir=' + 
@@ -21,6 +25,31 @@ class PlayBack extends React.Component {
     this.videoRef = React.createRef();
   }
 
+  onPlaybackSpeedInputChange(event) {
+    console.log('onPlaybackSpeedInputChange');
+    if (isNaN(parseFloat(event.target.value)) || parseFloat(event.target.value) <= 0.2 ||
+        parseFloat(event.target.value) > 10) { return; }
+    console.log('onPlaybackSpeedInputChange continue');
+    console.log(parseFloat(event.target.value))
+    this.setState({
+      videoPlaybackRate: parseFloat(event.target.value)
+    }, () => {this.videoRef.current.playbackRate = this.state.videoPlaybackRate});
+  }
+
+  onPlayFasterButtonClick(event) {
+    this.setState(prevState =>({
+      videoPlaybackRate: prevState.videoPlaybackRate + 0.1
+    }), () => {this.videoRef.current.playbackRate = this.state.videoPlaybackRate});
+  }
+
+  onPlaySlowerButtonClick(event) {
+    if (this.state.videoPlaybackRate <= 0.2) { return; }
+
+    this.setState(prevState =>({
+      videoPlaybackRate: prevState.videoPlaybackRate - 0.1
+    }), () => {this.videoRef.current.playbackRate = this.state.videoPlaybackRate});
+  }
+  
   onCanPlayEvent(event) {
     this.videoRef.current.playbackRate = 3;
   }
@@ -89,15 +118,15 @@ class PlayBack extends React.Component {
                   </div>
                 </div>
               </div>
-              <div class="accordion-item">
-                <h2 class="accordion-header" id="headingTwo">
+              <div className="accordion-item">
+                <h2 className="accordion-header" id="headingTwo">
                   <button className={`accordion-button ${screen.width > 1000 ? "" : "collapsed"}`} type="button" data-bs-toggle="collapse"
                           data-bs-target="#collapseTwo" aria-expanded={screen.width > 1000} aria-controls="collapseTwo">
                     Technical Information
                   </button>
                 </h2>
                 <div id="collapseTwo" className={`accordion-collapse collapse ${screen.width > 1000 ? "show" : ""}`} aria-labelledby="headingTwo">
-                  <div class="accordion-body">
+                  <div className="accordion-body">
                   {json_html}
                   </div>
                 </div>
@@ -106,28 +135,30 @@ class PlayBack extends React.Component {
           </div>
           <div className="col-sm-9 col-md-push-9">
             {/* A combination of sm and number makes it work */}
-            <video style={{ width: "100%", maxHeight: "90vh", backgroundColor: "black" }} ref={this.videoRef} onCanPlay={this.onCanPlayEvent} playbackRate="5" autoPlay controls>
+            <video style={{ width: "100%", maxHeight: "90vh", backgroundColor: "black" }} ref={this.videoRef}
+                   playbackRate="5" autoPlay={true} controls>
               <source src={this.videoURL} />
-              <textarea class="form-control" aria-label="With textarea" onChange={this.onSubtitlesURLTextareaChange}>{this.state.subtitlesURL}</textarea>
+              <textarea className="form-control" aria-label="With textarea" onChange={this.onSubtitlesURLTextareaChange} value={this.state.subtitlesURL} />
               <track label="English" kind="subtitles" srcLang="en" src={this.state.subtitlesURL} default />
             Your browser does not support the video tag.
             </video>
 
-            <div class="container-fluid">
-              <div class="row">
-                <div class="col-lg">
+            <div className="container-fluid px-0">
+              <div className="row">
+                <div className="col-xl-9">
                   <div className="input-group">
-                          <span className="input-group-text">Subs</span>
-                          <textarea className="form-control" aria-label="With textarea" rows="4"
+                          <span className="input-group-text font-monospace">Subs&nbsp;</span>
+                          <textarea className="form-control" aria-label="With textarea" rows={screen.width > 1000 ? 1 : 2} style={{fontSize: "1em", wordBreak: "break-all" }}
                                     onChange={this.onSubtitlesURLTextareaChange} value={this.state.subtitlesURL}></textarea>
                   </div>                        
                 </div>
-                <div class="col-lg">                  
-                <div class="input-group">
-                          <span class="input-group-text">Speed</span>
-                          <input type="text" class="form-control" placeholder="Playback speed" aria-label="Recipient's username with two button addons" />
-                          <button class="btn btn-primary" type="button"><i class="bi bi-chevron-double-left"></i></button>
-                          <button class="btn btn-primary" type="button"><i class="bi bi-chevron-double-right"></i></button>
+                <div className="col-xl-3">                  
+                <div className="input-group">
+                          <span className="input-group-text font-monospace">Speed</span>
+                          <input type="text" className="form-control" placeholder="Playback speed"
+                                 onChange={this.onPlaybackSpeedInputChange} value={this.state.videoPlaybackRate.toFixed(1)} />
+                          <button className="btn btn-primary" type="button" onClick={this.onPlaySlowerButtonClick}><i className="bi bi-chevron-double-left"></i></button>
+                          <button className="btn btn-primary" type="button" onClick={this.onPlayFasterButtonClick}><i className="bi bi-chevron-double-right"></i></button>
                         </div>
                 </div>
               </div>

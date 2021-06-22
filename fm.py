@@ -28,6 +28,7 @@ loader = importlib.machinery.SourceFileLoader('emailer',
 emailer = loader.load_module()
 
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 thread_lock = threading.Lock()
 
@@ -42,6 +43,7 @@ app_address = ''
 app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager'
 debug_mode = False
+direct_open_ext = None
 external_script_dir = ''
 file_stat = None
 fs_path = ''
@@ -273,17 +275,23 @@ def remove():
     return Response('success', 200)
 
 
-def convert_video_format(input_path: str, output_path: str,
-                         crf: int, resolution: int):
+def video_transcoding_thread(input_path: str, output_path: str,
+                         crf: int, resolution: int, audio_id: int):
 
     ffmpeg_cmd = ['/usr/bin/ffmpeg', '-y',  # -y: overwrite output file
                   '-i', input_path, '-vf', f'scale={resolution}:-1',
                   '-map', '0:v',
-                  '-map', '0:a?',
+                  # -map 0:v means we select all the video streams from the
+                  # first input (i.e., stream[0]). What if we just want to
+                  # keep the first video stream from the first input?
+                  # we pass -map 0:v:0
+                  '-map', '0:a' + (f':{audio_id}' if audio_id >= 0 else '?'),
                   # -map 0:a: ffmpeg will keep all the audio streams, the
                   # trailing ? means ffmpeg will ignore this option if there
                   # are no audio streams, otherwise ffmpeg will complaint
-                  # and quit
+                  # and quit.
+                  # On the other hand, -map -0:a:1 means we only keep the 2nd
+                  # audio stream from the 1st input
                   # https://trac.ffmpeg.org/wiki/Map#Examples
                   '-c:v', 'libvpx-vp9', '-c:a', 'libopus',
                   # use libvpx-vp9 video encoder and libopus audio codec
@@ -327,11 +335,13 @@ def convert_video_format(input_path: str, output_path: str,
 def raw_info_to_video_info(ri):
 
     st = OrderedDict()
+    # Having an OrderedDict() is not enough, you need to set
+    # app.config['JSON_SORT_KEYS'] = False to pass the order to the client.
     st['type'] = ri['codec_type']
     st['format'] = ri['codec_name']
 
     if ri['codec_type'] == 'video':
-        # Note that video includes both videos and images
+        # Note that "video" in this context includes both videos and images
         st['width'] = ri['width']
         st['height'] = ri['height']
     else:
@@ -349,6 +359,59 @@ def raw_info_to_video_info(ri):
             st = f'Unknown codec_type: {ri["codec_type"]}'
 
     return st
+
+
+def extract_subtitles_thread(video_path: str, stream_no: int):
+
+    ffmpeg_cmd = ['/usr/bin/ffmpeg', '-y', '-i', video_path,
+                  '-map', f'0:s:{stream_no}', '-f', 'webvtt',
+                  video_path + '.vtt']
+
+    p = subprocess.Popen(
+            args=ffmpeg_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+    stdout, stderr = p.communicate()
+
+    if p.returncode != 0:
+        with open(video_path + '_log.txt', 'w+') as f:
+            f.write(f'===== return_code =====\n{p.returncode}\n\n\n')
+            f.write(f'===== std_output =====\n{stdout.decode("utf-8")}\n\n\n')
+            f.write(f'===== std_err =====\n{stderr.decode("utf-8")}')
+
+
+@app.route('/extract-subtitles/', methods=['POST'])
+def extract_subtitles():
+
+    if (
+            'asset_dir' not in request.form or
+            'video_name' not in request.form or
+            'stream_no' not in request.form
+            ):
+        return Response('asset_dir, video_name or stream_no specified', 400)
+    asset_dir = request.form['asset_dir']
+    video_name = request.form['video_name']
+
+    try:
+        video_path = flask.safe_join(root_dir, asset_dir[1:], video_name)
+        # safe_join can prevent base directory escaping
+        # [1:] is used to get ride of the initial /;
+        # otherwise safe_join will consider it a chroot escape attempt
+
+        stream_no = int(request.form['stream_no'])
+    except werkzeug.exceptions.NotFound:
+        logging.exception(f'Parameters are {asset_dir}, {video_name}')
+        return Response('Potential chroot escape', 400)
+    except ValueError:
+        return Response('Parameters incorrect', 400)
+    if os.path.isfile(video_path) is False:
+        return Response('Video file does not exist', 400)
+
+    threading.Thread(target=extract_subtitles_thread,
+                     args=(video_path, stream_no)).start()
+
+    return Response('Subtitles extracted', 200)
 
 
 @app.route('/get-video-info/', methods=['GET'])
@@ -394,22 +457,25 @@ def get_video_info():
     # sensitive information such as real filesystem path.
 
     video_info = OrderedDict()
+    # Having an OrderedDict() is not enough, you need to set
+    # app.config['JSON_SORT_KEYS'] = False to pass the order to the client.
     video_info['content'] = OrderedDict()
     vic = video_info['content']
-
     rif = raw_info['format']
-    if 'duration' in rif:
-        vic['duration'] = str(dt.timedelta(
-            seconds=float(rif['duration'])))[:-7]
-    else:
-        vic['duration'] = 'unknown'
+
     try:
         vic['creation'] = rif['tags']['creation_time'][:10]
         # Z is related to timezone information. But it is not quite relevant
         # here so we just ignore it!
     except Exception as e:
-        print(e)
-        vic['creation'] = 'unknown'
+        vic['creation'] = f'unknown: {e}'
+
+    if 'duration' in rif:
+        vic['duration'] = str(dt.timedelta(
+            seconds=float(rif['duration'])))[:-7]
+    else:
+        vic['duration'] = 'unknown'
+
     if 'bit_rate' in rif:
         vic['bit_rate'] = str(
             round(float(rif['bit_rate']) / 1024 / 1024, 2)) + ' Mbps'
@@ -435,9 +501,13 @@ def get_video_info():
 @app.route('/video-transcode/', methods=['POST'])
 def video_transcode():
 
-    if ('asset_dir' not in request.form or 'video_name' not in request.form or
-            'crf' not in request.form):
-        return Response('asset_dir, video_name, crf or resolution is missing',
+    if (
+            'asset_dir' not in request.form or
+            'video_name' not in request.form or
+            'crf' not in request.form or
+            'resolution' not in request.form or
+            'audio_id' not in request.form):
+        return Response('asset_dir, video_name, crf, resolution or audio_id is missing',
                         400)
 
     try:
@@ -445,6 +515,7 @@ def video_transcode():
         video_name = request.form['video_name']
         crf = int(request.form['crf'])
         res = int(request.form['resolution'])
+        audio_id = int(request.form['audio_id'])
 
         if crf < 0 or crf > 63:
             raise ValueError(f'Invalid crf value {crf}', 400)
@@ -461,14 +532,18 @@ def video_transcode():
         video_path = flask.safe_join(abs_path, video_name)
         if os.path.isfile(video_path) is False:
             raise FileNotFoundError(f'video {video_name} not found')
-        if res == -1:
-            output_path = video_path + f'_crf{crf}.webm'
-        else:
-            output_path = video_path + f'_{res}p_crf{crf}.webm'
+        output_path = video_path
+        if res != -1:
+            output_path += f'_{res}p'
+        if audio_id != -1:
+            output_path += f'_audio{audio_id}'
+        output_path += f'_crf{crf}.webm'
         if os.path.isfile(output_path) or os.path.isdir(output_path):
             raise FileExistsError('target video name occupied')
-        threading.Thread(target=convert_video_format,
-                         args=(video_path, output_path, crf, res)).start()
+        threading.Thread(
+                target=video_transcoding_thread,
+                args=(video_path, output_path, crf, res, audio_id)
+            ).start()
 
     except (FileExistsError, FileNotFoundError, ValueError):
         logging.exception('')
@@ -532,23 +607,34 @@ def download():
     asset_dir = request.args.get('asset_dir')
     filename = request.args.get('filename')
 
-    if 'as_attachment' in request.args:
-        as_attachment = bool(request.args.get('as_attachment'))
-    else:
-        as_attachment = True
-
     try:
         file_dir = flask.safe_join(root_dir, asset_dir[1:])
+        file_path = flask.safe_join(file_dir, filename)
         # safe_join can prevent base directory escaping
         # [1:] is used to get ride of the initial /:
         # otherwise safe_join will consider it a chroot escape attempt
-        fid = get_file_id(flask.safe_join(file_dir, filename))
+        fid = get_file_id(file_path)
     except werkzeug.exceptions.NotFound:
         logging.exception(f'Parameters are {root_dir}, {asset_dir}')
         return Response('Potential chroot escape', 400)
     except Exception:
         logging.exception('')
         return Response('Parameter error', 400)
+
+    # If as_attachment == False, browsers will attempt to open the
+    # file directly instead of starting a download.
+    # The side effect of this behavior is, suppose as_attachment == False
+    # but the file cannot be directly opened in a browser, it will
+    # download it anyway but the downloaded file will be named randomly.
+    # If we set as_attachment == True, the browser will usually respect
+    # the filename we pick on the server side. (However, if we set
+    # as_attachment == True) browsers will always download the file
+    # without trying to directly open it.
+    if 'as_attachment' in request.args:
+        as_attachment = bool(request.args.get('as_attachment'))
+    else:
+        basename, ext = os.path.splitext(file_path)
+        as_attachment = (ext in direct_open_ext) is False
 
     if fid in file_stat['content']:
         last_download = dt.datetime.strptime(
@@ -563,9 +649,9 @@ def download():
     file_stat['content'][fid]['last_download'] = dt.datetime.now().strftime(
         '%Y-%m-%d %H:%M:%S')
     # Note that logic here is:
-    # A download is counted only if it happens at least 2 hours after the last
-    # download. But we will update the last_download no matter if a download
-    # is counted or not.
+    # A download is counted only if it happens at least 2 hours after the
+    # previous download. But we will update the last_download no matter if
+    # a download is counted or not.
     # The result is that if you download the file 10 times with a ten-minute
     # interval between any two of them, only the 1st download will be counted
     # as a new download but the last_download timestamp will be the time of
@@ -610,8 +696,9 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
         file_info['content']['..']['media_type'] = -1
         file_info['content']['..']['extension'] = ''
 
-    scanner = os.scandir(abs_path)
-    for entry in scanner:
+    entries = list(os.scandir(abs_path))
+    entries.sort(key=lambda x: x.name)
+    for entry in entries:
         # entry has is_dir(), is_file() and is_symlink() methods but it does
         # not has a is_mountpoint() method. To keep the result consistent,
         # here we use method under os.path to do the job.
@@ -631,7 +718,7 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
         elif os.path.islink(entry.path):
             fic['file_type'] = 3
         elif os.path.isfile(entry.path):
-            file_info['content'][fn]['file_type'] = 1
+            fic['file_type'] = 1
             basename, ext = os.path.splitext(fn)
             fic['basename'] = basename
             fic['extension'] = ext
@@ -652,18 +739,19 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
             # Tried using crc32 and partial crc32 here...
             # It turned out that any content-based checksum is just too
             # expensive to use...
-            file_info['content'][fn]['stat'] = {}
+            fic['stat'] = {}
 
             if fid not in file_stat['content']:
                 fic['stat']['downloads'] = 0
                 fic['stat']['last_download'] = ''
             else:
-                fic['stat']['downloads'] = file_stat['content'][fid]['downloads']
-                fic['stat']['last_download'] = file_stat['content'][fid]['last_download']
+                fic['stat']['downloads'] = (
+                    file_stat['content'][fid]['downloads'])
+                fic['stat']['last_download'] = (
+                    file_stat['content'][fid]['last_download'])
 
         elif os.path.isdir(entry.path):
             fic['file_type'] = 0
-    scanner.close()
 
     return file_info
 
@@ -720,8 +808,8 @@ def stop_signal_handler(*args):
 def main(debug):
 
     port = -1
-    global allowed_ext, app_address, debug_mode, root_dir, thumbnails_path
-    global external_script_dir, file_stat, fs_path, log_path
+    global allowed_ext, app_address, debug_mode, direct_open_ext, root_dir
+    global external_script_dir, file_stat, fs_path, log_path, thumbnails_path
     global image_extensions, video_extensions
 
     debug_mode = debug
@@ -732,6 +820,7 @@ def main(debug):
         port = settings['flask']['port']
         allowed_ext = settings['app']['allowed_ext']
         app_address = settings['app']['address']
+        direct_open_ext = settings['app']['direct_open_extensions']
         external_script_dir = settings['app']['external_script_dir']
         fs_path = settings['app']['files_statistics']
         image_extensions = settings['app']['image_extensions']
@@ -776,7 +865,12 @@ def main(debug):
                                         'delay': 0 if debug_mode else 300})
     th_email.start()
 
-    serve(app, host="127.0.0.1", port=port)
+    serve(app, host="127.0.0.1", port=port,
+          max_request_body_size=2*1024*1024*1024)
+    # You need the max_request_body_size to accept large upload file...
+    # serve() will not explicit raise an exception is this parameter is NOT
+    # set but it will close the connection...
+
 
 
 if __name__ == '__main__':

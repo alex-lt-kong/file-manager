@@ -22,10 +22,10 @@ def main(path, stream):
     for entry in scanner:
         print(entry.name)
         src = os.path.join(path, entry.name)
-        dst = src + '.srt'
+        dst = src + '.vtt'
         print(src, dst)
         ffmpeg_cmd = ['/usr/bin/ffmpeg','-y', '-i', src,
-                      '-map', f'0:s:{stream}', dst]
+                      '-map', f'0:s:{stream}', '-f', 'webvtt', dst]
         p = subprocess.Popen(args=ffmpeg_cmd,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, error = p.communicate()
