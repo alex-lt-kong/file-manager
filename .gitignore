@@ -4,6 +4,7 @@ notes.json
 resources/files/
 resources/thumbnails/
 resources/files.json
+resources/thumbnail-rotate.state
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

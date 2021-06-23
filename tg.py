@@ -1,13 +1,12 @@
 #!/usr/bin/python3
 
-from PIL import Image, ImageFile
+from PIL import Image
 
-import argparse
+import click
 import datetime
 import glob
 import json
 import logging
-import math
 import os
 import re
 import random
@@ -18,23 +17,123 @@ import subprocess
 import sys
 import threading
 import time
-import urllib
 
 # app_dir: the app's real address on the filesystem
 app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager-thumbnail-generator'
+debug_mode = False
 image_extensions = None
-log_path = ''
 settings_path = os.path.join(app_dir, 'settings.json')
-root_dir = ''
 thumbnails_path = ''
 video_extensions = None
 
 
-def main():
+def get_dir_size(path: str):
 
-    global log_path, settings_path, thumbnails_path
+    total_size, files_count = 0, 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # skip if it is symbolic link
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+                files_count += 1
+
+    return total_size, files_count
+
+
+def resize_image(basewidth: int, src_path: str, dst_path: str):
+
+    try:
+        img = Image.open(src_path)
+        wpercent = (basewidth / float(img.size[0]))
+        hsize = int((float(img.size[1]) * float(wpercent)))
+        img = img.resize((basewidth, hsize), Image.ANTIALIAS)
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+        img.save(dst_path)
+    except Exception:
+        logging.exception('')
+
+
+def generate_thumbnails(root_dir: str):
+
+    global thumbnails_path
+    image_count, video_count, skip_count = 0, 0, 0
+
+    # root_dir needs a trailing slash (i.e. /root/dir/)
+    for file_path in glob.iglob(root_dir + '/' + '**/*', recursive=True):
+
+        file_name = os.path.basename(file_path)
+        file_ext = os.path.splitext(file_path)[1].lower()
+        file_size = os.path.getsize(file_path)
+
+        tn_path = os.path.join(thumbnails_path, file_name) + '.jpg'
+
+        if os.path.isfile(tn_path):
+            logging.debug('Thumbnail for [{}] exists'.format(
+                file_path[len(root_dir):]
+                ))
+            skip_count += 1
+            continue
+
+        if file_ext in video_extensions:
+            logging.info('Generating thumbnail for video [{}]'.format(
+                file_path[len(root_dir):]
+                ))
+            video_count += 1
+            if file_size > 512 * 1024 * 1024:
+                timestamp = '00:08:30.000'
+            elif file_size > 128 * 1024 * 1024:
+                timestamp = '00:02:08.000'
+            elif file_size > 64 * 1024 * 1024:
+                timestamp = '00:01:04.000'
+            elif file_size > 16 * 1024 * 1024:
+                timestamp = '00:00:16.000'
+            elif file_size > 4 * 1024 * 1024:
+                timestamp = '00:00:04.000'
+            else:
+                timestamp = '00:00:01.000'
+
+            if debug_mode is False:
+                delay = file_size / 1024 / 1024 / 100
+                logging.debug(f'Wait for {delay:.1f} sec...')
+                time.sleep(delay)
+
+            ffmpeg_cmd = ['/usr/bin/ffmpeg', '-i', file_path,
+                          '-loglevel', 'warning',
+                          '-ss', timestamp, '-vframes', '1', tn_path]
+            p = subprocess.Popen(args=ffmpeg_cmd,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            stdout, stderr = p.communicate()
+            if p.returncode != 0:
+                logging.error(f'ffmpeg non-zero exist code: {p.returncode}')
+                logging.error(f'stderr: {stderr.decode("utf-8")}')
+
+            if os.path.isfile(tn_path):
+                resize_image(basewidth=240, src_path=tn_path, dst_path=tn_path)
+
+        if file_ext in image_extensions:
+            logging.info('Generating thumbnail for image [{}]'.format(
+                file_path[len(root_dir):]
+                ))
+            image_count += 1
+            resize_image(basewidth=480, src_path=file_path, dst_path=tn_path)
+
+    logging.info(f'File scanning done,{image_count} image and '
+                 f'{video_count} video thumbnails generated, '
+                 f'{skip_count} existing thumbnails skipped.')
+
+
+@click.command()
+@click.option('--debug', is_flag=True)
+def main(debug):
+
+    global debug_mode, settings_path, thumbnails_path
     global image_extensions, video_extensions
+
+    debug_mode = debug
     try:
         with open(settings_path, 'r') as json_file:
             json_str = json_file.read()
@@ -46,79 +145,35 @@ def main():
         video_extensions = data['app']['video_extensions']
     except Exception as e:
         data = None
-        print(f'{e}')
+        print(e)
         return
 
-    debug_mode = True
     logging.basicConfig(
         filename=log_path,
         level=logging.DEBUG if debug_mode else logging.INFO,
-        format='%(asctime)s %(levelname)s %(module)s - %(funcName)s: %(message)s',
+        format=('%(asctime)s %(levelname)s '
+                '%(module)s - %(funcName)s: %(message)s'),
         datefmt='%Y-%m-%d %H:%M:%S',
     )
 
-    logging.info('[{app_name}] started')
+    logging.info(f'[{app_name}] started')
+    if debug_mode:
+        print('Running in debug mode')
+        logging.info('Running in debug mode')
+    else:
+        logging.info('Running in production mode')
 
-    # root_dir needs a trailing slash (i.e. /root/dir/)
-    for file_path in glob.iglob(root_dir + '/' + '**/*', recursive=True):
+    size, count = get_dir_size(thumbnails_path)
+    logging.info('Before generation, the size of the thumbnail dir '
+                 f'[{thumbnails_path}] is {size/1024/1024:.2f} MB and '
+                 f'it contains {count} files.')
 
-        file_name = os.path.basename(file_path)
-        file_dir = os.path.dirname(file_path)
-        file_ext = os.path.splitext(file_path)[1].lower()
-        file_size = os.path.getsize(file_path)
+    generate_thumbnails(root_dir=root_dir)
 
-        tn_path = os.path.join(thumbnails_path, file_name) + '.jpg'
-
-        if os.path.isfile(tn_path):
-            logging.debug(f'Thumbnail for [{file_path}] exists')
-            if random.randint(0, 500) != 0:
-                continue
-
-        if file_ext in video_extensions:
-            logging.info(f'Generating thumbnail for video [{file_name}]')
-            if file_size < 1024 * 1024 * 5:
-                timestamp = '00:00:02.000'
-            elif file_size < 1024 * 1024 * 10:
-                timestamp = '00:00:20.000'
-            elif file_size < 1024 * 1024 * 50:
-                timestamp = '00:00:60.000'
-            elif file_size < 1024 * 1024 * 100:
-                timestamp = '00:01:30.000'
-            else:
-                timestamp = '00:03:00.000'
-            delay = file_size / 1024 / 1024 / 100
-            print(f'Wait for {delay} sec before thumbnail generation')
-            time.sleep(delay)
-            cmdline = ['/usr/bin/ffmpeg', '-i', file_path,
-                       '-loglevel', 'fatal',
-                       '-ss', timestamp, '-vframes', '1', tn_path]
-            subprocess.call(cmdline)
-
-            if os.path.isfile(tn_path):
-                try:
-                    basewidth = 320
-                    img = Image.open(tn_path)
-                    wpercent = (basewidth/float(img.size[0]))
-                    hsize = int((float(img.size[1])*float(wpercent)))
-                    img = img.resize((basewidth, hsize), Image.ANTIALIAS)
-                    if img.mode in ("RGBA", "P"):
-                        img = img.convert("RGB")
-                    img.save(tn_path)
-                except Exception as e:
-                    logging.error(f"{e}")
-        if file_ext in image_extensions:
-            try:
-                logging.info(f'Generating thumbnail for image [{file_name}]')
-                basewidth = 640
-                img = Image.open(file_path)
-                wpercent = (basewidth/float(img.size[0]))
-                hsize = int((float(img.size[1])*float(wpercent)))
-                img = img.resize((basewidth, hsize), Image.ANTIALIAS)
-                if img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB")
-                img.save(tn_path)
-            except Exception as e:
-                logging.error(f"{e}")
+    size, count = get_dir_size(thumbnails_path)
+    logging.info('After generation, the size of the thumbnail dir '
+                 f'[{thumbnails_path}] is {size/1024/1024:.2f} MB and '
+                 f'it contains {count} files.')
 
 
 if __name__ == '__main__':

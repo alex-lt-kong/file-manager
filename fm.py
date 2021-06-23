@@ -279,7 +279,8 @@ def video_transcoding_thread(input_path: str, output_path: str,
                              crf: int, resolution: int, audio_id: int):
 
     ffmpeg_cmd = ['/usr/bin/ffmpeg', '-y',  # -y: overwrite output file
-                  '-i', input_path, '-map_metadata', '0',
+                  '-i', input_path, '-loglevel', 'warning',
+                  '-map_metadata', '0',
                   # -map_metadata 0: copy the metadata from the 1st input
                   # file to the output file.
                   '-vf', f'scale=-1:{resolution}',
@@ -330,13 +331,11 @@ def video_transcoding_thread(input_path: str, output_path: str,
     # if ffmpeg returns zero or not because there is some saying that
     # ffmpeg's exit code canNOT be used to reliably check if the conversion
     # is a failure.
-    # However, it turns out that ffmpeg's log is way too long...so it is
-    # now only generated if ffmpeg's exit code is zero...
-    if p.returncode != 0:
-        with open(output_log_path, 'w+') as f:
-            f.write(f'===== return_code =====\n{p.returncode}\n\n\n')
-            f.write(f'===== std_output =====\n{stdout.decode("utf-8")}\n\n\n')
-            f.write(f'===== std_err =====\n{stderr.decode("utf-8")}')
+    with open(output_log_path, 'w+') as f:
+        f.write(f'===== return_code =====\n{p.returncode}\n\n\n')
+        f.write(f'===== stdout =====\n{stderr.decode("utf-8")}')
+        # Note that ffmpeg sends all the log to stderr and leave stdout
+        # for piping the output data to other programs.
 
 
 def raw_info_to_video_info(ri):
@@ -371,6 +370,7 @@ def raw_info_to_video_info(ri):
 def extract_subtitles_thread(video_path: str, stream_no: int):
 
     ffmpeg_cmd = ['/usr/bin/ffmpeg', '-y', '-i', video_path,
+                  '-loglevel', 'warning',
                   '-map', f'0:s:{stream_no}', '-f', 'webvtt',
                   video_path + '.vtt']
 

@@ -620,10 +620,10 @@ class ModalMove extends React.Component {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label htmlFor="move-destination-input" className="form-label">
+                  <label htmlFor="move-destination-input" className="form-label" style={{ wordBreak: "break-all" }}>
                     Move the file from <b>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</b> to:
                   </label>
-                  <textarea id="move-destination-input" type="text" className="form-control" row="3"
+                  <textarea id="move-destination-input" type="text" className="form-control" rows="3"
                             placeholder="Input new filename" value={this.state.newFilepath} onChange={this.onFilepathChange} />
                   <div className="accordion my-2" id="accordionMove">
                     <div className="accordion-item">
@@ -895,7 +895,7 @@ class FileManager extends React.Component {
       }.bind(this)
     };
   
-    axios.post("https://media.sz.lan/upload/", payload, config)
+    axios.post(this.state.appAddress + "/upload/", payload, config)
     .then(response => {
       // an alert is not needed since the user will see the change of the files list.
       this.fetchDataFromServer(this.state.currentPath)
@@ -975,10 +975,10 @@ class FileManager extends React.Component {
     } else if (this.state.fileInfo.content[value].file_type === 1) {
       console.log('ordinary file [' + value + '] clicked');
       if (this.state.fileInfo.content[value].media_type < 2) {
-        window.open('https://media.sz.lan/download/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
+        window.open(this.state.appAddress + '/download/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
                                '&filename=' + encodeURIComponent(value)); 
       } else if (this.state.fileInfo.content[value].media_type === 2) {
-        window.open('https://media.sz.lan/play-video/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
+        window.open(this.state.appAddress + '/play-video/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
                                '&video_name=' + encodeURIComponent(value)); 
       }
     } else {
@@ -1100,7 +1100,7 @@ class FileManager extends React.Component {
       */
       if (fi.content[key].file_type === 0) { // file_type == 0: ordinary directory
         thumbnail = (
-          <img src='https://media.sz.lan/static/icons/folder.svg' style={{ width: "100%", cursor: "pointer" }}
+          <img src={`${this.state.appAddress}/static/icons/folder.svg`} style={{ width: "100%", cursor: "pointer" }}
                onClick={() => this.onClickItem(key)} />
           );
           // For svg <img>, we specify width: 100%;
@@ -1108,34 +1108,34 @@ class FileManager extends React.Component {
       } else if (fi.content[key].file_type === 1) { // file_type == 1: ordinary file
         if (fi.content[key].media_type === 1) { // image
           thumbnail = (
-            <img src={`https://media.sz.lan/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
+            <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
                style={{ maxWidth: "100%", maxHeight: "90vh", "display":"block", cursor: "pointer" }}
                onClick={() => this.onClickItem(key)}
-               onError={(e)=>{e.target.onerror = null; e.target.src="https://media.sz.lan/static/icons/image.svg"; e.target.style="width: 100%"}} />);
+               onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/image.svg"; e.target.style="width: 100%"}} />);
               // For svg <img>, we specify width: 100%;
               // For ordinary image we specify maxWidth: 100%;
               // Note for onError we need to specify a special style;
         } else if (fi.content[key].media_type === 2) { // video
           thumbnail = (
-            <img src={`https://media.sz.lan/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
+            <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
                style={{ maxWidth: "100%", cursor: "pointer" }}
                onClick={() => this.onClickItem(key)}
-               onError={(e)=>{e.target.onerror = null; e.target.src="https://media.sz.lan/static/icons/video.svg"; e.target.style="width: 100%"}} />);
+               onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/video.svg"; e.target.style="width: 100%"}} />);
               // For svg <img>, we specify width: 100%;
               // For ordinary image we specify maxWidth: 100%;
               // Note for onError we need to specify a special style;
         } else if (fi.content[key].media_type === 0) { // not a media file
           let url = null;
           if ([".doc", ".docx", ".odt", ".rtf", ".docm", ".docx", "wps"].includes(fi.content[key].extension.toLowerCase())) {
-            url = "https://media.sz.lan/static/icons/word.svg"; 
+            url = this.state.appAddress + "/static/icons/word.svg"; 
           } else if ([".htm", ".html", ".mht"].includes(fi.content[key].extension.toLowerCase())) {
-            url = "https://media.sz.lan/static/icons/html.svg"; 
+            url = this.state.appAddress + "/static/icons/html.svg"; 
           } else if ([".7z", ".zip", ".rar", ".tar", ".gz"].includes(fi.content[key].extension.toLowerCase())) {
-            url = "https://media.sz.lan/static/icons/archive.svg"; 
+            url = this.state.appAddress + "/static/icons/archive.svg"; 
           } else if ([".mp3", ".wma", ".wav", ".ogg", ".flac"].includes(fi.content[key].extension.toLowerCase())) {
-            url = "https://media.sz.lan/static/icons/music.svg"; 
+            url = this.state.appAddress + "/static/icons/music.svg"; 
           } else {
-            url = "https://media.sz.lan/static/icons/misc.svg"; 
+            url = this.state.appAddress + "/static/icons/misc.svg"; 
           }
           thumbnail = (<img src={url} style={{ width: "100%", "display":"block", float:"left", cursor: "pointer" }}
                     onClick={() => this.onClickItem(key)} />);
@@ -1146,7 +1146,7 @@ class FileManager extends React.Component {
       } else if (fi.content[key].file_type === 2) { // file_type == 2: mountpoint
         fileMetaData = 'mountpoint';
         thumbnail = (
-          <img src='https://media.sz.lan/static/icons/special-folder.svg' style={{ width: "100%", cursor: "pointer" }}
+          <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
                onClick={() => this.onClickItem(key)} />
           );
           // For svg <img>, we specify width: 100%;
@@ -1154,13 +1154,13 @@ class FileManager extends React.Component {
       } else if (fi.content[key].file_type === 3) { // file_type == 3: symbolic link
         fileMetaData = 'symbolic link';
         thumbnail = (
-          <img src='https://media.sz.lan/static/icons/special-folder.svg' style={{ width: "100%", cursor: "pointer" }}
+          <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
                onClick={() => this.onClickItem(key)} />
           );
       } else {
         fileMetaData = '??Unknown file type??';
         thumbnail = (
-          <img src='https://media.sz.lan/static/icons/special-folder.svg' style={{ width: "100%", cursor: "pointer" }}
+          <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
                onClick={() => this.onClickItem(key)} />
           );
       }
