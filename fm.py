@@ -212,10 +212,10 @@ def move():
                  'disabled to prevent unexpected data loss'), 400)
         if (os.path.isfile(old_real_filepath) is False and
                 os.path.isdir(old_real_filepath) is False):
-            return Response(f'{old_real_filepath} not found', 400)
+            return Response(f'{old_filepath} not found', 400)
         if (os.path.isfile(new_real_filepath) or
                 os.path.isdir(new_real_filepath)):
-            return Response(f'{new_real_filepath} occupied', 400)
+            return Response(f'{new_filepath} occupied', 400)
 
         shutil.move(src=old_real_filepath, dst=new_real_filepath)
         # If the destination is on the current filesystem, then os.rename()

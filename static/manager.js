@@ -40,8 +40,8 @@ class ModalVideoInfo extends React.Component {
           console.log(error);     
           this.setState({
             jsonHTML: (
-              <div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
-                Unable to fetch information from video <strong>{this.state.videoName}</strong>:
+              <div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
+                Unable to fetch information from video <strong style={{ wordBreak: "break-all" }}>{this.state.videoName}</strong>:
                 <br />{error.response.data}
               </div>
             ),
@@ -134,8 +134,8 @@ class ModalExtractSubtitles extends React.Component {
     .catch(error => {
       console.log(error);
       this.setState({
-        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
-                            Unable to extract subtitles from <strong>{this.state.videoName}</strong>:<br />{error.response.data}
+        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
+                            Unable to extract subtitles from <strong style={{ wordBreak: "break-all" }}>{this.state.videoName}</strong>:<br />{error.response.data}
                           </div>)
       });  
     });
@@ -351,8 +351,8 @@ class ModalRemove extends React.Component {
     .catch(error => {
       console.log(error);
       this.setState({
-        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
-                            Unable to remove <strong>{this.state.fileInfo.filename}</strong>:<br />{error.response.data}
+        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
+                            Unable to remove <strong style={{ wordBreak: "break-all" }}>{this.state.fileInfo.filename}</strong>:<br />{error.response.data}
                           </div>)
       }); 
     });
@@ -388,7 +388,7 @@ class ModalRemove extends React.Component {
             </div>
             <div className="modal-body">
             <div className="mb-3">
-                <span className="form-label" style={{ wordWrap: "break-word", wordBreak: "break-all" }}>
+                <span className="form-label" style={{ wordBreak: "break-all" }}>
                 Remove file <strong>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong>?
                 </span>
                 {this.state.responseMessage}
@@ -487,8 +487,8 @@ class ModalTranscode extends React.Component {
     })
     .catch(error => {
       this.setState({
-        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
-                            Unable to transcode <strong>{payload.get('video_name')}</strong>:<br />{error.response.data}
+        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
+                            Unable to transcode <strong style={{ wordBreak: "break-all" }}>{payload.get('video_name')}</strong>:<br />{error.response.data}
                           </div>)
       });
     });
@@ -605,9 +605,10 @@ class ModalTranscode extends React.Component {
                           <ol>
                             <li>The server will start a separate <code>ffmpeg</code> process to do the conversion;</li>
                             <li>The constant rate factor (CRF) can be from 0-63. Lower values mean better quality;
-                            According to <a href="https://trac.ffmpeg.org/wiki/Encode/VP9" target="_blank">FFMPEG's manual</a>, for
+                            According to <a href="https://trac.ffmpeg.org/wiki/Encode/VP9" target="_blank">ffmpeg's manual</a>, for
                             WebM format (VP9 video encoder), recommended values range from 15-35;</li>
-                            <li>After selecting the video quality, a CRF value will be automatically set according to <a href="https://developers.google.com/media/vp9/settings/vod/" target="_blank">
+                            <li>After selecting the video quality, a CRF value will be automatically set according 
+                              to <a href="https://developers.google.com/media/vp9/settings/vod/" target="_blank">
                             Google's recommendation</a>;</li>
                             <li>According to <a href="https://developers.google.com/media/vp9/the-basics" target="_blank">
                             Google's manual</a>, for VP9, 480p is considered a safe resolution for a broad range of mobile and web devices.</li>
@@ -641,6 +642,8 @@ class ModalMove extends React.Component {
     this.state = {
       appAddress: props.appAddress,
       dialogueShouldClose: props.dialogueShouldClose,
+      disableSubmitByDirName: false,
+      disableSubmitByFileName: false,
       fileInfo: props.fileInfo,
       newFileDir: props.fileInfo.asset_dir,
       newFileName: props.fileInfo.filename,
@@ -682,8 +685,9 @@ class ModalMove extends React.Component {
     .catch(error => {
       console.log(error);
       this.setState({
-        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
-                            Unable to move file from <strong>{payload.get('old_filepath')}</strong> to <strong>{payload.get('new_filepath')}</strong>:
+        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
+                            Unable to move file from <strong style={{ wordBreak: "break-all" }}>{payload.get('old_filepath')}
+                            </strong> to <strong style={{ wordBreak: "break-all" }}>{payload.get('new_filepath')}</strong>:
                             <br />{error.response.data}
                           </div>)
       });   
@@ -692,6 +696,22 @@ class ModalMove extends React.Component {
   
   onFileDirChange(event) {
     var newVal = event.target.value.replace('\n', '').replace('\r', '');
+    if (newVal.endsWith('/')) {
+      this.setState({
+        responseMessage: null,
+        disableSubmitByDirName: false
+      });
+
+    } else {
+      this.setState({
+        responseMessage: (<div className="alert alert-warning mb-3" role="alert" style={{ wordBreak: "break-word" }}>
+                            New directory <strong style={{ wordBreak: "break-all" }}>{newVal}</strong> does not end with a <code>/</code>.
+                            If submitted, the section after the last <code>/</code> will be interpreted as a part of the new filename by the server,
+                            which is usually not desired. To avoid the ambiguity, you need to append a <code>/</code> to the end of the directory to submit.
+                          </div>),
+        disableSubmitByDirName: true
+      });
+    }
     this.setState({
       newFileDir: newVal
       });
@@ -699,6 +719,20 @@ class ModalMove extends React.Component {
   
   onFileNameChange(event) {
     var newVal = event.target.value.replace('\n', '').replace('\r', '');
+    if (newVal.includes('/')) {
+      this.setState({
+        responseMessage: (<div className="alert alert-warning mb-3" role="alert" style={{ wordBreak: "break-word" }}>
+                            New filename <strong style={{ wordBreak: "break-all" }}>{newVal}</strong> contains <code>/</code>, which will be interpreted as 
+                            a separate directory by the server. To avoid ambiguity, this value cannot be submitted.
+                          </div>),
+        disableSubmitByFileName: true
+      });
+    } else {
+      this.setState({
+        responseMessage: null,
+        disableSubmitByFileName: false
+      });
+    }
     this.setState({
       newFileName: newVal
       });
@@ -730,8 +764,8 @@ class ModalMove extends React.Component {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label className="form-label" style={{ wordBreak: "break-all" }}>
-                    Move the file from <b>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</b> to:
+                  <label className="form-label" style={{ wordBreak: "break-word" }}>
+                    Move the file from <strong style={{ wordBreak: "break-all" }}>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong> to:
                   </label>
                   <div className="input-group mb-1">
                     <span className="input-group-text font-monospace">Directory</span>
@@ -739,7 +773,7 @@ class ModalMove extends React.Component {
                               placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
                   </div>
                   <div className="input-group mb-3">
-                    <span className="input-group-text font-monospace">Filename</span>
+                    <span className="input-group-text font-monospace">Filename&nbsp;</span>
                     <textarea type="text" className="form-control" rows="2"
                               placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
                   </div>
@@ -770,7 +804,8 @@ class ModalMove extends React.Component {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
-                <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>Submit</button>
+                <button type="button" className="btn btn-primary" disabled={this.state.disableSubmitByFileName || this.state.disableSubmitByDirName}
+                        onClick={this.handleSubmitClick}>Submit</button>
               </div>
             </div>
           </div>
@@ -1327,7 +1362,8 @@ class FileManager extends React.Component {
 
               {/* button and input is bound using jQuery... */}
               <button type="button" className="btn btn-primary mx-1 my-1" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i> New</button>               
-              <button className="btn btn-primary mx-1 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo" aria-controls="offcanvasBottomServerInfo"
+              <button className="btn btn-primary mx-1 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo"
+                      aria-controls="offcanvasBottomServerInfo"
                   onClick={this.onServerInfoClick}>
                 <i className="bi bi-gear"></i> Info
               </button>
