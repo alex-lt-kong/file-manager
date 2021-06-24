@@ -40,8 +40,8 @@ class ModalVideoInfo extends React.Component {
           console.log(error);     
           this.setState({
             jsonHTML: (
-              <div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
-                Unable to fetch video information for video <strong>{this.state.videoName}</strong>:
+              <div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+                Unable to fetch information from video <strong>{this.state.videoName}</strong>:
                 <br />{error.response.data}
               </div>
             ),
@@ -134,7 +134,7 @@ class ModalExtractSubtitles extends React.Component {
     .catch(error => {
       console.log(error);
       this.setState({
-        responseMessage: (<div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
                             Unable to extract subtitles from <strong>{this.state.videoName}</strong>:<br />{error.response.data}
                           </div>)
       });  
@@ -191,7 +191,7 @@ class ModalExtractSubtitles extends React.Component {
                         <ol>
                           <li>Subtitle extraction is much less expensive compared with transcoding. You could expect the result within minutes;</li>
                           <li>You can check the ID of a stream by using the Video Info function;</li>
-                          <li>Internally, the server uses ffmpeg to do the extraction. If ffmepg returns non-zero exit code, a log file will be generated.</li>
+                          <li>The server uses <code>ffmpeg</code> to do the extraction. If <code>ffmpeg</code> returns a non-zero exit code, a log file will be generated.</li>
                         </ol>
                       </div>
                       </div>
@@ -351,7 +351,7 @@ class ModalRemove extends React.Component {
     .catch(error => {
       console.log(error);
       this.setState({
-        responseMessage: (<div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
                             Unable to remove <strong>{this.state.fileInfo.filename}</strong>:<br />{error.response.data}
                           </div>)
       }); 
@@ -439,16 +439,18 @@ class ModalTranscode extends React.Component {
     this.state = {      
       appAddress: props.appAddress,
       audioID: -1,
+      crf: 30,
       dialogueShouldClose: props.dialogueShouldClose,
       fileInfo: props.fileInfo,
-      crf: 30,
       refreshFileList: props.refreshFileList,
-      resolution: -1
+      resolution: -1,
+      threads: 0
     };
     this.onAudioIDChange = this.onAudioIDChange.bind(this);
     this.handleCloseClick = this.handleCloseClick.bind(this);
     this.onCRFChange = this.onCRFChange.bind(this);
     this.onResolutionChange = this.onResolutionChange.bind(this);
+    this.onThreadsChange = this.onThreadsChange.bind(this);
     this.handleSubmitClick = this.handleSubmitClick.bind(this);
     
   }
@@ -471,6 +473,7 @@ class ModalTranscode extends React.Component {
     payload.append('video_name', this.state.fileInfo.filename);
     payload.append('crf', this.state.crf);
     payload.append('resolution', this.state.resolution);
+    payload.append('threads', this.state.threads);
     axios({
       method: "post",
       url: this.state.appAddress + "/video-transcode/",
@@ -484,7 +487,7 @@ class ModalTranscode extends React.Component {
     })
     .catch(error => {
       this.setState({
-        responseMessage: (<div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
                             Unable to transcode <strong>{payload.get('video_name')}</strong>:<br />{error.response.data}
                           </div>)
       });
@@ -515,6 +518,12 @@ class ModalTranscode extends React.Component {
       });
   }
 
+  onThreadsChange(event) {
+    this.setState({
+      threads: event.target.value
+      });
+  }
+  
   onAudioIDChange(event) {
     this.setState({
       audioID: event.target.value
@@ -551,18 +560,18 @@ class ModalTranscode extends React.Component {
               <div className="modal-body">
                 <div className="mb-3">
                   <span htmlFor="exampleFormControlInput1" className="form-label">
-                    Transcode video <b>{this.state.fileInfo.filename}</b> to WebM format (VP9) with the following CRF:
+                    Transcode video <b>{this.state.fileInfo.filename}</b> to WebM format (VP9) with the following parameters:
                   </span>  
-                  <div className="input-group mb-3">
+                  <div className="input-group my-1">
                     <span className="input-group-text">CRF</span>
                     <input type="text" className="form-control"
-                           placeholder="CRF Here" value={this.state.crf} onChange={this.onCRFChange} />
-                    <span class="input-group-text">Audio ID</span>
-                    <input type="text" class="form-control"
+                           placeholder="CRF" value={this.state.crf} onChange={this.onCRFChange} />
+                    <span className="input-group-text">Audio ID</span>
+                    <input type="text" className="form-control"
                            placeholder="Audio stream ID" value={this.state.audioID} onChange={this.onAudioIDChange} />
                   </div>
 
-                  <div className="input-group mb-3">
+                  <div className="input-group my-1">
                     <label className="input-group-text" htmlFor="inputSelectResolution">Resolution</label>
                     <select className="form-select" id="inputSelectResolution" defaultValue={-1}
                         onChange={this.onResolutionChange} >
@@ -575,6 +584,13 @@ class ModalTranscode extends React.Component {
                       <option value="144">144p</option>
                     </select>
                   </div>
+
+                  <div className="input-group my-1">
+                    <span className="input-group-text">Threads</span>
+                    <input type="number" className="form-control"
+                           placeholder="Number of threads" min="1" max="8" value={this.state.threads} onChange={this.onThreadsChange} />
+                  </div>
+
                   {this.state.responseMessage}
                   <div className="accordion my-2" id="accordionRemove">
                     <div className="accordion-item">
@@ -587,17 +603,20 @@ class ModalTranscode extends React.Component {
                       <div id="collapseRemoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
                         <div className="accordion-body">
                           <ol>
-                            <li>The server will start a separate ffmpeg process to do the conversion in a separate thread;</li>
+                            <li>The server will start a separate <code>ffmpeg</code> process to do the conversion;</li>
                             <li>The constant rate factor (CRF) can be from 0-63. Lower values mean better quality;
                             According to <a href="https://trac.ffmpeg.org/wiki/Encode/VP9" target="_blank">FFMPEG's manual</a>, for
                             WebM format (VP9 video encoder), recommended values range from 15-35;</li>
-                            <li>A CRF value will be set according to <a href="https://developers.google.com/media/vp9/settings/vod/" target="_blank">
-                            Google's recommendation</a>, after selecting the video quality;</li>
+                            <li>After selecting the video quality, a CRF value will be automatically set according to <a href="https://developers.google.com/media/vp9/settings/vod/" target="_blank">
+                            Google's recommendation</a>;</li>
                             <li>According to <a href="https://developers.google.com/media/vp9/the-basics" target="_blank">
                             Google's manual</a>, for VP9, 480p is considered a safe resolution for a broad range of mobile and web devices.</li>
-                            <li>Since modern browsers will pick the first audio stream (ID==0) and usually manual audio stream selection is not allowed,
-                                when doing transcoding, you can pick the preferred one by specifying its ID so that it becomes the only audio stream which
-                                will definitely be played by browsers. You can find the ID using Video Info function.</li>
+                            <li>Since modern browsers will pick the first audio stream (ID==0) and manual audio stream selection is usually not possible,
+                                you can pick the preferred audio stream by its ID before transcoding so that it becomes the only audio stream which
+                                will definitely be selected by browsers. You can find the ID using <code>Video Info</code> function.</li>
+                            <li><code>threads</code> can only be from 0 to 8 where 0 means ffmpeg selects the optimal value by itself. Note that
+                            a large <code>threads</code> value may or may not translate to high performance but a
+                            small <code>threads</code> will guarantee lower CPU usage.</li>
                           </ol>
                         </div>
                       </div>
@@ -663,7 +682,7 @@ class ModalMove extends React.Component {
     .catch(error => {
       console.log(error);
       this.setState({
-        responseMessage: (<div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
                             Unable to move file from <strong>{payload.get('old_filepath')}</strong> to <strong>{payload.get('new_filepath')}</strong>:
                             <br />{error.response.data}
                           </div>)
@@ -714,13 +733,13 @@ class ModalMove extends React.Component {
                   <label className="form-label" style={{ wordBreak: "break-all" }}>
                     Move the file from <b>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</b> to:
                   </label>
-                  <div class="input-group mb-1">
-                    <span class="input-group-text">Directory</span>
+                  <div className="input-group mb-1">
+                    <span className="input-group-text font-monospace">Directory</span>
                     <textarea type="text" className="form-control" rows="2"
                               placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
                   </div>
-                  <div class="input-group mb-3">
-                    <span class="input-group-text">Filename</span>
+                  <div className="input-group mb-3">
+                    <span className="input-group-text font-monospace">Filename</span>
                     <textarea type="text" className="form-control" rows="2"
                               placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
                   </div>
@@ -739,8 +758,8 @@ class ModalMove extends React.Component {
                         os.path.ismount()</a> returns true;<br />
                         2. The server calls <a href="https://docs.python.org/3/library/shutil.html#shutil.move" target="_blank">
                         shutil.move()</a> to do the move;<br />
-                        3. If the destination is on a different filesystem, source file is copied to destination and then removed.
-                        (It could take a long time!)<br />
+                        3. If the destination is on a different filesystem, source file is copied to destination and then removed
+                        <strong>(It could take a long time!)</strong>;<br />
                         4. In case of symlinks, a new symlink pointing to the target of src will be created in or as dst and src will be removed.
                         </div>
                       </div>
@@ -1098,12 +1117,11 @@ class FileManager extends React.Component {
 
         this.serverInfoPanel = (
           <div>
-            <p><b>Refresh at: </b>{this.state.serverInfo.metadata.timestamp}</p>
-            <p><b>CPU Usage: </b>{this.state.serverInfo.cpu.percent}%</p>
+            <p><b>CPU Usage: </b>{this.state.serverInfo.cpu.percent.map((p) => p.toString() + "% ")}</p>            
             <p>
               <b>Memory: </b>
               {Math.round(this.state.serverInfo.memory.physical_total / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB in total,&nbsp;
-              {Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB available
+              {Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB free
               {/* The fancy regex is used to add a thousands separator */}
             </p>
             <b>System:</b>

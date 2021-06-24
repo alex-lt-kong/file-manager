@@ -83,7 +83,7 @@ def get_server_info():
         "%Y-%m-%d %H:%M:%S")
 
     info['cpu'] = {}
-    info['cpu']['percent'] = psutil.cpu_percent(interval=1)
+    info['cpu']['percent'] = psutil.cpu_percent(interval=1, percpu=True)
 
     mem = psutil.virtual_memory()
     info['memory'] = {}
@@ -280,10 +280,14 @@ def remove():
 
 
 def video_transcoding_thread(input_path: str, output_path: str,
-                             crf: int, resolution: int, audio_id: int):
+                             crf: int, resolution: int, audio_id: int,
+                             threads=0):
 
+    start_at = dt.datetime.now()
+
+    loglevel = 'warning'
     ffmpeg_cmd = ['/usr/bin/ffmpeg', '-y',  # -y: overwrite output file
-                  '-i', input_path, '-loglevel', 'warning',
+                  '-i', input_path, '-loglevel', loglevel,
                   '-map_metadata', '0',
                   # -map_metadata 0: copy the metadata from the 1st input
                   # file to the output file.
@@ -314,7 +318,7 @@ def video_transcoding_thread(input_path: str, output_path: str,
                   # the 'max_muxing_queue_size' parameter can be used to
                   # solve the error of
                   # 'Too many packets buffered for output stream'
-                  '-threads', '2',
+                  '-threads', str(threads),
                   output_path]
     # According to this link: https://trac.ffmpeg.org/wiki/Encode/VP9 , VP9
     # supports a so-called two-pass mode. But according to the following link:
@@ -335,9 +339,20 @@ def video_transcoding_thread(input_path: str, output_path: str,
     # if ffmpeg returns zero or not because there is some saying that
     # ffmpeg's exit code canNOT be used to reliably check if the conversion
     # is a failure.
+    finish_at = dt.datetime.now()
+    duration = finish_at - start_at
     with open(output_log_path, 'w+') as f:
-        f.write(f'===== return_code =====\n{p.returncode}\n\n\n')
-        f.write(f'===== stdout =====\n{stderr.decode("utf-8")}')
+        # w+ : Opens a file for writing and reading.
+        # Overwrites the existing file if the file exists.
+        f.write('===== basic information =====\n')
+        f.write('start at: {}\n'.format(start_at.strftime("%Y-%m-%d %H:%M")))
+        f.write('finish at: {}\n'.format(finish_at.strftime("%Y-%m-%d %H:%M")))
+        f.write('duration: {}\n'.format(str(duration).split('.')[0]))
+        f.write(f'crf: {crf}, resolution: {resolution}, '
+                f'audio_id: {audio_id}, threads: {threads}\n')
+        f.write(f'return code: {p.returncode}\n\n')
+        f.write(f'===== stdout (loglevel = {loglevel}) =====\n'
+                f'{stderr.decode("utf-8")}')
         # Note that ffmpeg sends all the log to stderr and leave stdout
         # for piping the output data to other programs.
 
@@ -354,27 +369,19 @@ def raw_info_to_video_info(ri):
         # Note that "video" in this context includes both videos and images
         st['width'] = ri['width']
         st['height'] = ri['height']
-    else:
-        if ri['codec_type'] == 'audio' or ri['codec_type'] == 'subtitle':
-            if 'tags' in ri and 'language' in ri['tags']:
-                st['language'] = ri['tags']['language']
-            else:
-                st['language'] = 'unknown'
-        elif ri['codec_type'] == 'attachment':
-            if 'tags' in ri and 'filename' in ri['tags']:
-                st['filename'] = ri['tags']['filename']
-            else:
-                st['filename'] = 'unknown'
-        else:
-            st = f'Unknown codec_type: {ri["codec_type"]}'
+
+    if 'tags' in ri:
+        for key in ri['tags']:
+            st[key] = ri['tags'][key]
 
     return st
 
 
 def extract_subtitles_thread(video_path: str, stream_no: int):
 
+    loglevel = 'warning'
     ffmpeg_cmd = ['/usr/bin/ffmpeg', '-y', '-i', video_path,
-                  '-loglevel', 'warning',
+                  '-loglevel', loglevel,
                   '-map', f'0:s:{stream_no}', '-f', 'webvtt',
                   video_path + '.vtt']
 
@@ -388,8 +395,8 @@ def extract_subtitles_thread(video_path: str, stream_no: int):
     if p.returncode != 0:
         with open(video_path + '_log.txt', 'w+') as f:
             f.write(f'===== return_code =====\n{p.returncode}\n\n\n')
-            f.write(f'===== std_output =====\n{stdout.decode("utf-8")}\n\n\n')
-            f.write(f'===== std_err =====\n{stderr.decode("utf-8")}')
+            f.write(f'===== stdout (loglevel = {loglevel}) =====\n'
+                    '{stderr.decode("utf-8")}')
 
 
 @app.route('/extract-subtitles/', methods=['POST'])
@@ -517,9 +524,10 @@ def video_transcode():
             'video_name' not in request.form or
             'crf' not in request.form or
             'resolution' not in request.form or
-            'audio_id' not in request.form):
-        return Response('asset_dir, video_name, crf, resolution or audio_id is missing',
-                        400)
+            'audio_id' not in request.form or
+            'threads' not in request.form):
+        return Response('asset_dir, video_name, crf, resolution, '
+                        'audio_id or threads is missing', 400)
 
     try:
         asset_dir = request.form['asset_dir']
@@ -527,9 +535,12 @@ def video_transcode():
         crf = int(request.form['crf'])
         res = int(request.form['resolution'])
         audio_id = int(request.form['audio_id'])
+        threads = int(request.form['threads'])
 
+        if threads < 0 or threads > 8:
+            return Response('threads should be an integer between 0 to 8', 400)
         if crf < 0 or crf > 63:
-            raise ValueError(f'Invalid crf value {crf}', 400)
+            return Response(f'Invalid crf value {crf}', 400)
         if res < 144 or res > 1080:
             res = -1
         # Why the treatments of crf and res are different?
@@ -542,7 +553,8 @@ def video_transcode():
 
         video_path = flask.safe_join(abs_path, video_name)
         if os.path.isfile(video_path) is False:
-            raise FileNotFoundError(f'video {video_name} not found')
+            return Response(f'video {video_name} not found', 400)
+
         output_path = video_path
         if res != -1:
             output_path += f'_{res}p'
@@ -550,11 +562,15 @@ def video_transcode():
             output_path += f'_audio{audio_id}'
         output_path += f'_crf{crf}.webm'
         if os.path.isfile(output_path) or os.path.isdir(output_path):
-            raise FileExistsError('target video name occupied')
-        threading.Thread(
-                target=video_transcoding_thread,
-                args=(video_path, output_path, crf, res, audio_id)
-            ).start()
+            return Response('target video name occupied', 400)
+
+        kwargs = {
+            'input_path': video_path, 'output_path': output_path,
+            'crf': crf, 'resolution': res, 'audio_id': audio_id,
+            'threads': threads
+        }
+        threading.Thread(target=video_transcoding_thread,
+                         kwargs=kwargs).start()
 
     except (FileExistsError, FileNotFoundError, ValueError):
         logging.exception('')
