@@ -4,68 +4,69 @@ class ModalVideoInfo extends React.Component {
     this.state = {
       appAddress: props.appAddress,
       assetDir: props.assetDir,
+      dialogueShouldClose: props.dialogueShouldClose,
+      jsonHTML: (<div className="d-flex align-items-center justify-content-center">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>),
       videoName: props.videoName,
-      videoInfo: null,
-      show: props.show
+      videoInfo: null
     };
     this.handleOKClick = this.handleOKClick.bind(this);
+    this.fetchDataFromServer();
   }
 
   componentDidMount() {
     $(this.modal).modal('show');
-    this.fetchDataFromServer();
-  }
-  
-  componentDidUpdate() {
     window.onpopstate = e => {
-      $(this.modal).modal('hide');
+      this.handleOKClick();
     }
   }
 
   fetchDataFromServer() {                    
     URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
-     axios.get(URL)
-       .then(response => {
-         this.setState({
-          videoInfo: null
-           // make it empty before fill it in again to force a re-rendering.
+      axios.get(URL)
+        .then(response => {
+          this.setState({
+           videoInfo: null
+          });
+          this.setState({
+           videoInfo: response.data,
+           jsonHTML: syntaxHighlight(JSON.stringify(response.data.content, null, 2))
          });
-         this.setState({
-          videoInfo: response.data
-         });
-       })
-       .catch(error => {
-        console.log(error);
-         alert('Unable to fetch videoInfo:\n' + error.response.data);         
-       });
+        })
+        .catch(error => {
+          console.log(error);     
+          this.setState({
+            jsonHTML: (
+              <div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+                Unable to fetch video information for video <strong>{this.state.videoName}</strong>:
+                <br />{error.response.data}
+              </div>
+            ),
+            videoInfo: false            
+           });
+        });
   }
 
   handleOKClick() {
     $(this.modal).modal('hide');
+    if (this.state.dialogueShouldClose != null) {
+      this.state.dialogueShouldClose();
+    }
+    /* When we want to close it, we need to do two things:
+      1. we set hide to the modal within this component;
+      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
+      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
+    */
   }
 
   render() {
-    
-    if (this.state.show === false) {
-      return null;
-    }
-
-    let json_html = null;
-    if (this.state.videoInfo === null) { 
-      json_html = (
-        <div className="d-flex align-items-center justify-content-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      );
-    }
-    else { 
-      json_html = syntaxHighlight(JSON.stringify(this.state.videoInfo.content, null, 2));
-    }
 
     return (
-    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="videoInformationModalTitle" aria-hidden="true">
+    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="videoInformationModalTitle"
+         aria-hidden="true" data-bs-backdrop="static">
         <div className="modal-dialog  modal-dialog-scrollable" role="document">
           {/* Turned out that modal-dialog-scrollable is buggy on smartphone devices... */}
         <div className="modal-content">
@@ -73,7 +74,7 @@ class ModalVideoInfo extends React.Component {
             <h5 className="modal-title" id="videoInformationModalTitle" >Video Information</h5>
             </div>
             <div className="modal-body">
-              <div className="mb-3">{json_html}</div>
+              <div className="mb-3">{this.state.jsonHTML}</div>
             </div>
             <div className="modal-footer">
             <button type="button" className="btn btn-primary" onClick={this.handleOKClick}>OK</button>
@@ -92,10 +93,11 @@ class ModalExtractSubtitles extends React.Component {
     this.state = {
       appAddress: props.appAddress,
       assetDir: props.assetDir,
+      dialogueShouldClose: props.dialogueShouldClose,
       refreshFileList: props.refreshFileList,
+      responseMessage: null,
       streamNo: 0,
       videoName: props.videoName,
-      modalClose: props.closed
     };
     this.handleCloseClick = this.handleCloseClick.bind(this);
     this.onstreamNoChange = this.onstreamNoChange.bind(this);
@@ -103,13 +105,10 @@ class ModalExtractSubtitles extends React.Component {
   }
 
   componentDidMount() {
-    $(this.modal).modal('show');     
-  }
-
-  componentDidUpdate() {
+    $(this.modal).modal('show');
     window.onpopstate = e => {
-      $(this.modal).modal('hide');
-    }
+      this.handleCloseClick();
+    }   
   }
 
   handleSubmitClick() {
@@ -134,7 +133,11 @@ class ModalExtractSubtitles extends React.Component {
     })
     .catch(error => {
       console.log(error);
-      alert('Unable to extract subtitles:\n' + error.response.data);      
+      this.setState({
+        responseMessage: (<div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+                            Unable to extract subtitles from <strong>{this.state.videoName}</strong>:<br />{error.response.data}
+                          </div>)
+      });  
     });
   }
   
@@ -146,18 +149,26 @@ class ModalExtractSubtitles extends React.Component {
 
   handleCloseClick() {
     $(this.modal).modal('hide');
-    if (this.state.modalClose != null) {
-      this.state.modalClose();
+    if (this.state.dialogueShouldClose != null) {
+      this.state.dialogueShouldClose();
     }
+    /* When we want to close it, we need to do two things:
+      1. we set hide to the modal within this component;
+      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
+      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
+    */
   }
-
+  
   render() {
     return (
-      <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="modal-extract-subtitles-title"
+           aria-hidden="true" data-bs-backdrop="static" >
+          {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
+          so the proper close methods will always be called.  */}
         <div className="modal-dialog modal-dialog-scrollable" role="document">
           <div className="modal-content">
             <div className="modal-header">
-              <h5 className="modal-title" id="exampleModalLabel">Extract Subtitles</h5>
+              <h5 className="modal-title" id="modal-extract-subtitles-title">Extract Subtitles</h5>
             </div>
             <div className="modal-body">
               <div className="mb-3">
@@ -165,7 +176,8 @@ class ModalExtractSubtitles extends React.Component {
                   Specify the stream ID (starting from 0) of the subtitles to be extracted:
                 </label>
                 <input id="folder-name-input" type="text" className="form-control"
-                    placeholder="Input folder name" value={this.state.streamNo} onChange={this.onstreamNoChange}/>   
+                    placeholder="Input folder name" value={this.state.streamNo} onChange={this.onstreamNoChange}/>
+                {this.state.responseMessage}
                 <div className="accordion my-2" id="accordionRemove">
                   <div className="accordion-item">
                       <h2 className="accordion-header" id="headingRemove">
@@ -206,6 +218,7 @@ class ModalMkdir extends React.Component {
     this.state = {
       appAddress: props.appAddress,
       assetDir: props.assetDir,
+      dialogueShouldClose: props.dialogueShouldClose,
       folderName: 'New Folder',
       refreshFileList: props.refreshFileList,
       modalClose: props.closed
@@ -258,8 +271,8 @@ class ModalMkdir extends React.Component {
 
   handleCloseClick() {
     $(this.modal).modal('hide');
-    if (this.state.modalClose != null) {
-      this.state.modalClose();
+    if (this.state.dialogueShouldClose != null) {
+      this.state.dialogueShouldClose();
     }
   }
 
@@ -301,9 +314,10 @@ class ModalRemove extends React.Component {
     super(props);
     this.state = {
       appAddress: props.appAddress,
+      dialogueShouldClose: props.dialogueShouldClose,
       fileInfo: props.fileInfo,
       refreshFileList: props.refreshFileList,
-      show: props.show
+      responseMessage: null
     };
     this.handleCloseClick = this.handleCloseClick.bind(this);
     this.handleSubmitClick = this.handleSubmitClick.bind(this);
@@ -311,11 +325,8 @@ class ModalRemove extends React.Component {
 
   componentDidMount() {
     $(this.modal).modal('show');
-  }
-
-  componentDidUpdate() {
     window.onpopstate = e => {
-      $(this.modal).modal('hide');
+      this.handleCloseClick();
     }
   }
 
@@ -339,12 +350,24 @@ class ModalRemove extends React.Component {
     })
     .catch(error => {
       console.log(error);
-      alert('Unable to remove:\n' + error.response.data);      
+      this.setState({
+        responseMessage: (<div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+                            Unable to remove <strong>{this.state.fileInfo.filename}</strong>:<br />{error.response.data}
+                          </div>)
+      }); 
     });
   }
 
   handleCloseClick() {
     $(this.modal).modal('hide');
+    if (this.state.dialogueShouldClose != null) {
+      this.state.dialogueShouldClose();
+    }
+    /* When we want to close it, we need to do two things:
+      1. we set hide to the modal within this component;
+      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
+      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
+    */
   }
 
   render() {
@@ -354,17 +377,21 @@ class ModalRemove extends React.Component {
     }
 
     return (
-    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" data-bs-backdrop="static" 
+         aria-labelledby="modal-remove-file-title" aria-hidden="true">
+           {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
+               so the proper close methods will always be called.  */}
         <div className="modal-dialog modal-dialog-scrollable" role="document">
         <div className="modal-content">
             <div className="modal-header">
-            <h5 className="modal-title" >Remove File</h5>
+              <h5 className="modal-title" id="modal-remove-file-title" >Remove File</h5>
             </div>
             <div className="modal-body">
             <div className="mb-3">
                 <span className="form-label" style={{ wordWrap: "break-word", wordBreak: "break-all" }}>
                 Remove file <strong>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong>?
                 </span>
+                {this.state.responseMessage}
                 <div className="accordion my-2" id="accordionRemove">
                   <div className="accordion-item">
                       <h2 className="accordion-header" id="headingRemove">
@@ -412,11 +439,11 @@ class ModalTranscode extends React.Component {
     this.state = {      
       appAddress: props.appAddress,
       audioID: -1,
+      dialogueShouldClose: props.dialogueShouldClose,
       fileInfo: props.fileInfo,
       crf: 30,
       refreshFileList: props.refreshFileList,
-      resolution: -1,
-      show: props.show
+      resolution: -1
     };
     this.onAudioIDChange = this.onAudioIDChange.bind(this);
     this.handleCloseClick = this.handleCloseClick.bind(this);
@@ -428,11 +455,8 @@ class ModalTranscode extends React.Component {
 
   componentDidMount() {
     $(this.modal).modal('show');
-  }
-
-  componentDidUpdate() {
     window.onpopstate = e => {
-      $(this.modal).modal('hide');
+      this.handleCloseClick();
     }
   }
 
@@ -459,8 +483,11 @@ class ModalTranscode extends React.Component {
       }
     })
     .catch(error => {
-      console.log(error);
-      alert('Unable to transcode:\n' + error.response.data);      
+      this.setState({
+        responseMessage: (<div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+                            Unable to transcode <strong>{payload.get('video_name')}</strong>:<br />{error.response.data}
+                          </div>)
+      });
     });
   }
   
@@ -496,20 +523,30 @@ class ModalTranscode extends React.Component {
   
   handleCloseClick() {
     $(this.modal).modal('hide');
+    if (this.state.dialogueShouldClose != null) {
+      this.state.dialogueShouldClose();
+    }
+    /* When we want to close it, we need to do two things:
+      1. we set hide to the modal within this component;
+      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
+      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
+    */
   }
 
-  render() {
-    
+  render() {    
     if (this.state.show === false) {
       return null;
     }
-
+   
     return (
-        <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" data-bs-backdrop="static" 
+             aria-labelledby="modal-video-transcode-title" aria-hidden="true">
+            {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
+          so the proper close methods will always be called.  */}
           <div className="modal-dialog modal-dialog-scrollable" role="document">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Video Transcode</h5>
+                <h5 className="modal-title" id="modal-video-transcode-title">Video Transcode</h5>
               </div>
               <div className="modal-body">
                 <div className="mb-3">
@@ -538,7 +575,7 @@ class ModalTranscode extends React.Component {
                       <option value="144">144p</option>
                     </select>
                   </div>
-
+                  {this.state.responseMessage}
                   <div className="accordion my-2" id="accordionRemove">
                     <div className="accordion-item">
                       <h2 className="accordion-header" id="headingRemove">
@@ -584,11 +621,12 @@ class ModalMove extends React.Component {
     super(props);
     this.state = {
       appAddress: props.appAddress,
+      dialogueShouldClose: props.dialogueShouldClose,
       fileInfo: props.fileInfo,
       newFileDir: props.fileInfo.asset_dir,
       newFileName: props.fileInfo.filename,
       refreshFileList: props.refreshFileList,
-      show: props.show
+      responseMessage: null
     };
     this.handleCloseClick = this.handleCloseClick.bind(this);
     this.handleSubmitClick = this.handleSubmitClick.bind(this);
@@ -598,11 +636,8 @@ class ModalMove extends React.Component {
 
   componentDidMount() {
     $(this.modal).modal('show');
-  }
-  
-  componentDidUpdate() {
     window.onpopstate = e => {
-      $(this.modal).modal('hide');
+      this.handleCloseClick();
     }
   }
 
@@ -627,7 +662,12 @@ class ModalMove extends React.Component {
     })
     .catch(error => {
       console.log(error);
-      alert('Unable to move:\n' + error.response.data);      
+      this.setState({
+        responseMessage: (<div class="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-all" }}>
+                            Unable to move file from <strong>{payload.get('old_filepath')}</strong> to <strong>{payload.get('new_filepath')}</strong>:
+                            <br />{error.response.data}
+                          </div>)
+      });   
     });
   }
   
@@ -647,30 +687,44 @@ class ModalMove extends React.Component {
 
   handleCloseClick() {
     $(this.modal).modal('hide');
+    if (this.state.dialogueShouldClose != null) {
+      this.state.dialogueShouldClose();
+    }
+    /* When we want to close it, we need to do two things:
+      1. we set hide to the modal within this component;
+      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
+      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
+    */
   }
 
   render() {
-    
-    if (this.state.show === false) {
-      return null;
-    }
 
     return (
-        <div className="modal fade" ref={modal=> this.modal = modal} id="exampleModal" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div className="modal fade" ref={modal=> this.modal = modal} id="exampleModal" role="dialog"
+             aria-labelledby="modal-move-file-title" aria-hidden="true" data-bs-backdrop="static" >
+          {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
+              so the proper close methods will always be called.  */}
           <div className="modal-dialog modal-dialog-scrollable" role="document">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title" id="exampleModalLabel">Move File</h5>
+                <h5 className="modal-title" id="modal-move-file-title">Move File</h5>
               </div>
               <div className="modal-body">
                 <div className="mb-3">
                   <label className="form-label" style={{ wordBreak: "break-all" }}>
                     Move the file from <b>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</b> to:
                   </label>
-                  <textarea type="text" className="form-control" rows="2"
-                            placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
-                  <textarea type="text" className="form-control" rows="2"
-                            placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
+                  <div class="input-group mb-1">
+                    <span class="input-group-text">Directory</span>
+                    <textarea type="text" className="form-control" rows="2"
+                              placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
+                  </div>
+                  <div class="input-group mb-3">
+                    <span class="input-group-text">Filename</span>
+                    <textarea type="text" className="form-control" rows="2"
+                              placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
+                  </div>
+                  {this.state.responseMessage}
                   <div className="accordion my-2" id="accordionMove">
                     <div className="accordion-item">
                       <h2 className="accordion-header" id="headingRemove">
@@ -712,102 +766,79 @@ class ContextMenu extends React.Component {
     super(props);
     this.state = {      
       appAddress: props.appAddress,
-      modalKey: 0,
+      modalDialogue: null,
       refreshFileList: props.refreshFileList,
-      showModal: false,
       fileInfo: props.fileInfo
     };
+    this.dialogueShouldClose = this.dialogueShouldClose.bind(this);
     this.onExtractSubtitlesButtonClick = this.onExtractSubtitlesButtonClick.bind(this);
     this.onMoveButtonClick = this.onMoveButtonClick.bind(this);
     this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);    
     this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
     this.onVideoInfoButtonClick = this.onVideoInfoButtonClick.bind(this);
-    this.Modal = null;
+  }
+  
+  dialogueShouldClose() {
+    this.state.modalDialogue = null;
+    this.forceUpdate();
   }
   
   onRemoveButtonClick(event) {
-    this.Modal = (
-      <ModalRemove key={this.state.modalKey} 
-           fileInfo={this.state.fileInfo}
-           appAddress={this.state.appAddress}
-           refreshFileList={this.state.refreshFileList}
-           show={true}/>
-        // By adding a key attribute, Modal will be created each time, so we
-        //  can pass different show attribute to it.
-    );
-    this.setState(prevState => ({
-      showModal: true,
-      modalKey: prevState.modalKey + 1
-    }));
+    this.setState({
+      modalDialogue: (<ModalRemove
+                fileInfo={this.state.fileInfo}
+                appAddress={this.state.appAddress}
+                dialogueShouldClose={this.dialogueShouldClose}
+                refreshFileList={this.state.refreshFileList} />)
+    });
+    this.forceUpdate();
   }
   
   onExtractSubtitlesButtonClick(event) {
-
-    this.Modal = (
-      <ModalExtractSubtitles
-           appAddress={this.state.appAddress}
-           key={this.state.modalKey} 
-           assetDir={this.state.fileInfo.asset_dir}
-           videoName={this.state.fileInfo.filename}           
-           refreshFileList={this.state.refreshFileList}
-           show={true} />
-        // By adding a key attribute, Modal will be created each time, so we
-        //  can pass different show attribute to it.
-    );
-    this.setState(prevState => ({
-      showModal: true,
-      modalKey: prevState.modalKey + 1
-    }));
-  }
-  
+    this.setState({
+      modalDialogue: (<ModalExtractSubtitles
+        appAddress={this.state.appAddress}
+        assetDir={this.state.fileInfo.asset_dir}
+        dialogueShouldClose={this.dialogueShouldClose}
+        videoName={this.state.fileInfo.filename}           
+        refreshFileList={this.state.refreshFileList} />)
+    });
+    this.forceUpdate();
+  }  
 
   onVideoInfoButtonClick(event) {
-    this.Modal = (
-      <ModalVideoInfo
-           key={this.state.modalKey} 
-           assetDir={this.state.fileInfo.asset_dir}
-           videoName={this.state.fileInfo.filename}
+    this.setState({
+      modalDialogue: (<ModalVideoInfo
            appAddress={this.state.appAddress}
-           show={true}/>
-        // By adding a key attribute, Modal will be created each time, so we
-        //  can pass different show attribute to it.
-    );
-    this.setState(prevState => ({
-      showModal: true,
-      modalKey: prevState.modalKey + 1
-    }));
+           assetDir={this.state.fileInfo.asset_dir}
+           dialogueShouldClose={this.dialogueShouldClose}
+           videoName={this.state.fileInfo.filename} />)
+    });
+    this.forceUpdate();
   }
 
   onMoveButtonClick(event) {
-    this.Modal = (
-      <ModalMove key={this.state.modalKey} 
+    this.setState({
+      modalDialogue: (<ModalMove 
+          dialogueShouldClose={this.dialogueShouldClose}
            fileInfo={this.state.fileInfo}
            appAddress={this.state.appAddress}
-           refreshFileList={this.state.refreshFileList}
-           show={true}/>
-        // By adding a key attribute, Modal will be created each time, so we
-        //  can pass different show attribute to it.
-    );
-    this.setState(prevState => ({
-      showModal: true,
-      modalKey: prevState.modalKey + 1
-    }));
+           refreshFileList={this.state.refreshFileList}/>)
+    });
+    this.forceUpdate();
   }
   
   onTranscodeButtonClick(event) {
-    this.Modal = (
-      <ModalTranscode key={this.state.modalKey} 
+    this.setState({
+      modalDialogue: (<ModalTranscode
            fileInfo={this.state.fileInfo}
            appAddress={this.state.appAddress}
-           refreshFileList={this.state.refreshFileList}
-           show={true}/>
+           dialogueShouldClose={this.dialogueShouldClose}
+           refreshFileList={this.state.refreshFileList} />)
         // By adding a key attribute, Modal will be created each time, so we
-        //  can pass different show attribute to it.
-    );
-    this.setState(prevState => ({
-      showModal: true,
-      modalKey: prevState.modalKey + 1
-    }));
+        // can pass different show attribute to it.
+    });
+    this.forceUpdate();
   }
 
   render() {
@@ -822,7 +853,7 @@ class ContextMenu extends React.Component {
           <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
           <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</a></li>
         </ul>
-        {this.Modal}
+        {this.state.modalDialogue}
       </div>
     );
   }
@@ -975,14 +1006,14 @@ class FileManager extends React.Component {
 
   fileListShouldRefresh = () => this.fetchDataFromServer(this.state.fileInfo.metadata.asset_dir);
 
-  destoryNewFolderModal = () => this.Modal = null;
+  dialogueShouldClose = () => this.Modal = null;
 
   onNewFolderClick(event) {
     this.Modal = (
       <ModalMkdir assetDir={this.state.currentPath}
             appAddress={this.state.appAddress}
             refreshFileList={this.fileListShouldRefresh} 
-            closed={this.destoryNewFolderModal} />
+            dialogueShouldClose={this.dialogueShouldClose} />
             // Tried many different solutions, a callback
             // to destory the Modal is still the best way 
             // to handle the close() event.

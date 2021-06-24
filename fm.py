@@ -208,8 +208,8 @@ def move():
         # NotFound exception.
         if os.path.ismount(old_real_filepath):
             return Response(
-                (f'{old_filepath} is a mountpoint.The move of mountpoint is '
-                 'disabled to prevent accidental massive data loss'), 400)
+                (f'{old_filepath} is a mountpoint. The move of mountpoints is '
+                 'disabled to prevent unexpected data loss'), 400)
         if (os.path.isfile(old_real_filepath) is False and
                 os.path.isdir(old_real_filepath) is False):
             return Response(f'{old_real_filepath} not found', 400)
@@ -253,8 +253,8 @@ def remove():
 
         if os.path.ismount(real_filepath):
             return Response(
-                (f'{filepath} is a mountpoint.The removal of mountpoint is '
-                 'disabled to prevent accidental massive data loss'), 400)
+                (f'{filepath} is a mountpoint. The removal of mountpoints is '
+                 'disabled to prevent unexpected data loss'), 400)
             logging.info(f'Mountpoint [{real_filepath}] NOT removed')
         elif os.path.islink(real_filepath):
             os.unlink(real_filepath)
@@ -266,7 +266,7 @@ def remove():
             shutil.rmtree(real_filepath)
             logging.debug(f'Directory removed: [{real_filepath}]')
         else:
-            return Response(f'{filepath} does not exist or'
+            return Response(f'{filepath} does not exist or '
                             'cannot be handled by the server', 400)
 
     except (FileNotFoundError, PermissionError, werkzeug.exceptions.NotFound):
