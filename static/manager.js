@@ -15,6 +15,12 @@ class ModalVideoInfo extends React.Component {
     $(this.modal).modal('show');
     this.fetchDataFromServer();
   }
+  
+  componentDidUpdate() {
+    window.onpopstate = e => {
+      $(this.modal).modal('hide');
+    }
+  }
 
   fetchDataFromServer() {                    
     URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
@@ -60,7 +66,7 @@ class ModalVideoInfo extends React.Component {
 
     return (
     <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="videoInformationModalTitle" aria-hidden="true">
-        <div className="modal-dialog" role="document">
+        <div className="modal-dialog  modal-dialog-scrollable" role="document">
           {/* Turned out that modal-dialog-scrollable is buggy on smartphone devices... */}
         <div className="modal-content">
             <div className="modal-header">
@@ -98,6 +104,12 @@ class ModalExtractSubtitles extends React.Component {
 
   componentDidMount() {
     $(this.modal).modal('show');     
+  }
+
+  componentDidUpdate() {
+    window.onpopstate = e => {
+      $(this.modal).modal('hide');
+    }
   }
 
   handleSubmitClick() {
@@ -207,6 +219,12 @@ class ModalMkdir extends React.Component {
     $(this.modal).modal('show');     
   }
 
+  componentDidUpdate() {
+    window.onpopstate = e => {
+      $(this.modal).modal('hide');
+    }
+  }
+
   handleSubmitClick() {
     this.postDataToServer();    
   }
@@ -293,6 +311,12 @@ class ModalRemove extends React.Component {
 
   componentDidMount() {
     $(this.modal).modal('show');
+  }
+
+  componentDidUpdate() {
+    window.onpopstate = e => {
+      $(this.modal).modal('hide');
+    }
   }
 
   handleSubmitClick() {
@@ -404,6 +428,12 @@ class ModalTranscode extends React.Component {
 
   componentDidMount() {
     $(this.modal).modal('show');
+  }
+
+  componentDidUpdate() {
+    window.onpopstate = e => {
+      $(this.modal).modal('hide');
+    }
   }
 
   handleSubmitClick() {
@@ -568,6 +598,12 @@ class ModalMove extends React.Component {
 
   componentDidMount() {
     $(this.modal).modal('show');
+  }
+  
+  componentDidUpdate() {
+    window.onpopstate = e => {
+      $(this.modal).modal('hide');
+    }
   }
 
   handleSubmitClick() {
@@ -917,6 +953,7 @@ class FileManager extends React.Component {
   }
 
   componentDidMount() {
+    
     this.fetchDataFromServer(this.state.currentPath);
      // this.Modal = null;
 
@@ -1088,7 +1125,6 @@ class FileManager extends React.Component {
 
   render() {
     if (this.state.fileInfo === null) { return null; }
-
     let fi = this.state.fileInfo;
     const keys = Object.keys(fi.content);
     let fileList = new Array(keys.length);
@@ -1137,9 +1173,11 @@ class FileManager extends React.Component {
             url = this.state.appAddress + "/static/icons/word.svg"; 
           } else if ([".htm", ".html", ".mht"].includes(fi.content[key].extension.toLowerCase())) {
             url = this.state.appAddress + "/static/icons/html.svg"; 
+          } else if ([".pdf"].includes(fi.content[key].extension.toLowerCase())) {
+            url = this.state.appAddress + "/static/icons/pdf.svg";
           } else if ([".7z", ".zip", ".rar", ".tar", ".gz"].includes(fi.content[key].extension.toLowerCase())) {
             url = this.state.appAddress + "/static/icons/archive.svg"; 
-          } else if ([".mp3", ".wma", ".wav", ".ogg", ".flac"].includes(fi.content[key].extension.toLowerCase())) {
+          } else if ([".mka", ".mp3", ".wma", ".wav", ".ogg", ".flac"].includes(fi.content[key].extension.toLowerCase())) {
             url = this.state.appAddress + "/static/icons/music.svg"; 
           } else {
             url = this.state.appAddress + "/static/icons/misc.svg"; 
@@ -1274,14 +1312,19 @@ class FileManager extends React.Component {
           </div>
         </div>
         <div>
-          <ul className="list-group overflow-auto" style={{ maxWidth: "1000px", maxHeight: "100%", marginLeft: "auto", marginRight: "auto" }}>
+          <ul className="list-group overflow-auto"
+              style={{ maxWidth: "1000px", maxHeight: "100%", minHeight: "60vh", marginLeft: "auto", marginRight: "auto" }}>
             {/* The maxHeight: 100% is used to solve a very nasty bug. The bug is like this:
                 First, it only happens on smartphone and will not happen on desktop browser. On a mobile device, if you have a long file list and
                 you try to open the context menu for the file items shown on the last page of the list (i.e. not necessarily the last one, but the ones
                 could be shown on the last page of the screen) you will notice that the poge will scroll up a little bit at the moment you click the
                 "more" button. I failed to find any solutions or even references to this bug online.
                 After a lot of trial-and-error, it turns out that if we set the maxHeight of the file list to the height of the monitor,
-                the bug disappears... */}
+                the bug disappears... 
+                minHeight is used to fix another issue: suppose we set maxHeight only, if the content height is too small,
+                the context menu can actually be higher than the content height, forcing the browser to show a scrollbar
+                in order to accommodate the height of the context menu. If we set minHeight == 60vh, the content height
+                will never to too small to accomodate the context menu.*/}
           {fileList}
           </ul>
         </div>
