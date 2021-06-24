@@ -18,7 +18,6 @@ class ModalVideoInfo extends React.Component {
 
   fetchDataFromServer() {                    
     URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
-    console.log('Fetching: ' + URL);
      axios.get(URL)
        .then(response => {
          this.setState({
@@ -30,8 +29,8 @@ class ModalVideoInfo extends React.Component {
          });
        })
        .catch(error => {
-         alert('Unable to fetch videoInfo:\n' + error.response.data);
-         console.log(error);
+        console.log(error);
+         alert('Unable to fetch videoInfo:\n' + error.response.data);         
        });
   }
 
@@ -122,8 +121,8 @@ class ModalExtractSubtitles extends React.Component {
       }
     })
     .catch(error => {
-      alert('Unable to extract subtitles:\n' + error.response.data);
       console.log(error);
+      alert('Unable to extract subtitles:\n' + error.response.data);      
     });
   }
   
@@ -228,8 +227,8 @@ class ModalMkdir extends React.Component {
       }
     })
     .catch(error => {
-      alert('Unable to create new folder:\n' + error.response.data);
       console.log(error);
+      alert('Unable to create new folder:\n' + error.response.data);      
     });
   }
   
@@ -315,8 +314,8 @@ class ModalRemove extends React.Component {
       }
     })
     .catch(error => {
-      alert('Unable to remove:\n' + error.response.data);
       console.log(error);
+      alert('Unable to remove:\n' + error.response.data);      
     });
   }
 
@@ -430,8 +429,8 @@ class ModalTranscode extends React.Component {
       }
     })
     .catch(error => {
-      alert('Unable to transcode:\n' + error.response.data);
       console.log(error);
+      alert('Unable to transcode:\n' + error.response.data);      
     });
   }
   
@@ -556,13 +555,15 @@ class ModalMove extends React.Component {
     this.state = {
       appAddress: props.appAddress,
       fileInfo: props.fileInfo,
-      newFilepath: props.fileInfo.asset_dir + props.fileInfo.filename,
+      newFileDir: props.fileInfo.asset_dir,
+      newFileName: props.fileInfo.filename,
       refreshFileList: props.refreshFileList,
       show: props.show
     };
     this.handleCloseClick = this.handleCloseClick.bind(this);
-    this.onFilepathChange = this.onFilepathChange.bind(this);
     this.handleSubmitClick = this.handleSubmitClick.bind(this);
+    this.onFileDirChange = this.onFileDirChange.bind(this);
+    this.onFileNameChange = this.onFileNameChange.bind(this);
   }
 
   componentDidMount() {
@@ -575,9 +576,8 @@ class ModalMove extends React.Component {
 
   fetchDataFromServer() {                    
     const payload = new FormData();
-     // payload.append('asset_dir', this.state.fileInfo.asset_dir);
     payload.append('old_filepath', this.state.fileInfo.asset_dir + this.state.fileInfo.filename);
-    payload.append('new_filepath', this.state.newFilepath);
+    payload.append('new_filepath', this.state.newFileDir + this.state.newFileName);
     axios({
       method: "post",
       url: this.state.appAddress + "/move/",
@@ -590,14 +590,22 @@ class ModalMove extends React.Component {
       }
     })
     .catch(error => {
-      alert('Unable to move:\n' + error.response.data);
       console.log(error);
+      alert('Unable to move:\n' + error.response.data);      
     });
   }
   
-  onFilepathChange(event) {
+  onFileDirChange(event) {
+    var newVal = event.target.value.replace('\n', '').replace('\r', '');
     this.setState({
-      newFilepath: event.target.value
+      newFileDir: newVal
+      });
+  }
+  
+  onFileNameChange(event) {
+    var newVal = event.target.value.replace('\n', '').replace('\r', '');
+    this.setState({
+      newFileName: newVal
       });
   }
 
@@ -620,11 +628,13 @@ class ModalMove extends React.Component {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label htmlFor="move-destination-input" className="form-label" style={{ wordBreak: "break-all" }}>
+                  <label className="form-label" style={{ wordBreak: "break-all" }}>
                     Move the file from <b>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</b> to:
                   </label>
-                  <textarea id="move-destination-input" type="text" className="form-control" rows="3"
-                            placeholder="Input new filename" value={this.state.newFilepath} onChange={this.onFilepathChange} />
+                  <textarea type="text" className="form-control" rows="2"
+                            placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
+                  <textarea type="text" className="form-control" rows="2"
+                            placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
                   <div className="accordion my-2" id="accordionMove">
                     <div className="accordion-item">
                       <h2 className="accordion-header" id="headingRemove">
@@ -903,7 +913,6 @@ class FileManager extends React.Component {
     .catch(error => {
       console.log(error);
       alert('Unable to upload files:\n' + error.response.data);
-      console.log(error);
     });
   }
 
@@ -1014,7 +1023,7 @@ class FileManager extends React.Component {
         });
 
         const ffmpegItems = this.state.serverInfo.ffmpeg.map((ffmpegItem) =>
-          <li key={ffmpegItem.pid}>
+          <li key={ffmpegItem.pid} style={{ wordBreak: "break-all" }}>
             {ffmpegItem.cmdline} <b>(since {ffmpegItem.since})</b>
           </li>
         );
@@ -1043,17 +1052,15 @@ class FileManager extends React.Component {
         this.forceUpdate();
         })
       .catch(error => {
-        alert('Unable to fetch server info:\n' + error.response.data);
         console.log(error);
+        alert('Unable to fetch server info:\n' + error.response.data);        
       });
   }
   
   fetchDataFromServer(asset_dir) {
-   // if (asset_dir === null) {
-   //   asset_dir = this.state.fileInfo.metadata.asset_dir;
-  //  }
+
     URL = this.state.appAddress + '/get-file-list/?asset_dir=' + encodeURIComponent(asset_dir);
-   // console.log('Fetching: ' + URL);
+
     axios.get(URL)
       .then(response => {
         // handle success
@@ -1067,11 +1074,11 @@ class FileManager extends React.Component {
           currentPath: response.data.metadata.asset_dir,
           pathStack:  [...prevState.pathStack, response.data.metadata.asset_dir]
         }));
-        console.log(this.state.pathStack);
       })
       .catch(error => {
-        alert('Unable to fetch fileInfo:\n' + error.response.data);
         console.log(error);
+        alert('Unable to fetch fileInfo:\n' + error.response.data);
+        
       });
   }
 

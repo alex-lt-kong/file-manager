@@ -114,7 +114,7 @@ class PlayBack extends React.Component {
                     <p className="my-1" style={{ wordBreak: "break-all" }}><b>Name: </b>{this.state.videoName}</p>
                     <p className="my-1" style={{ wordBreak: "break-all" }}><b>URL: </b><a href={this.videoURL}>{this.videoURL}</a></p>
                     <p className="my-1" style={{ wordBreak: "break-all" }}><b>Views: </b>{this.state.views}</p>
-                    <p className="my-1" style={{ wordBreak: "break-all" }}><b>Last View: </b>{this.state.lastView.slice(0, 10)}</p>
+                    <p className="my-1" style={{ wordBreak: "break-all" }}><b>Last View: </b>{this.state.lastView}</p>
                   </div>
                 </div>
               </div>
@@ -135,10 +135,9 @@ class PlayBack extends React.Component {
           </div>
           <div className="col-sm-9 col-md-push-9">
             {/* A combination of sm and number makes it work */}
-            <video style={{ width: "100%", maxHeight: "90vh", backgroundColor: "black" }} ref={this.videoRef}
-                   playbackRate="5" autoPlay={true} controls>
+            <video style={{ width: "100%", maxHeight: "90vh", backgroundColor: "black" }} ref={this.videoRef} autoPlay={true} controls>
               <source src={this.videoURL} />
-              <textarea className="form-control" aria-label="With textarea" onChange={this.onSubtitlesURLTextareaChange} value={this.state.subtitlesURL} />
+              <textarea className="form-control" style={{ wordBreak: "break-all" }} aria-label="With textarea" onChange={this.onSubtitlesURLTextareaChange} value={this.state.subtitlesURL} />
               <track label="English" kind="subtitles" srcLang="en" src={this.state.subtitlesURL} default />
             Your browser does not support the video tag.
             </video>
@@ -148,7 +147,8 @@ class PlayBack extends React.Component {
                 <div className="col-xl-9">
                   <div className="input-group">
                           <span className="input-group-text font-monospace">Subs&nbsp;</span>
-                          <textarea className="form-control" aria-label="With textarea" rows={screen.width > 1000 ? 1 : 3} style={{fontSize: "1em", wordBreak: "break-all" }}
+                          <textarea className="form-control" aria-label="With textarea" rows={screen.width > 1000 ? 1 : 3}
+                                    style={{ fontSize: "1em", wordBreak: "break-all" }}
                                     onChange={this.onSubtitlesURLTextareaChange} value={this.state.subtitlesURL}></textarea>
                   </div>                        
                 </div>
@@ -173,7 +173,9 @@ class PlayBack extends React.Component {
 
 ReactDOM.render(
   <div>
-      <PlayBack appAddress={app_address} assetDir={asset_dir} videoName={video_name} views={views} lastView={last_view} />
+      <PlayBack appAddress={app_address} assetDir={paras['asset_dir']} 
+                videoName={paras['video_name']} views={paras['views']}
+                lastView={paras['last_view']} />
   </div>,
   document.querySelector('#root'),
 );

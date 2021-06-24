@@ -60,7 +60,7 @@ video_extensions = None
 def get_file_id(path: str):
 
     if os.path.isfile(path) is False:
-        raise ValueError(f'File {path} does not exist')
+        raise FileNotFoundError(f'File {path} does not exist')
 
     filename = os.path.basename(path)
     # Note that os.path.basename() is generally used to handle file path
@@ -193,6 +193,10 @@ def move():
     try:
         old_filepath = request.form['old_filepath']
         new_filepath = request.form['new_filepath']
+        old_filepath = old_filepath.replace('\n', '').replace('\r', '')
+        new_filepath = new_filepath.replace('\n', '').replace('\r', '')
+        # send_from_directory() will raise ValueError if it detects
+        # newline, so let's just remove them.
         old_real_filepath = flask.safe_join(root_dir, old_filepath[1:])
         new_real_filepath = flask.safe_join(root_dir, new_filepath[1:])
         # safe_join can prevent base directory escaping
@@ -208,10 +212,10 @@ def move():
                  'disabled to prevent accidental massive data loss'), 400)
         if (os.path.isfile(old_real_filepath) is False and
                 os.path.isdir(old_real_filepath) is False):
-            raise Response(f'{old_filepath} not found', 400)
+            return Response(f'{old_real_filepath} not found', 400)
         if (os.path.isfile(new_real_filepath) or
                 os.path.isdir(new_real_filepath)):
-            raise Response(f'{new_filepath} occupied by an existing file', 400)
+            return Response(f'{new_real_filepath} occupied', 400)
 
         shutil.move(src=old_real_filepath, dst=new_real_filepath)
         # If the destination is on the current filesystem, then os.rename()
@@ -573,9 +577,11 @@ def play_video():
 
     try:
         fid = get_file_id(flask.safe_join(root_dir, asset_dir[1:], video_name))
+    except FileNotFoundError():
+        return Response('File not found', 404)
     except Exception:
         logging.exception(f'parameters: {root_dir}, {asset_dir}, {video_name}')
-        return Response('Parameters error')
+        return Response('Parameters error', 400)
     if fid in file_stat['content']:
         views = file_stat['content'][fid]['downloads']
         last_view = file_stat['content'][fid]['last_download']
@@ -585,11 +591,15 @@ def play_video():
 
     global debug_mode
 
+    paras = {}
+    paras['asset_dir'] = asset_dir
+    paras['video_name'] = video_name
+    paras['views'] = views
+    paras['last_view'] = last_view
+
     return render_template('playback.html',
                            app_address=app_address,
-                           asset_dir=asset_dir,
-                           video_name=video_name,
-                           views=views, last_view=last_view,
+                           paras=json.dumps(paras),
                            mode='development' if debug_mode else 'production')
 
 
@@ -621,9 +631,11 @@ def download():
         # [1:] is used to get ride of the initial /:
         # otherwise safe_join will consider it a chroot escape attempt
         fid = get_file_id(file_path)
-    except werkzeug.exceptions.NotFound:
+    except (werkzeug.exceptions.NotFound):
         logging.exception(f'Parameters are {root_dir}, {asset_dir}')
         return Response('Potential chroot escape', 400)
+    except FileNotFoundError:
+        return Response('File not found', 404)
     except Exception:
         logging.exception('')
         return Response('Parameter error', 400)
