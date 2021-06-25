@@ -145,11 +145,11 @@ class PlayBack extends React.Component {
             <div className="container-fluid px-0">
               <div className="row">
                 <div className="col-xl-9">
-                  <div className="input-group">
-                          <span className="input-group-text font-monospace">Subs&nbsp;</span>
-                          <textarea className="form-control" aria-label="With textarea" rows={screen.width > 1000 ? 1 : 3}
-                                    style={{ fontSize: "1em", wordBreak: "break-all" }}
-                                    onChange={this.onSubtitlesURLTextareaChange} value={this.state.subtitlesURL}></textarea>
+                  <div className="input-group">                    
+                    <span className="input-group-text font-monospace">Subs&nbsp;</span>
+                    <textarea className="form-control" aria-label="With textarea" rows={screen.width > 1000 ? 1 : 3}
+                              style={{ fontSize: "1em", wordBreak: "break-all" }}
+                              onChange={this.onSubtitlesURLTextareaChange} value={this.state.subtitlesURL}></textarea>
                   </div>                        
                 </div>
                 <div className="col-xl-3">                  

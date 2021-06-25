@@ -85,11 +85,11 @@ class ContextMenu extends React.Component {
         <i id="dropdownContextMenuButton" className="bi bi-three-dots-vertical" data-bs-toggle="dropdown"
            aria-expanded="false" style={{ cursor: "pointer", fontSize: "1.2em" }} ></i>
         <ul className="dropdown-menu" aria-labelledby="dropdownContextMenuButton">
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onMoveButtonClick}>Move</a></li>
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</a></li>
+          <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onMoveButtonClick}>Move</a></li>
+          <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
+          <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
+          <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
+          <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</a></li>
         </ul>
         {this.state.modalDialogue}
       </div>

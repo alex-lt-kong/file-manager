@@ -14,7 +14,8 @@ class ModalMove extends React.Component {
       responseMessage: null
     };
     this.handleCloseClick = this.handleCloseClick.bind(this);
-    this.handleSubmitClick = this.handleSubmitClick.bind(this);
+    this.handleRegularizationClick = this.handleRegularizationClick.bind(this);
+    this.handleSubmitClick = this.handleSubmitClick.bind(this);    
     this.onFileDirChange = this.onFileDirChange.bind(this);
     this.onFileNameChange = this.onFileNameChange.bind(this);
   }
@@ -35,6 +36,12 @@ class ModalMove extends React.Component {
     // clicking it twice should not cause any issue since the second move will be blocked (FileExistsError) anyway.
     // It is mainly used to reduce users confusion.
     this.fetchDataFromServer();    
+  }
+
+  handleRegularizationClick() {
+    this.setState(prevState => ({
+      newFileName: prevState.newFileName.toLowerCase().replace(/[&\/\\#,+()$~%.'":*?<>{}]/g, '').replace(/\s+/g, '-').replace('---', '_')
+    }));
   }
 
   fetchDataFromServer() {                    
@@ -139,12 +146,12 @@ class ModalMove extends React.Component {
                   </label>
                   <div className="input-group mb-1">
                     <span className="input-group-text font-monospace">Directory</span>
-                    <textarea type="text" className="form-control" rows="2"
+                    <textarea type="text" className="form-control" rows="2"  style={{ wordBreak: "break-all" }}
                               placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
                   </div>
                   <div className="input-group mb-3">
                     <span className="input-group-text font-monospace">Filename&nbsp;</span>
-                    <textarea type="text" className="form-control" rows="2"
+                    <textarea type="text" className="form-control" rows="2" style={{ wordBreak: "break-all" }}
                               placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
                   </div>
                   {this.state.responseMessage}
@@ -158,13 +165,17 @@ class ModalMove extends React.Component {
                       </h2>
                       <div id="collapseMoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionMove">
                         <div className="accordion-body">
-                        1. The server calls returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
-                        os.path.ismount()</a> returns true;<br />
-                        2. The server calls <a href="https://docs.python.org/3/library/shutil.html#shutil.move" target="_blank">
-                        shutil.move()</a> to do the move;<br />
-                        3. If the destination is on a different filesystem, source file is copied to destination and then removed
-                        <strong>(It could take a long time!)</strong>;<br />
-                        4. In case of symlinks, a new symlink pointing to the target of src will be created in or as dst and src will be removed.
+                          <ol>
+                            <li>The server returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
+                                os.path.ismount()</a> returns true;</li>
+                            <li>The server calls <a href="https://docs.python.org/3/library/shutil.html#shutil.move" target="_blank">
+                                shutil.move()</a> to do the move;</li>
+                            <li>If the destination is on a different filesystem, source file is copied to destination and then removed <strong>
+                              (It could take a long time!)</strong>;</li>
+                            <li>In case of symlinks, a new symlink pointing to the target of src will be created in or as dst and src will be removed.</li>
+                            <li><code>Regularize Filename</code> is used to make a filename more machine-friendly: it converts all letters to lowercase, replaces
+                                each special character (including space) with a <code>-</code> and then replaces a <code>---</code> with a <code>_</code></li>
+                          </ol>
                         </div>
                       </div>
                     </div>
@@ -174,9 +185,10 @@ class ModalMove extends React.Component {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
+                <button type="button" className="btn btn-primary"  onClick={this.handleRegularizationClick}>Regularize Filename</button>
                 <button type="button" className="btn btn-primary"
                         disabled={this.state.disableSubmitByFileName || this.state.disableSubmitByDirName || this.state.disableSubmitBySubmit}
-                        onClick={this.handleSubmitClick}>Submit</button>
+                        onClick={this.handleSubmitClick}>OK</button>
               </div>
             </div>
           </div>

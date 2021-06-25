@@ -60,6 +60,7 @@ class FileManager extends React.Component {
     this.onServerInfoClick = this.onServerInfoClick.bind(this);
 
     this.serverInfoPanel;
+    this.navigationBar = null;
   }
 
 
@@ -421,60 +422,26 @@ class FileManager extends React.Component {
     return fileList;
   }
 
-  render() {
-    if (this.state.fileInfo === null) { return null; }
-    let fileList = this.generateFilesList(this.state.fileInfo.content);
-
-    return (      
-      <div>
-        <div className="navbar navbar-expand-lg navbar-light bg-light sticky-top">
-          <div className="row container-fluid">
-            <div className="col-md-auto">
-            {/* Use col-{breakpoint}-auto classes to size columns based on the natural width of their content. */}
-              
-            <button className="btn btn-primary mx-1 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom" >
-                <i className="bi bi-upload"></i> Upload
+  renderNavigationBar() {
+    this.navigationBar = (
+      <div className="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+        <div className="row container-fluid">
+          <div className="col-md-auto">
+          {/* Use col-{breakpoint}-auto classes to size columns based on the natural width of their content. */}            
+            <div class="btn-group">
+              <button type="button" class="btn btn-primary dropdown-toggle mx-1 my-1" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-plus-circle"></i> New..  
               </button>
-              <div className="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
-                <div className="offcanvas-header">
-                  <h5 className="offcanvas-title" id="offcanvasBottomLabel"><b>File Upload</b></h5>
-                  <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
-                </div>
-                <div className="offcanvas-body" style={{ fontSize: "0.85em" }}>
-                  {/* d-flex align-items-center justify-content-center: used to center
-                  this.serverInfoPanel horizontally and vertically 
-                      However, after adding d-flex align-items-center justify-content-center,
-                      the scroll function of offcanvas will be broken. So now these attributes are
-                      NOT added. */}
-                      <div className="">
-                        <p style={{ wordBreak: "break-all" }}><b>Name: </b>{this.state.selectedFile === null ? "NA" : this.state.selectedFile.name}</p>
-                        <p><b>Size: </b>{this.state.selectedFile === null ? "0" : (this.state.selectedFile.size / 1024 / 1024).toFixed(2) + "MB"}</p>
-                      </div>
-                      <div className="progress">
-                        <div className="progress-bar" role="progressbar"
-                             style={{ width: this.state.uploadProgress != null ? this.state.uploadProgress + "%" : "0%"  }}
-                             aria-valuenow={this.state.uploadProgress} aria-valuemin="0" aria-valuemax="100">
-                               {this.state.uploadProgress != null ? this.state.uploadProgress + "%" : "" }
-                               </div>
-                      </div>
-                      <div>
-                        <input onChange={this.onFileChange} type="file" className="my-3"></input>
-                        <p>Note: Interestingly, while it may appear that the page only supports single-file upload, you can actually upload more
-                           files even if previous ones are still being transferred. (But multiple upload processes will share the same progress bar ¯\_(ツ)_/¯)</p>
-                      </div>                    
-                </div>
-              </div>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom"
+                      aria-controls="offcanvasBottom"><i className="bi bi-upload"></i>  Upload File</a></li>
+                <li><a class="dropdown-item" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i>  Create Folder</a></li>
+              </ul>
+            </div>
 
-              {/* button and input is bound using jQuery... */}
-              <button type="button" className="btn btn-primary mx-1 my-1" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i> New</button>               
-              <button className="btn btn-primary mx-1 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo"
-                      aria-controls="offcanvasBottomServerInfo"
-                  onClick={this.onServerInfoClick}>
-                <i className="bi bi-gear"></i> Info
-              </button>
-              <div className="offcanvas offcanvas-bottom h-auto" id="offcanvasBottomServerInfo" aria-labelledby="offcanvasBottomServerInfoLabel">
+            <div className="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
               <div className="offcanvas-header">
-                <h5 className="offcanvas-title" id="offcanvasBottomServerInfoLabel"><b>Server Info</b></h5>
+                <h5 className="offcanvas-title" id="offcanvasBottomLabel"><b>File Upload</b></h5>
                 <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
               </div>
               <div className="offcanvas-body" style={{ fontSize: "0.85em" }}>
@@ -483,24 +450,70 @@ class FileManager extends React.Component {
                     However, after adding d-flex align-items-center justify-content-center,
                     the scroll function of offcanvas will be broken. So now these attributes are
                     NOT added. */}
-                {this.serverInfoPanel}
+                    <div className="">
+                      <p style={{ wordBreak: "break-all" }}><b>Name: </b>{this.state.selectedFile === null ? "NA" : this.state.selectedFile.name}</p>
+                      <p><b>Size: </b>{this.state.selectedFile === null ? "0" : (this.state.selectedFile.size / 1024 / 1024).toFixed(2) + "MB"}</p>
+                    </div>
+                    <div className="progress">
+                      <div className="progress-bar" role="progressbar"
+                          style={{ width: this.state.uploadProgress != null ? this.state.uploadProgress + "%" : "0%"  }}
+                          aria-valuenow={this.state.uploadProgress} aria-valuemin="0" aria-valuemax="100">
+                            {this.state.uploadProgress != null ? this.state.uploadProgress + "%" : "" }
+                            </div>
+                    </div>
+                    <div>
+                      <input onChange={this.onFileChange} type="file" className="my-3"></input>
+                      <p>Note: Interestingly, while it may appear that the page only supports single-file upload, you can actually upload more
+                        files even if previous ones are still being transferred. (But multiple upload processes will share the same progress bar ¯\_(ツ)_/¯)</p>
+                    </div>                    
               </div>
-              </div>
+            </div>        
+            <button className="btn btn-primary mx-1 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo"
+                    aria-controls="offcanvasBottomServerInfo"
+                onClick={this.onServerInfoClick}>
+              <i className="bi bi-gear"></i> Info
+            </button>
+            <div className="offcanvas offcanvas-bottom h-auto" id="offcanvasBottomServerInfo" aria-labelledby="offcanvasBottomServerInfoLabel">
+            <div className="offcanvas-header">
+              <h5 className="offcanvas-title" id="offcanvasBottomServerInfoLabel"><b>Server Info</b></h5>
+              <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
             </div>
-            <div className="col">
-              <div className="input-group d-flex justify-content-between mx-1 my-1">
-                {/* d-flex and justify-content-between keep components in one line*/}
-                <span className="input-group-text" id="basic-addon1">Path</span>
-                <input type="text" className="form-control" placeholder="Address"
-                    aria-label="Recipient's username" aria-describedby="button-addon2"
-                    value={this.state.addressBar} onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress}  id="address-input" />
-                <button className="btn btn-primary" type="button" onClick={this.onClickAddressBarGo} htmlFor="address-input" >
-                  <i className="bi bi-caret-right-fill"></i>
-                </button>
-              </div>
+            <div className="offcanvas-body" style={{ fontSize: "0.85em" }}>
+              {/* d-flex align-items-center justify-content-center: used to center
+              this.serverInfoPanel horizontally and vertically 
+                  However, after adding d-flex align-items-center justify-content-center,
+                  the scroll function of offcanvas will be broken. So now these attributes are
+                  NOT added. */}
+              {this.serverInfoPanel}
+            </div>
+            </div>
+          </div>
+          <div className="col">
+            <div className="input-group d-flex justify-content-between mx-1 my-1">
+              {/* d-flex and justify-content-between keep components in one line*/}
+              <span className="input-group-text" id="basic-addon1">Path</span>
+              <input type="text" className="form-control" placeholder="Address"
+                  aria-label="Recipient's username" aria-describedby="button-addon2"
+                  value={this.state.addressBar} onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress}  id="address-input" />
+              <button className="btn btn-primary" type="button" onClick={this.onClickAddressBarGo} htmlFor="address-input" >
+                <i className="bi bi-caret-right-fill"></i>
+              </button>
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+
+  render() {
+    if (this.state.fileInfo === null) { return null; }
+    let fileList = this.generateFilesList(this.state.fileInfo.content);
+    this.renderNavigationBar();
+
+    return (      
+      <div>
+        {this.navigationBar}
         <div>
           <ul className="list-group overflow-auto"
               style={{ maxWidth: "1000px", maxHeight: "100%", minHeight: "60vh", marginLeft: "auto", marginRight: "auto" }}>
