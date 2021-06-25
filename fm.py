@@ -224,9 +224,7 @@ def move():
         # created in or as dst and src will be removed.
         logging.debug('File moved from'
                       f'[{old_real_filepath}] to [{new_real_filepath}]')
-    except (FileNotFoundError, FileExistsError, PermissionError,
-            werkzeug.exceptions.NotFound):
-        logging.exception('')
+    except (FileNotFoundError, FileExistsError, werkzeug.exceptions.NotFound):
         return Response('Client-side error', 400)
     except Exception:
         logging.exception('')

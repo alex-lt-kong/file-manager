@@ -8,15 +8,17 @@ import glob
 import json
 import logging
 import os
-import re
 import random
 import signal
 import smtplib
 import socket
 import subprocess
-import sys
-import threading
 import time
+
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+# It is said to be used to solve the issue OSError: image file is truncated
+# https://stackoverflow.com/questions/12984426/python-pil-ioerror-image-file-truncated-with-big-images
 
 # app_dir: the app's real address on the filesystem
 app_dir = os.path.dirname(os.path.realpath(__file__))
@@ -54,12 +56,14 @@ def resize_image(basewidth: int, src_path: str, dst_path: str):
         img.save(dst_path)
     except Exception:
         logging.exception('')
+        return False
+    return True
 
 
 def generate_thumbnails(root_dir: str):
 
     global thumbnails_path
-    image_count, video_count, skip_count = 0, 0, 0
+    image_count, video_count, error_count, skip_count = 0, 0, 0, 0
 
     # root_dir needs a trailing slash (i.e. /root/dir/)
     for file_path in glob.iglob(root_dir + '/' + '**/*', recursive=True):
@@ -81,7 +85,7 @@ def generate_thumbnails(root_dir: str):
             logging.info('Generating thumbnail for video [{}]'.format(
                 file_path[len(root_dir):]
                 ))
-            video_count += 1
+
             if file_size > 512 * 1024 * 1024:
                 timestamp = '00:08:30.000'
             elif file_size > 128 * 1024 * 1024:
@@ -107,22 +111,31 @@ def generate_thumbnails(root_dir: str):
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             stdout, stderr = p.communicate()
-            if p.returncode != 0:
-                logging.error(f'ffmpeg non-zero exist code: {p.returncode}')
-                logging.error(f'stderr: {stderr.decode("utf-8")}')
 
-            if os.path.isfile(tn_path):
-                resize_image(basewidth=240, src_path=tn_path, dst_path=tn_path)
+            if p.returncode != 0:
+                error_count += 1
+                logging.error(f'ffmpeg non-zero exist code: {p.returncode}')
+                logging.error(f'stdout: {stderr.decode("utf-8")}')
+
+            elif os.path.isfile(tn_path):
+                retval = resize_image(basewidth=240,
+                                      src_path=tn_path, dst_path=tn_path)
+                video_count += 1 if retval else 0
+                error_count += 0 if retval else 1
 
         if file_ext in image_extensions:
             logging.info('Generating thumbnail for image [{}]'.format(
                 file_path[len(root_dir):]
                 ))
             image_count += 1
-            resize_image(basewidth=480, src_path=file_path, dst_path=tn_path)
+            retval = resize_image(basewidth=480,
+                                  src_path=file_path, dst_path=tn_path)
+            image_count += 1 if retval else 0
+            error_count += 0 if retval else 1
 
     logging.info(f'File scanning done,{image_count} image and '
-                 f'{video_count} video thumbnails generated, '
+                 f'{video_count} video thumbnails generated; '
+                 f'{error_count} errors occurred; '
                  f'{skip_count} existing thumbnails skipped.')
 
 

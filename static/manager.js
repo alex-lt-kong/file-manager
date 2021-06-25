@@ -1,918 +1,3 @@
-class ModalVideoInfo extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      appAddress: props.appAddress,
-      assetDir: props.assetDir,
-      dialogueShouldClose: props.dialogueShouldClose,
-      jsonHTML: (<div className="d-flex align-items-center justify-content-center">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                </div>),
-      videoName: props.videoName,
-      videoInfo: null
-    };
-    this.handleOKClick = this.handleOKClick.bind(this);
-    this.fetchDataFromServer();
-  }
-
-  componentDidMount() {
-    $(this.modal).modal('show');
-    window.onpopstate = e => {
-      this.handleOKClick();
-    }
-  }
-
-  fetchDataFromServer() {                    
-    URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
-      axios.get(URL)
-        .then(response => {
-          this.setState({
-           videoInfo: null
-          });
-          this.setState({
-           videoInfo: response.data,
-           jsonHTML: syntaxHighlight(JSON.stringify(response.data.content, null, 2))
-         });
-        })
-        .catch(error => {
-          console.log(error);     
-          this.setState({
-            jsonHTML: (
-              <div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
-                Unable to fetch information from video <strong style={{ wordBreak: "break-all" }}>{this.state.videoName}</strong>:
-                <br />{error.response.data}
-              </div>
-            ),
-            videoInfo: false            
-           });
-        });
-  }
-
-  handleOKClick() {
-    $(this.modal).modal('hide');
-    if (this.state.dialogueShouldClose != null) {
-      this.state.dialogueShouldClose();
-    }
-    /* When we want to close it, we need to do two things:
-      1. we set hide to the modal within this component;
-      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
-      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
-    */
-  }
-
-  render() {
-
-    return (
-    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="videoInformationModalTitle"
-         aria-hidden="true" data-bs-backdrop="static">
-        <div className="modal-dialog  modal-dialog-scrollable" role="document">
-          {/* Turned out that modal-dialog-scrollable is buggy on smartphone devices... */}
-        <div className="modal-content">
-            <div className="modal-header">
-            <h5 className="modal-title" id="videoInformationModalTitle" >Video Information</h5>
-            </div>
-            <div className="modal-body">
-              <div className="mb-3">{this.state.jsonHTML}</div>
-            </div>
-            <div className="modal-footer">
-            <button type="button" className="btn btn-primary" onClick={this.handleOKClick}>OK</button>
-            </div>
-        </div>
-      </div>
-    </div>
-    );
-  }
-}
-
-class ModalExtractSubtitles extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      appAddress: props.appAddress,
-      assetDir: props.assetDir,
-      dialogueShouldClose: props.dialogueShouldClose,
-      refreshFileList: props.refreshFileList,
-      responseMessage: null,
-      streamNo: 0,
-      videoName: props.videoName,
-    };
-    this.handleCloseClick = this.handleCloseClick.bind(this);
-    this.onstreamNoChange = this.onstreamNoChange.bind(this);
-    this.handleSubmitClick = this.handleSubmitClick.bind(this);
-  }
-
-  componentDidMount() {
-    $(this.modal).modal('show');
-    window.onpopstate = e => {
-      this.handleCloseClick();
-    }   
-  }
-
-  handleSubmitClick() {
-    this.postDataToServer();    
-  }
-
-  postDataToServer() {                    
-    const payload = new FormData();
-    payload.append('asset_dir', this.state.assetDir);
-    payload.append('video_name', this.state.videoName);
-    payload.append('stream_no', this.state.streamNo);
-    axios({
-      method: "post",
-      url: this.state.appAddress + "/extract-subtitles/",
-      data: payload,
-    })
-    .then(response => {
-      this.handleCloseClick();
-      if (this.state.refreshFileList != null) {
-        this.state.refreshFileList();
-      }
-    })
-    .catch(error => {
-      console.log(error);
-      this.setState({
-        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
-                            Unable to extract subtitles from <strong style={{ wordBreak: "break-all" }}>{this.state.videoName}</strong>:<br />{error.response.data}
-                          </div>)
-      });  
-    });
-  }
-  
-  onstreamNoChange(event) {
-    this.setState({
-      streamNo: event.target.value
-    });
-  }
-
-  handleCloseClick() {
-    $(this.modal).modal('hide');
-    if (this.state.dialogueShouldClose != null) {
-      this.state.dialogueShouldClose();
-    }
-    /* When we want to close it, we need to do two things:
-      1. we set hide to the modal within this component;
-      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
-      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
-    */
-  }
-  
-  render() {
-    return (
-      <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="modal-extract-subtitles-title"
-           aria-hidden="true" data-bs-backdrop="static" >
-          {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
-          so the proper close methods will always be called.  */}
-        <div className="modal-dialog modal-dialog-scrollable" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="modal-extract-subtitles-title">Extract Subtitles</h5>
-            </div>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label htmlFor="folder-name-input" className="form-label">
-                  Specify the stream ID (starting from 0) of the subtitles to be extracted:
-                </label>
-                <input id="folder-name-input" type="text" className="form-control"
-                    placeholder="Input folder name" value={this.state.streamNo} onChange={this.onstreamNoChange}/>
-                {this.state.responseMessage}
-                <div className="accordion my-2" id="accordionRemove">
-                  <div className="accordion-item">
-                      <h2 className="accordion-header" id="headingRemove">
-                      <button className="accordion-button collapsed" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
-                      What's Happening Under the Hood?
-                      </button>
-                      </h2>
-                      <div id="collapseRemoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
-                      <div className="accordion-body">
-                        <ol>
-                          <li>Subtitle extraction is much less expensive compared with transcoding. You could expect the result within minutes;</li>
-                          <li>You can check the ID of a stream by using the Video Info function;</li>
-                          <li>The server uses <code>ffmpeg</code> to do the extraction. If <code>ffmpeg</code> returns a non-zero exit code, a log file will be generated.</li>
-                        </ol>
-                      </div>
-                      </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
-              <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>Submit</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-}
-
-
-class ModalMkdir extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      appAddress: props.appAddress,
-      assetDir: props.assetDir,
-      dialogueShouldClose: props.dialogueShouldClose,
-      folderName: 'New Folder',
-      refreshFileList: props.refreshFileList,
-      modalClose: props.closed
-    };
-    this.handleCloseClick = this.handleCloseClick.bind(this);
-    this.onFolderNameChange = this.onFolderNameChange.bind(this);
-    this.handleSubmitClick = this.handleSubmitClick.bind(this);
-  }
-
-  componentDidMount() {
-    $(this.modal).modal('show');     
-  }
-
-  componentDidUpdate() {
-    window.onpopstate = e => {
-      $(this.modal).modal('hide');
-    }
-  }
-
-  handleSubmitClick() {
-    this.postDataToServer();    
-  }
-
-  postDataToServer() {                    
-    const payload = new FormData();
-    payload.append('asset_dir', this.state.assetDir);
-    payload.append('folder_name', this.state.folderName);
-    axios({
-      method: "post",
-      url: this.state.appAddress + "/create-folder/",
-      data: payload,
-    })
-    .then(response => {
-      this.handleCloseClick();
-      if (this.state.refreshFileList != null) {
-        this.state.refreshFileList();
-      }
-    })
-    .catch(error => {
-      console.log(error);
-      alert('Unable to create new folder:\n' + error.response.data);      
-    });
-  }
-  
-  onFolderNameChange(event) {
-    this.setState({
-      folderName: event.target.value
-    });
-  }
-
-  handleCloseClick() {
-    $(this.modal).modal('hide');
-    if (this.state.dialogueShouldClose != null) {
-      this.state.dialogueShouldClose();
-    }
-  }
-
-  render() {
-    return (
-      <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div className="modal-dialog modal-dialog-scrollable" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="exampleModalLabel">New Folder</h5>
-            </div>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label htmlFor="folder-name-input" className="form-label">
-                  Input the name of the folder to be created:
-                </label>
-                <input id="folder-name-input" type="text" className="form-control"
-                    placeholder="Input folder name" value={this.state.folderName} onChange={this.onFolderNameChange}/>   
-                <div style={{ marginTop: "1em"}}>
-                  Notes:<br />
-                  1. The server calls returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
-                  os.path.ismount()</a> returns true;<br />
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
-              <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>Submit</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-}
-
-class ModalRemove extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      appAddress: props.appAddress,
-      dialogueShouldClose: props.dialogueShouldClose,
-      fileInfo: props.fileInfo,
-      refreshFileList: props.refreshFileList,
-      responseMessage: null
-    };
-    this.handleCloseClick = this.handleCloseClick.bind(this);
-    this.handleSubmitClick = this.handleSubmitClick.bind(this);
-  }
-
-  componentDidMount() {
-    $(this.modal).modal('show');
-    window.onpopstate = e => {
-      this.handleCloseClick();
-    }
-  }
-
-  handleSubmitClick() {
-    this.postDataToServer();    
-  }
-
-  postDataToServer() {                    
-    const payload = new FormData();
-    payload.append('filepath', this.state.fileInfo.asset_dir + this.state.fileInfo.filename);
-    axios({
-      method: "post",
-      url: this.state.appAddress + "/remove/",
-      data: payload,
-    })
-    .then(response => {
-      this.handleCloseClick();
-      if (this.state.refreshFileList != null) {
-        this.state.refreshFileList();
-      }
-    })
-    .catch(error => {
-      console.log(error);
-      this.setState({
-        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
-                            Unable to remove <strong style={{ wordBreak: "break-all" }}>{this.state.fileInfo.filename}</strong>:<br />{error.response.data}
-                          </div>)
-      }); 
-    });
-  }
-
-  handleCloseClick() {
-    $(this.modal).modal('hide');
-    if (this.state.dialogueShouldClose != null) {
-      this.state.dialogueShouldClose();
-    }
-    /* When we want to close it, we need to do two things:
-      1. we set hide to the modal within this component;
-      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
-      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
-    */
-  }
-
-  render() {
-    
-    if (this.state.show === false) {
-      return null;
-    }
-
-    return (
-    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" data-bs-backdrop="static" 
-         aria-labelledby="modal-remove-file-title" aria-hidden="true">
-           {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
-               so the proper close methods will always be called.  */}
-        <div className="modal-dialog modal-dialog-scrollable" role="document">
-        <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="modal-remove-file-title" >Remove File</h5>
-            </div>
-            <div className="modal-body">
-            <div className="mb-3">
-                <span className="form-label" style={{ wordBreak: "break-all" }}>
-                Remove file <strong>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong>?
-                </span>
-                {this.state.responseMessage}
-                <div className="accordion my-2" id="accordionRemove">
-                  <div className="accordion-item">
-                      <h2 className="accordion-header" id="headingRemove">
-                      <button className="accordion-button collapsed" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
-                      What's Happening Under the Hood?
-                      </button>
-                      </h2>
-                      <div id="collapseRemoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
-                      <div className="accordion-body">
-                        <ol>
-                          <li>The server returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
-                          os.path.ismount()</a> returns true;</li>
-                          <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.unlink" target="_blank">
-                          os.unlink()</a> if <a href="https://docs.python.org/3/library/os.path.html#os.path.islink" target="_blank">
-                          os.path.islink()</a> returns true;</li>
-                          <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.remove" target="_blank">
-                          os.remove()</a> if <a href="https://docs.python.org/3/library/os.path.html#os.path.isfile" target="_blank">
-                          os.path.isfile()</a> returns true;</li>
-                          <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.rmdir" target="_blank">
-                          shutil.rmtree()</a> if <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" target="_blank">
-                          os.path.isdir()</a> returns true;</li>
-                          <li>The serve returns an error if all of the above conditions are not met.</li>
-                        </ol>
-                      </div>
-                      </div>
-                  </div>
-                </div>
-            </div>
-            </div>
-            <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>No</button>
-            <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>YES!</button>
-            </div>
-        </div>
-        </div>
-    </div>
-    );
-  }
-}
-
-class ModalTranscode extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {      
-      appAddress: props.appAddress,
-      audioID: -1,
-      crf: 30,
-      dialogueShouldClose: props.dialogueShouldClose,
-      fileInfo: props.fileInfo,
-      refreshFileList: props.refreshFileList,
-      resolution: -1,
-      threads: 0
-    };
-    this.onAudioIDChange = this.onAudioIDChange.bind(this);
-    this.handleCloseClick = this.handleCloseClick.bind(this);
-    this.onCRFChange = this.onCRFChange.bind(this);
-    this.onResolutionChange = this.onResolutionChange.bind(this);
-    this.onThreadsChange = this.onThreadsChange.bind(this);
-    this.handleSubmitClick = this.handleSubmitClick.bind(this);
-    
-  }
-
-  componentDidMount() {
-    $(this.modal).modal('show');
-    window.onpopstate = e => {
-      this.handleCloseClick();
-    }
-  }
-
-  handleSubmitClick() {
-    this.postDataToServer();    
-  }
-
-  postDataToServer() {                    
-    const payload = new FormData();
-    payload.append('asset_dir', this.state.fileInfo.asset_dir);
-    payload.append('audio_id', this.state.audioID);
-    payload.append('video_name', this.state.fileInfo.filename);
-    payload.append('crf', this.state.crf);
-    payload.append('resolution', this.state.resolution);
-    payload.append('threads', this.state.threads);
-    axios({
-      method: "post",
-      url: this.state.appAddress + "/video-transcode/",
-      data: payload,
-    })
-    .then(response => {
-      this.handleCloseClick();
-      if (this.state.refreshFileList != null) {
-        this.state.refreshFileList();
-      }
-    })
-    .catch(error => {
-      this.setState({
-        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
-                            Unable to transcode <strong style={{ wordBreak: "break-all" }}>{payload.get('video_name')}</strong>:<br />{error.response.data}
-                          </div>)
-      });
-    });
-  }
-  
-  onResolutionChange(event){
-    this.setState({
-      resolution: event.target.value
-    });
-
-    var autoCRF = 0;
-    if (event.target.value === '1080') { autoCRF = 31; }
-    else if (event.target.value === '720') { autoCRF = 32; }
-    else if (event.target.value === '480') { autoCRF = 33; }
-    else if (event.target.value === '360') { autoCRF = 36; }
-    else if (event.target.value === '240') { autoCRF = 37; }
-    if (autoCRF != 0) {
-      this.setState({
-        crf: autoCRF
-      });
-    }
-  }
-
-  onCRFChange(event) {
-    this.setState({
-      crf: event.target.value
-      });
-  }
-
-  onThreadsChange(event) {
-    this.setState({
-      threads: event.target.value
-      });
-  }
-  
-  onAudioIDChange(event) {
-    this.setState({
-      audioID: event.target.value
-      });
-  }
-  
-  handleCloseClick() {
-    $(this.modal).modal('hide');
-    if (this.state.dialogueShouldClose != null) {
-      this.state.dialogueShouldClose();
-    }
-    /* When we want to close it, we need to do two things:
-      1. we set hide to the modal within this component;
-      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
-      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
-    */
-  }
-
-  render() {    
-    if (this.state.show === false) {
-      return null;
-    }
-   
-    return (
-        <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" data-bs-backdrop="static" 
-             aria-labelledby="modal-video-transcode-title" aria-hidden="true">
-            {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
-          so the proper close methods will always be called.  */}
-          <div className="modal-dialog modal-dialog-scrollable" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title" id="modal-video-transcode-title">Video Transcode</h5>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <span htmlFor="exampleFormControlInput1" className="form-label">
-                    Transcode video <b>{this.state.fileInfo.filename}</b> to WebM format (VP9) with the following parameters:
-                  </span>  
-                  <div className="input-group my-1">
-                    <span className="input-group-text">CRF</span>
-                    <input type="text" className="form-control"
-                           placeholder="CRF" value={this.state.crf} onChange={this.onCRFChange} />
-                    <span className="input-group-text">Audio ID</span>
-                    <input type="text" className="form-control"
-                           placeholder="Audio stream ID" value={this.state.audioID} onChange={this.onAudioIDChange} />
-                  </div>
-
-                  <div className="input-group my-1">
-                    <label className="input-group-text" htmlFor="inputSelectResolution">Resolution</label>
-                    <select className="form-select" id="inputSelectResolution" defaultValue={-1}
-                        onChange={this.onResolutionChange} >
-                      <option value="-1">Original</option>
-                      <option value="1080" >1080p</option>
-                      <option value="720">720p</option>
-                      <option value="480">480p</option>
-                      <option value="360">360p</option>
-                      <option value="240">240p</option>
-                      <option value="144">144p</option>
-                    </select>
-                  </div>
-
-                  <div className="input-group my-1">
-                    <span className="input-group-text">Threads</span>
-                    <input type="number" className="form-control"
-                           placeholder="Number of threads" min="1" max="8" value={this.state.threads} onChange={this.onThreadsChange} />
-                  </div>
-
-                  {this.state.responseMessage}
-                  <div className="accordion my-2" id="accordionRemove">
-                    <div className="accordion-item">
-                      <h2 className="accordion-header" id="headingRemove">
-                      <button className="accordion-button collapsed" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
-                        What's Happening Under the Hood?
-                      </button>
-                      </h2>
-                      <div id="collapseRemoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
-                        <div className="accordion-body">
-                          <ol>
-                            <li>The server will start a separate <code>ffmpeg</code> process to do the conversion;</li>
-                            <li>The constant rate factor (CRF) can be from 0-63. Lower values mean better quality;
-                            According to <a href="https://trac.ffmpeg.org/wiki/Encode/VP9" target="_blank">ffmpeg's manual</a>, for
-                            WebM format (VP9 video encoder), recommended values range from 15-35;</li>
-                            <li>After selecting the video quality, a CRF value will be automatically set according 
-                              to <a href="https://developers.google.com/media/vp9/settings/vod/" target="_blank">
-                            Google's recommendation</a>;</li>
-                            <li>According to <a href="https://developers.google.com/media/vp9/the-basics" target="_blank">
-                            Google's manual</a>, for VP9, 480p is considered a safe resolution for a broad range of mobile and web devices.</li>
-                            <li>Since modern browsers will pick the first audio stream (ID==0) and manual audio stream selection is usually not possible,
-                                you can pick the preferred audio stream by its ID before transcoding so that it becomes the only audio stream which
-                                will definitely be selected by browsers. You can find the ID using <code>Video Info</code> function.</li>
-                            <li><code>threads</code> can only be from 0 to 8 where 0 means ffmpeg selects the optimal value by itself. Note that
-                            a large <code>threads</code> value may or may not translate to high performance but a
-                            small <code>threads</code> will guarantee lower CPU usage.</li>
-                          </ol>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
-                <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>Submit</button>
-              </div>
-            </div>
-          </div>
-        </div>
-    );
-  }
-}
-
-class ModalMove extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      appAddress: props.appAddress,
-      dialogueShouldClose: props.dialogueShouldClose,
-      disableSubmitByDirName: false,
-      disableSubmitByFileName: false,
-      fileInfo: props.fileInfo,
-      newFileDir: props.fileInfo.asset_dir,
-      newFileName: props.fileInfo.filename,
-      refreshFileList: props.refreshFileList,
-      responseMessage: null
-    };
-    this.handleCloseClick = this.handleCloseClick.bind(this);
-    this.handleSubmitClick = this.handleSubmitClick.bind(this);
-    this.onFileDirChange = this.onFileDirChange.bind(this);
-    this.onFileNameChange = this.onFileNameChange.bind(this);
-  }
-
-  componentDidMount() {
-    $(this.modal).modal('show');
-    window.onpopstate = e => {
-      this.handleCloseClick();
-    }
-  }
-
-  handleSubmitClick() {
-    this.fetchDataFromServer();    
-  }
-
-  fetchDataFromServer() {                    
-    const payload = new FormData();
-    payload.append('old_filepath', this.state.fileInfo.asset_dir + this.state.fileInfo.filename);
-    payload.append('new_filepath', this.state.newFileDir + this.state.newFileName);
-    axios({
-      method: "post",
-      url: this.state.appAddress + "/move/",
-      data: payload,
-    })
-    .then(response => {
-      this.handleCloseClick();
-      if (this.state.refreshFileList != null) {
-        this.state.refreshFileList();
-      }
-    })
-    .catch(error => {
-      console.log(error);
-      this.setState({
-        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
-                            Unable to move file from <strong style={{ wordBreak: "break-all" }}>{payload.get('old_filepath')}
-                            </strong> to <strong style={{ wordBreak: "break-all" }}>{payload.get('new_filepath')}</strong>:
-                            <br />{error.response.data}
-                          </div>)
-      });   
-    });
-  }
-  
-  onFileDirChange(event) {
-    var newVal = event.target.value.replace('\n', '').replace('\r', '');
-    if (newVal.endsWith('/')) {
-      this.setState({
-        responseMessage: null,
-        disableSubmitByDirName: false
-      });
-
-    } else {
-      this.setState({
-        responseMessage: (<div className="alert alert-warning mb-3" role="alert" style={{ wordBreak: "break-word" }}>
-                            New directory <strong style={{ wordBreak: "break-all" }}>{newVal}</strong> does not end with a <code>/</code>.
-                            If submitted, the section after the last <code>/</code> will be interpreted as a part of the new filename by the server,
-                            which is usually not desired. To avoid the ambiguity, you need to append a <code>/</code> to the end of the directory to submit.
-                          </div>),
-        disableSubmitByDirName: true
-      });
-    }
-    this.setState({
-      newFileDir: newVal
-      });
-  }
-  
-  onFileNameChange(event) {
-    var newVal = event.target.value.replace('\n', '').replace('\r', '');
-    if (newVal.includes('/')) {
-      this.setState({
-        responseMessage: (<div className="alert alert-warning mb-3" role="alert" style={{ wordBreak: "break-word" }}>
-                            New filename <strong style={{ wordBreak: "break-all" }}>{newVal}</strong> contains <code>/</code>, which will be interpreted as 
-                            a separate directory by the server. To avoid ambiguity, this value cannot be submitted.
-                          </div>),
-        disableSubmitByFileName: true
-      });
-    } else {
-      this.setState({
-        responseMessage: null,
-        disableSubmitByFileName: false
-      });
-    }
-    this.setState({
-      newFileName: newVal
-      });
-  }
-
-  handleCloseClick() {
-    $(this.modal).modal('hide');
-    if (this.state.dialogueShouldClose != null) {
-      this.state.dialogueShouldClose();
-    }
-    /* When we want to close it, we need to do two things:
-      1. we set hide to the modal within this component;
-      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
-      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
-    */
-  }
-
-  render() {
-
-    return (
-        <div className="modal fade" ref={modal=> this.modal = modal} id="exampleModal" role="dialog"
-             aria-labelledby="modal-move-file-title" aria-hidden="true" data-bs-backdrop="static" >
-          {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
-              so the proper close methods will always be called.  */}
-          <div className="modal-dialog modal-dialog-scrollable" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title" id="modal-move-file-title">Move File</h5>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label" style={{ wordBreak: "break-word" }}>
-                    Move the file from <strong style={{ wordBreak: "break-all" }}>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong> to:
-                  </label>
-                  <div className="input-group mb-1">
-                    <span className="input-group-text font-monospace">Directory</span>
-                    <textarea type="text" className="form-control" rows="2"
-                              placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
-                  </div>
-                  <div className="input-group mb-3">
-                    <span className="input-group-text font-monospace">Filename&nbsp;</span>
-                    <textarea type="text" className="form-control" rows="2"
-                              placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
-                  </div>
-                  {this.state.responseMessage}
-                  <div className="accordion my-2" id="accordionMove">
-                    <div className="accordion-item">
-                      <h2 className="accordion-header" id="headingRemove">
-                      <button className="accordion-button collapsed" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseMoveOne" aria-expanded="false" aria-controls="collapseMoveOne">
-                        What's Happening Under the Hood?
-                      </button>
-                      </h2>
-                      <div id="collapseMoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionMove">
-                        <div className="accordion-body">
-                        1. The server calls returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
-                        os.path.ismount()</a> returns true;<br />
-                        2. The server calls <a href="https://docs.python.org/3/library/shutil.html#shutil.move" target="_blank">
-                        shutil.move()</a> to do the move;<br />
-                        3. If the destination is on a different filesystem, source file is copied to destination and then removed
-                        <strong>(It could take a long time!)</strong>;<br />
-                        4. In case of symlinks, a new symlink pointing to the target of src will be created in or as dst and src will be removed.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>Close</button>
-                <button type="button" className="btn btn-primary" disabled={this.state.disableSubmitByFileName || this.state.disableSubmitByDirName}
-                        onClick={this.handleSubmitClick}>Submit</button>
-              </div>
-            </div>
-          </div>
-        </div>
-    );
-  }
-}
-
-class ContextMenu extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {      
-      appAddress: props.appAddress,
-      modalDialogue: null,
-      refreshFileList: props.refreshFileList,
-      fileInfo: props.fileInfo
-    };
-    this.dialogueShouldClose = this.dialogueShouldClose.bind(this);
-    this.onExtractSubtitlesButtonClick = this.onExtractSubtitlesButtonClick.bind(this);
-    this.onMoveButtonClick = this.onMoveButtonClick.bind(this);
-    this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);    
-    this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
-    this.onVideoInfoButtonClick = this.onVideoInfoButtonClick.bind(this);
-  }
-  
-  dialogueShouldClose() {
-    this.state.modalDialogue = null;
-    this.forceUpdate();
-  }
-  
-  onRemoveButtonClick(event) {
-    this.setState({
-      modalDialogue: (<ModalRemove
-                fileInfo={this.state.fileInfo}
-                appAddress={this.state.appAddress}
-                dialogueShouldClose={this.dialogueShouldClose}
-                refreshFileList={this.state.refreshFileList} />)
-    });
-    this.forceUpdate();
-  }
-  
-  onExtractSubtitlesButtonClick(event) {
-    this.setState({
-      modalDialogue: (<ModalExtractSubtitles
-        appAddress={this.state.appAddress}
-        assetDir={this.state.fileInfo.asset_dir}
-        dialogueShouldClose={this.dialogueShouldClose}
-        videoName={this.state.fileInfo.filename}           
-        refreshFileList={this.state.refreshFileList} />)
-    });
-    this.forceUpdate();
-  }  
-
-  onVideoInfoButtonClick(event) {
-    this.setState({
-      modalDialogue: (<ModalVideoInfo
-           appAddress={this.state.appAddress}
-           assetDir={this.state.fileInfo.asset_dir}
-           dialogueShouldClose={this.dialogueShouldClose}
-           videoName={this.state.fileInfo.filename} />)
-    });
-    this.forceUpdate();
-  }
-
-  onMoveButtonClick(event) {
-    this.setState({
-      modalDialogue: (<ModalMove 
-          dialogueShouldClose={this.dialogueShouldClose}
-           fileInfo={this.state.fileInfo}
-           appAddress={this.state.appAddress}
-           refreshFileList={this.state.refreshFileList}/>)
-    });
-    this.forceUpdate();
-  }
-  
-  onTranscodeButtonClick(event) {
-    this.setState({
-      modalDialogue: (<ModalTranscode
-           fileInfo={this.state.fileInfo}
-           appAddress={this.state.appAddress}
-           dialogueShouldClose={this.dialogueShouldClose}
-           refreshFileList={this.state.refreshFileList} />)
-        // By adding a key attribute, Modal will be created each time, so we
-        // can pass different show attribute to it.
-    });
-    this.forceUpdate();
-  }
-
-  render() {
-    return (
-      <div className="dropdown"  href = "javascript:return false;" style={{position: "relative" }} >
-        <i id="dropdownContextMenuButton" className="bi bi-three-dots-vertical" data-bs-toggle="dropdown"
-           aria-expanded="false" style={{ cursor: "pointer", fontSize: "1.2em" }} ></i>
-        <ul className="dropdown-menu" aria-labelledby="dropdownContextMenuButton">
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onMoveButtonClick}>Move</a></li>
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
-          <li><a className="dropdown-item py-1" style={{ cursor: "pointer" }} onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</a></li>
-        </ul>
-        {this.state.modalDialogue}
-      </div>
-    );
-  }
-}
-
 /**
  * Format bytes as human-readable text.
  * 
@@ -955,6 +40,7 @@ class FileManager extends React.Component {
       addressBar: '',
       currentPath: '/',
       fileInfo: null,
+      modalDialogue: null,
       pathStack: [],
       selectedFile: null,
       serverInfo: null,
@@ -962,7 +48,7 @@ class FileManager extends React.Component {
       uploadProgress: 0,
       username: null
     };
-
+    this.dialogueShouldClose = this.dialogueShouldClose.bind(this);
     this.onAddressBarChange = this.onAddressBarChange.bind(this);
     this.onClickItem = this.onClickItem.bind(this);
     this.onClickMore = this.onClickMore.bind(this);
@@ -972,8 +58,7 @@ class FileManager extends React.Component {
     this.onFileChange = this.onFileChange.bind(this);
     this.onNewFolderClick = this.onNewFolderClick.bind(this);    
     this.onServerInfoClick = this.onServerInfoClick.bind(this);
-    
-    this.Modal = null;
+
     this.serverInfoPanel;
   }
 
@@ -999,8 +84,6 @@ class FileManager extends React.Component {
 
   onFileUpload(selectedFiles) {
     const payload = new FormData();
-    
-
     payload.append('selected_files', selectedFiles);
     payload.append('asset_dir', this.state.currentPath); 
     var config = {
@@ -1060,18 +143,22 @@ class FileManager extends React.Component {
 
   fileListShouldRefresh = () => this.fetchDataFromServer(this.state.fileInfo.metadata.asset_dir);
 
-  dialogueShouldClose = () => this.Modal = null;
+  dialogueShouldClose() {
+    this.setState({
+      modalDialogue: null
+    });
+  }
 
   onNewFolderClick(event) {
-    this.Modal = (
-      <ModalMkdir assetDir={this.state.currentPath}
-            appAddress={this.state.appAddress}
-            refreshFileList={this.fileListShouldRefresh} 
-            dialogueShouldClose={this.dialogueShouldClose} />
-            // Tried many different solutions, a callback
-            // to destory the Modal is still the best way 
-            // to handle the close() event.
-    ); 
+    this.setState({
+      modalDialogue: (<ModalMkdir assetDir={this.state.currentPath}
+                                  appAddress={this.state.appAddress}
+                                  refreshFileList={this.fileListShouldRefresh} 
+                                  dialogueShouldClose={this.dialogueShouldClose} />)
+      // Tried many different solutions, a callback
+      // to destory the Modal is still the best way 
+      // to handle the close() event.
+    });
     this.forceUpdate();
     // A forceUpdate() is needed; otherwise, react.js won't know
     // that a render() is needed since there isn't a state change.
@@ -1165,7 +252,7 @@ class FileManager extends React.Component {
               <li><b>Python:</b> {this.state.serverInfo.version.python}</li>
               <li><b>Flask:</b> {this.state.serverInfo.version.flask}</li>
             </ul>
-            <b>FFMPEG:</b>
+            <b>FFmpeg:</b>
             <ol>{ffmpegItems}</ol>            
           </div>
         );
@@ -1207,15 +294,9 @@ class FileManager extends React.Component {
     return <ListItem button component="a" {...props} />;
   }
 
-  render() {
-    if (this.state.fileInfo === null) { return null; }
-    let fi = this.state.fileInfo;
-    const keys = Object.keys(fi.content);
-    let fileList = new Array(keys.length);
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      let thumbnail = null;
-      let fileMetaData = null;
+  generateThumbnailAndMetaData(key, content) {
+    let thumbnail = null;
+    let fileMetaData = null;
       /* The following block is about thumbnail generation and formatting. It is tricky because:
         1. For those files with preview, we want the thumbnail to be large so that we can take a good look;
         2. For those files withOUT preview, we want the thumbnaul to be small since we dont have anything to look anyway;
@@ -1225,74 +306,91 @@ class FileManager extends React.Component {
         4. We want the layout to be consistent.
         These three goals cannot be achieved in the same time. The compromise turns out to be hard to find.
       */
-      if (fi.content[key].file_type === 0) { // file_type == 0: ordinary directory
+    if (content.file_type === 0) { // file_type == 0: ordinary directory
+      thumbnail = (
+        <img src={`${this.state.appAddress}/static/icons/folder.svg`} style={{ width: "100%", cursor: "pointer" }}
+              onClick={() => this.onClickItem(key)} />
+        );
+        // For svg <img>, we specify width: 100%;
+        // For ordinary image we specify maxWidth: 100%
+    } else if (content.file_type === 1) { // file_type == 1: ordinary file
+      if (content.media_type === 1) { // image
         thumbnail = (
-          <img src={`${this.state.appAddress}/static/icons/folder.svg`} style={{ width: "100%", cursor: "pointer" }}
-               onClick={() => this.onClickItem(key)} />
-          );
-          // For svg <img>, we specify width: 100%;
-          // For ordinary image we specify maxWidth: 100%
-      } else if (fi.content[key].file_type === 1) { // file_type == 1: ordinary file
-        if (fi.content[key].media_type === 1) { // image
-          thumbnail = (
-            <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
-               style={{ maxWidth: "100%", maxHeight: "90vh", "display":"block", cursor: "pointer" }}
-               onClick={() => this.onClickItem(key)}
-               onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/image.svg"; e.target.style="width: 100%"}} />);
-              // For svg <img>, we specify width: 100%;
-              // For ordinary image we specify maxWidth: 100%;
-              // Note for onError we need to specify a special style;
-        } else if (fi.content[key].media_type === 2) { // video
-          thumbnail = (
-            <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
-               style={{ maxWidth: "100%", cursor: "pointer" }}
-               onClick={() => this.onClickItem(key)}
-               onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/video.svg"; e.target.style="width: 100%"}} />);
-              // For svg <img>, we specify width: 100%;
-              // For ordinary image we specify maxWidth: 100%;
-              // Note for onError we need to specify a special style;
-        } else if (fi.content[key].media_type === 0) { // not a media file
-          let url = null;
-          if ([".doc", ".docx", ".odt", ".rtf", ".docm", ".docx", "wps"].includes(fi.content[key].extension.toLowerCase())) {
-            url = this.state.appAddress + "/static/icons/word.svg"; 
-          } else if ([".htm", ".html", ".mht"].includes(fi.content[key].extension.toLowerCase())) {
-            url = this.state.appAddress + "/static/icons/html.svg"; 
-          } else if ([".pdf"].includes(fi.content[key].extension.toLowerCase())) {
-            url = this.state.appAddress + "/static/icons/pdf.svg";
-          } else if ([".7z", ".zip", ".rar", ".tar", ".gz"].includes(fi.content[key].extension.toLowerCase())) {
-            url = this.state.appAddress + "/static/icons/archive.svg"; 
-          } else if ([".mka", ".mp3", ".wma", ".wav", ".ogg", ".flac"].includes(fi.content[key].extension.toLowerCase())) {
-            url = this.state.appAddress + "/static/icons/music.svg"; 
-          } else {
-            url = this.state.appAddress + "/static/icons/misc.svg"; 
-          }
-          thumbnail = (<img src={url} style={{ width: "100%", "display":"block", float:"left", cursor: "pointer" }}
-                    onClick={() => this.onClickItem(key)} />);
-                // For svg <img>, we specify width: 100%;
-                // For ordinary image we specify maxWidth: 100%
+          <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
+              style={{ maxWidth: "100%", maxHeight: "90vh", "display":"block", cursor: "pointer" }}
+              onClick={() => this.onClickItem(key)}
+              onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/image.svg"; e.target.style="width: 100%"}} />);
+            // For svg <img>, we specify width: 100%;
+            // For ordinary image we specify maxWidth: 100%;
+            // Note for onError we need to specify a special style;
+      } else if (content.media_type === 2) { // video
+        thumbnail = (
+          <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
+              style={{ maxWidth: "100%", cursor: "pointer" }}
+              onClick={() => this.onClickItem(key)}
+              onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/video.svg"; e.target.style="width: 100%"}} />);
+            // For svg <img>, we specify width: 100%;
+            // For ordinary image we specify maxWidth: 100%;
+            // Note for onError we need to specify a special style;
+      } else if (content.media_type === 0) { // not a media file
+        let url = null;
+        if ([".doc", ".docx", ".odt", ".rtf", ".docm", ".docx", "wps"].includes(content.extension.toLowerCase())) {
+          url = this.state.appAddress + "/static/icons/word.svg"; 
+        } else if ([".htm", ".html", ".mht"].includes(content.extension.toLowerCase())) {
+          url = this.state.appAddress + "/static/icons/html.svg"; 
+        } else if ([".pdf"].includes(content.extension.toLowerCase())) {
+          url = this.state.appAddress + "/static/icons/pdf.svg";
+        } else if ([".7z", ".zip", ".rar", ".tar", ".gz"].includes(content.extension.toLowerCase())) {
+          url = this.state.appAddress + "/static/icons/archive.svg"; 
+        } else if ([".mka", ".mp3", ".wma", ".wav", ".ogg", ".flac"].includes(content.extension.toLowerCase())) {
+          url = this.state.appAddress + "/static/icons/music.svg"; 
+        } else {
+          url = this.state.appAddress + "/static/icons/misc.svg"; 
         }
-        fileMetaData = (<span><b>size:</b> {humanFileSize(fi.content[key].size)}, <b>views</b>: {fi.content[key].stat.downloads}</span>);
-      } else if (fi.content[key].file_type === 2) { // file_type == 2: mountpoint
-        fileMetaData = 'mountpoint';
-        thumbnail = (
-          <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
-               onClick={() => this.onClickItem(key)} />
-          );
-          // For svg <img>, we specify width: 100%;
-          // For ordinary image we specify maxWidth: 100%
-      } else if (fi.content[key].file_type === 3) { // file_type == 3: symbolic link
-        fileMetaData = 'symbolic link';
-        thumbnail = (
-          <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
-               onClick={() => this.onClickItem(key)} />
-          );
-      } else {
-        fileMetaData = '??Unknown file type??';
-        thumbnail = (
-          <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
-               onClick={() => this.onClickItem(key)} />
-          );
+        thumbnail = (<img src={url} style={{ width: "100%", "display":"block", float:"left", cursor: "pointer" }}
+                  onClick={() => this.onClickItem(key)} />);
+              // For svg <img>, we specify width: 100%;
+              // For ordinary image we specify maxWidth: 100%
       }
+      fileMetaData = (<span><b>size:</b> {humanFileSize(content.size)}, <b>views</b>: {content.stat.downloads}</span>);
+    } else if (content.file_type === 2) { // file_type == 2: mountpoint
+      fileMetaData = 'mountpoint';
+      thumbnail = (
+        <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
+              onClick={() => this.onClickItem(key)} />
+        );
+        // For svg <img>, we specify width: 100%;
+        // For ordinary image we specify maxWidth: 100%
+    } else if (content.file_type === 3) { // file_type == 3: symbolic link
+      fileMetaData = 'symbolic link';
+      thumbnail = (
+        <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
+              onClick={() => this.onClickItem(key)} />
+        );
+    } else {
+      fileMetaData = '??Unknown file type??';
+      thumbnail = (
+        <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
+              onClick={() => this.onClickItem(key)} />
+        );
+    }
+
+    return {
+      thumbnail: thumbnail,
+      fileMetaData: fileMetaData,
+    };
+  }
+
+  generateFilesList(fic) {
+    const keys = Object.keys(fic);
+    let fileList = new Array(keys.length);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];     
+      
+      let retval = this.generateThumbnailAndMetaData(key, fic[key]);
+      let thumbnail = retval.thumbnail;
+      let fileMetaData = retval.fileMetaData;
+
       fileList[i] = (
       <li key={i} className="list-group-item">            
         <div className="row" style={{ display: "grid", gridTemplateColumns: "8em 8fr 2.5em" }} >
@@ -1313,12 +411,19 @@ class FileManager extends React.Component {
             </div>
           </div>
           <div className="col">
-            <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fi.content[key]} appAddress={this.state.appAddress} /> 
+            <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fic[key]} appAddress={this.state.appAddress} /> 
           </div>
         </div>     
       </li>
       );
     }
+
+    return fileList;
+  }
+
+  render() {
+    if (this.state.fileInfo === null) { return null; }
+    let fileList = this.generateFilesList(this.state.fileInfo.content);
 
     return (      
       <div>
@@ -1413,7 +518,7 @@ class FileManager extends React.Component {
           {fileList}
           </ul>
         </div>
-        {this.Modal}
+        {this.state.modalDialogue}
       </div>
     );
   }
