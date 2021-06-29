@@ -1,0 +1,31 @@
+{
+    "app": {
+        "address": "https://localhost/",
+        "allowed_ext": [".7z", ".apk", ".avi", ".bmp", ".conf", ".crt", ".csv", ".doc", ".docx",
+                        ".flv", ".gif", ".ico", ".iso", ".jpeg", ".jpg", ".key", ".log", ".mp3", ".mp4",
+                        ".mkv", ".mov", ".mpg", ".mpeg", ".ods", ".odt", ".ovpn", ".pdf",
+                        ".pem", ".png", ".ppt", ".pptx", ".psd", ".rar", ".rtf", ".srt", ".sql",
+                        ".sqlite", ".tar",  ".tif", ".tiff", ".ttf", ".txt", ".vtt", ".wav", ".m4a", ".webm",
+                        ".wma", ".wmv", ".xls", ".xlsx", ".xml", ".zip"],
+        "direct_open_extensions": [".bmp", ".gif", ".jpg", ".jpeg", ".log-does-not-work", ".mp3", ".mp4", ".pdf", ".png", ".srt", ".txt", ".vtt-does-not-work", ".webm", ".webp"],
+        "external_script_dir": "https://localhost//resources",
+        "files_statistics": "/bin/file-manager/resources/files.json",
+        "log_path": "/var/log/file-manager.log",
+        "root_dir": "/bin/file-manager/resources/files",
+        "thumbnails_path": "/bin/file-manager/resources/thumbnails",
+        "video_extensions": [".mp4", ".wmv", ".webm", ".avi", ".mkv", ".flv", ".mov", ".rm", ".rmvb", ".mpg", ".mpeg", ".m4v", ".f4v", ".3gp", ".asf"],
+        "image_extensions": [".jpg", ".jpeg", ".tiff", ".tif", ".gif", ".bmp", ".png", ".webp"]
+    },
+    "email": {
+        "from_address": "media@localhost",
+        "from_password": "your-password",
+        "from_name": "media",
+        "to_address": "admin@localhost",
+        "to_name": "Admin Account"
+    },
+    "flask" :{
+        "max_upload_size": 2048000000,
+        "secret_key": "your-session-secret",
+        "port": 81
+    }
+}

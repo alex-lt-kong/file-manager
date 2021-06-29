@@ -124,8 +124,8 @@ class ModalTranscode extends React.Component {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <span htmlFor="exampleFormControlInput1" className="form-label">
-                    Transcode video <b>{this.state.fileInfo.filename}</b> to WebM format (VP9) with the following parameters:
+                  <span htmlFor="exampleFormControlInput1" className="form-label" style={{ wordBreak: "break-word" }}>
+                    Transcode video <b style={{ wordBreak: "break-all" }}>{this.state.fileInfo.filename}</b> to WebM format (VP9) with the following parameters:
                   </span>  
                   <div className="input-group my-1">
                     <span className="input-group-text">CRF</span>
