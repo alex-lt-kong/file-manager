@@ -13,8 +13,8 @@ A web-based file manager with a focus on video manipulation and streaming.
 
 * File List
 <p float="left">
-  <img src="https://raw.githubusercontent.com/alex-lt-kong/file-manager/main/screenshots/filelist_desktop.png" style="height: 50em" />
-  <img src="https://raw.githubusercontent.com/alex-lt-kong/file-manager/main/screenshots/filelist_mobile.png" style="height: 50em"  /> 
+  <img src="https://raw.githubusercontent.com/alex-lt-kong/file-manager/main/screenshots/filelist_desktop.png" style="height: 35em" />
+  <img src="https://raw.githubusercontent.com/alex-lt-kong/file-manager/main/screenshots/filelist_mobile.png" style="height: 35em"  /> 
 </p>
 * File Upload
 <p float="left">
