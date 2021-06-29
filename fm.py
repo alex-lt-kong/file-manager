@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 
 from collections import OrderedDict
-from flask import Flask, render_template, Response, request, redirect, url_for
+from flask import Flask, render_template, Response, request
 from flask_cors import CORS
 from PIL import ImageFile
 from waitress import serve
 
 import click
 import datetime as dt
+import errno
 import flask
 import json
 import logging
@@ -60,8 +61,11 @@ video_extensions = None
 def get_file_id(path: str):
 
     if os.path.isfile(path) is False:
-        raise FileNotFoundError(f'File {path} does not exist')
-
+        # Have to raise FileNotFoundError the right way!
+        # raise FileNotFoundError(f'File {path} does not exist')
+        raise FileNotFoundError(errno.ENOENT,
+                                os.strerror(errno.ENOENT),
+                                path)
     filename = os.path.basename(path)
     # Note that os.path.basename() is generally used to handle file path
     # under the same OS. That is, it handles *nix path well under *nix system
@@ -290,11 +294,13 @@ def video_transcoding_thread(input_path: str, output_path: str,
                   # -map_metadata 0: copy the metadata from the 1st input
                   # file to the output file.
                   '-vf', f'scale=-1:{resolution}',
-                  '-map', '0:v',
+                  '-map', '0:v?',
                   # -map 0:v means we select all the video streams from the
                   # first input (i.e., stream[0]). What if we just want to
                   # keep the first video stream from the first input?
                   # we pass -map 0:v:0
+                  # The trailing ? means we ask ffmpeg to proceed even if
+                  # there isn't a video stream (it could be a pure mp3 file)
                   '-map', '0:a' + (f':{audio_id}' if audio_id >= 0 else '?'),
                   # -map 0:a: ffmpeg will keep all the audio streams, the
                   # trailing ? means ffmpeg will ignore this option if there
@@ -430,29 +436,30 @@ def extract_subtitles():
     return Response('Subtitles extracted', 200)
 
 
-@app.route('/get-video-info/', methods=['GET'])
-def get_video_info():
+@app.route('/get-media-info/', methods=['GET'])
+def get_media_info():
 
-    if 'asset_dir' not in request.args or 'video_name' not in request.args:
-        return Response('Parameters asset_dir or video_name not specified',
+    if 'asset_dir' not in request.args or 'media_filename' not in request.args:
+        return Response('Parameters asset_dir or media_filename not specified',
                         400)
     asset_dir = request.args.get('asset_dir')
-    video_name = request.args.get('video_name')
+    media_filename = request.args.get('media_filename')
 
     try:
-        video_path = flask.safe_join(root_dir, asset_dir[1:], video_name)
+        media_filepath = flask.safe_join(root_dir, asset_dir[1:],
+                                         media_filename)
         # safe_join can prevent base directory escaping
         # [1:] is used to get ride of the initial /;
         # otherwise safe_join will consider it a chroot escape attempt
     except werkzeug.exceptions.NotFound:
-        logging.exception(f'Parameters are {asset_dir}, {video_name}')
+        logging.exception(f'Parameters are {asset_dir}, {media_filename}')
         return Response('Potential chroot escape', 400)
-    if os.path.isfile(video_path) is False:
-        return Response('Video file does not exist', 400)
+    if os.path.isfile(media_filepath) is False:
+        return Response(f'Video file {media_filename} does not exist', 400)
 
     ffmpeg_cmd = ['/usr/bin/ffprobe', '-v', 'quiet',
                   '-print_format', 'json', '-show_format', '-show_streams',
-                  video_path]
+                  media_filepath]
     p = subprocess.Popen(
             args=ffmpeg_cmd,
             stdout=subprocess.PIPE,
@@ -483,8 +490,13 @@ def get_video_info():
         vic['creation'] = rif['tags']['creation_time'][:10]
         # Z is related to timezone information. But it is not quite relevant
         # here so we just ignore it!
-    except Exception as e:
-        vic['creation'] = f'unknown: {e}'
+    except Exception:
+        vic['creation'] = 'unknown'
+
+    if 'format_name' in rif:
+        vic['format'] = rif['format_name']
+    else:
+        vic['format'] = 'unknown'
 
     if 'duration' in rif:
         vic['duration'] = str(dt.timedelta(
@@ -591,8 +603,12 @@ def play_video():
 
     try:
         fid = get_file_id(flask.safe_join(root_dir, asset_dir[1:], video_name))
-    except FileNotFoundError():
-        return Response('File not found', 404)
+    except OSError:
+        # You canNOT catch FileNotFoundError here; otherwise Python will raise
+        # a "catching classes that do not inherit from BaseException is
+        # not allowed" error
+        logging.exception('')
+        return Response('Error')
     except Exception:
         logging.exception(f'parameters: {root_dir}, {asset_dir}, {video_name}')
         return Response('Parameters error', 400)
@@ -648,8 +664,12 @@ def download():
     except (werkzeug.exceptions.NotFound):
         logging.exception(f'Parameters are {root_dir}, {asset_dir}')
         return Response('Potential chroot escape', 400)
-    except FileNotFoundError:
-        return Response('File not found', 404)
+    except OSError:
+        # You canNOT catch FileNotFoundError here; otherwise Python will raise
+        # a "catching classes that do not inherit from BaseException is
+        # not allowed" error
+        logging.exception('')
+        return Response('Error', 400)
     except Exception:
         logging.exception('')
         return Response('Parameter error', 400)
@@ -690,8 +710,11 @@ def download():
     # as a new download but the last_download timestamp will be the time of
     # the 10th download instead of the 1st download.
     try:
+        start_at = dt.datetime.now()
         with open(fs_path, 'w') as f:
             json.dump(file_stat, f, indent=2, sort_keys=True)
+        duration = dt.datetime.now() - start_at
+        logging.info(f'Time used to write file statistics: {duration}')
     except Exception:
         logging.exception('')
         return Response('Internal error: unable to save files statistics', 500)
@@ -899,11 +922,15 @@ def main(debug):
     th_email.start()
 
     serve(app, host="127.0.0.1", port=port,
-          max_request_body_size=2*1024*1024*1024)
+          max_request_body_size=2*1024*1024*1024,
+          log_socket_errors=False)
     # You need the max_request_body_size to accept large upload file...
+    # The default value of max_request_body_size is 1GB
     # serve() will not explicit raise an exception is this parameter is NOT
     # set but it will close the connection...
 
+    # log_socket_errors is to avoid logging errors such as this one:
+    # https://github.com/Pylons/waitress/issues/116
 
 
 if __name__ == '__main__':

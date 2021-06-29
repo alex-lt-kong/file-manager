@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from PIL import Image
+from PIL import Image, ImageFile
 
 import click
 import datetime
@@ -8,9 +8,6 @@ import glob
 import json
 import logging
 import os
-import random
-import signal
-import smtplib
 import socket
 import subprocess
 import time

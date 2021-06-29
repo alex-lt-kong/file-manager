@@ -112,8 +112,9 @@ class FileManager extends React.Component {
   
     axios.post(this.state.appAddress + "/upload/", payload, config)
     .then(response => {
-      // an alert is not needed since the user will see the change of the files list.
-      this.fetchDataFromServer(this.state.currentPath)
+      alert('File uploaded! You need to manually refresh the file list to see the new file.');
+      // Auto refresh when the offcanvas is still opened causes issues...
+      // to make it simpler, I just remove the auto refresh function.
     })
     .catch(error => {
       console.log(error);
@@ -438,8 +439,8 @@ class FileManager extends React.Component {
                 <li><a class="dropdown-item" onClick={this.onNewFolderClick}><i className="bi bi-folder-plus"></i>  Create Folder</a></li>
               </ul>
             </div>
-
-            <div className="offcanvas offcanvas-bottom h-auto" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+            <div className="offcanvas offcanvas-bottom h-auto"
+                 id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
               <div className="offcanvas-header">
                 <h5 className="offcanvas-title" id="offcanvasBottomLabel"><b>File Upload</b></h5>
                 <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" />
@@ -463,7 +464,7 @@ class FileManager extends React.Component {
                     </div>
                     <div>
                       <input onChange={this.onFileChange} type="file" className="my-3"></input>
-                      <p>Note: Interestingly, while it may appear that the page only supports single-file upload, you can actually upload more
+                      <p>Interestingly, while it may appear that the page only supports single-file upload, you can actually upload more
                         files even if previous ones are still being transferred. (But multiple upload processes will share the same progress bar ¯\_(ツ)_/¯)</p>
                     </div>                    
               </div>

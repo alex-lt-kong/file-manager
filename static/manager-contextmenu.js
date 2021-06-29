@@ -13,7 +13,7 @@ class ContextMenu extends React.Component {
     this.onMoveButtonClick = this.onMoveButtonClick.bind(this);
     this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);    
     this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
-    this.onVideoInfoButtonClick = this.onVideoInfoButtonClick.bind(this);
+    this.onMediaInfoButtonClick = this.onMediaInfoButtonClick.bind(this);
   }
   
   dialogueShouldClose() {
@@ -44,13 +44,13 @@ class ContextMenu extends React.Component {
     this.forceUpdate();
   }  
 
-  onVideoInfoButtonClick(event) {
+  onMediaInfoButtonClick(event) {
     this.setState({
-      modalDialogue: (<ModalVideoInfo
+      modalDialogue: (<ModalMediaInfo
            appAddress={this.state.appAddress}
            assetDir={this.state.fileInfo.asset_dir}
            dialogueShouldClose={this.dialogueShouldClose}
-           videoName={this.state.fileInfo.filename} />)
+           mediaFilename={this.state.fileInfo.filename} />)
     });
     this.forceUpdate();
   }
@@ -87,7 +87,7 @@ class ContextMenu extends React.Component {
         <ul className="dropdown-menu" aria-labelledby="dropdownContextMenuButton">
           <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onMoveButtonClick}>Move</a></li>
           <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
-          <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onVideoInfoButtonClick}>Video Info</a></li>
+          <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onMediaInfoButtonClick}>Media Info</a></li>
           <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onTranscodeButtonClick}>Transcode to WebM</a></li>
           <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</a></li>
         </ul>

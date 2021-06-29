@@ -5,6 +5,7 @@ class PlayBack extends React.Component {
     this.state = {
       appAddress: props.appAddress,
       assetDir: props.assetDir,
+      jsonHTML: null,
       subtitlesURL: props.appAddress + '/download/?asset_dir=' + encodeURIComponent(props.assetDir) + '&filename=' + encodeURIComponent(props.videoName) + '.vtt',
       lastView: props.lastView,
       videoInfo: null,
@@ -66,37 +67,32 @@ class PlayBack extends React.Component {
   
   fetchDataFromServer() {
 
-    URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
+    URL = this.state.appAddress + '/get-media-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&media_filename=' + encodeURIComponent(this.state.videoName);
     axios.get(URL)
       .then(response => {
         this.setState({
           videoInfo: null
-        });
-        this.setState({
-          videoInfo: response.data
-        });
+         });
+         this.setState({
+          videoInfo: response.data,
+          jsonHTML: syntaxHighlight(JSON.stringify(response.data.content, null, 2))
+        })
+
       })
       .catch(error => {
-        alert('Unable to video information:\n' + error.response.data);
-        console.log(error);
+        this.setState({
+          jsonHTML: (
+            <div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
+              Unable to fetch information from media <strong style={{ wordBreak: "break-all" }}>{this.state.mediaFilename}</strong>:
+              <br />{error.response.data}
+            </div>
+          ),
+          mediaInfo: false
+         });
       });
   }
 
   render() {
-
-    let json_html = null;
-    if (this.state.videoInfo === null) { 
-      json_html = (
-        <div className="d-flex align-items-center justify-content-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      );
-    }
-    else { 
-      json_html = syntaxHighlight(JSON.stringify(this.state.videoInfo.content, null, 2));
-    }
 
     return (
       <div className="container-fluid my-2">
@@ -127,7 +123,7 @@ class PlayBack extends React.Component {
                 </h2>
                 <div id="collapseTwo" className={`accordion-collapse collapse ${screen.width > 1000 ? "show" : ""}`} aria-labelledby="headingTwo">
                   <div className="accordion-body">
-                  {json_html}
+                  {this.state.jsonHTML}
                   </div>
                 </div>
               </div>              

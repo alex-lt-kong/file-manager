@@ -1,4 +1,4 @@
-class ModalVideoInfo extends React.Component {
+class ModalMediaInfo extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -10,8 +10,8 @@ class ModalVideoInfo extends React.Component {
                     <span className="visually-hidden">Loading...</span>
                   </div>
                 </div>),
-      videoName: props.videoName,
-      videoInfo: null
+      mediaFilename: props.mediaFilename,
+      mediaInfo: null
     };
     this.handleOKClick = this.handleOKClick.bind(this);
     this.fetchDataFromServer();
@@ -25,27 +25,26 @@ class ModalVideoInfo extends React.Component {
   }
 
   fetchDataFromServer() {                    
-    URL = this.state.appAddress + '/get-video-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&video_name=' + encodeURIComponent(this.state.videoName);
+    URL = this.state.appAddress + '/get-media-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&media_filename=' + encodeURIComponent(this.state.mediaFilename);
       axios.get(URL)
         .then(response => {
           this.setState({
-           videoInfo: null
+           mediaInfo: null
           });
           this.setState({
-           videoInfo: response.data,
+           mediaInfo: response.data,
            jsonHTML: syntaxHighlight(JSON.stringify(response.data.content, null, 2))
          });
         })
-        .catch(error => {
-          console.log(error);     
+        .catch(error => {   
           this.setState({
             jsonHTML: (
               <div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
-                Unable to fetch information from video <strong style={{ wordBreak: "break-all" }}>{this.state.videoName}</strong>:
+                Unable to fetch information from media file <strong style={{ wordBreak: "break-all" }}>{this.state.mediaFilename}</strong>:
                 <br />{error.response.data}
               </div>
             ),
-            videoInfo: false            
+            mediaInfo: false
            });
         });
   }
@@ -65,13 +64,13 @@ class ModalVideoInfo extends React.Component {
   render() {
 
     return (
-    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="videoInformationModalTitle"
+    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="mediaInformationModalTitle"
          aria-hidden="true" data-bs-backdrop="static">
         <div className="modal-dialog  modal-dialog-scrollable" role="document">
           {/* Turned out that modal-dialog-scrollable is buggy on smartphone devices... */}
         <div className="modal-content">
             <div className="modal-header">
-            <h5 className="modal-title" id="videoInformationModalTitle" >Video Information</h5>
+            <h5 className="modal-title" id="mediaInformationModalTitle" >Media Information</h5>
             </div>
             <div className="modal-body">
               <div className="mb-3">{this.state.jsonHTML}</div>

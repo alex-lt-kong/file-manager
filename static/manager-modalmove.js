@@ -40,7 +40,7 @@ class ModalMove extends React.Component {
 
   handleRegularizationClick() {
     this.setState(prevState => ({
-      newFileName: prevState.newFileName.toLowerCase().replace(/[&\/\\#,+()$~%.'":*?<>{}]/g, '').replace(/\s+/g, '-').replace('---', '_')
+      newFileName: prevState.newFileName.toLowerCase().replace(/[&\/\\#,+()$~%'":*?<>{}\[\]]/g, '-').replace(/\s+/g, '-').replace('---', '_')
     }));
   }
 
