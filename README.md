@@ -12,7 +12,7 @@ A web-based file manager with a focus on video manipulation and streaming.
 ## Screenshots
 
 * File List
-Solarized dark             |  Solarized Ocean
-:-------------------------:|:-------------------------:
-![File List Desktop](https://raw.githubusercontent.com/alex-lt-kong/file-manager/main/screenshots/filelist_desktop.png) |
-![File List Mobile](https://raw.githubusercontent.com/alex-lt-kong/file-manager/main/screenshots/filelist_mobile.png)
+<p float="left">
+  <img src="https://raw.githubusercontent.com/alex-lt-kong/file-manager/main/screenshots/filelist_desktop.png" width="75%" />
+  <img src="https://raw.githubusercontent.com/alex-lt-kong/file-manager/main/screenshots/filelist_mobile.png" width="25%" /> 
+</p>
