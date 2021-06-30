@@ -3,12 +3,11 @@
 from PIL import Image, ImageFile
 
 import click
-import datetime
+import datetime as dt
 import glob
 import json
 import logging
 import os
-import socket
 import subprocess
 import time
 
@@ -27,7 +26,7 @@ thumbnails_path = ''
 video_extensions = None
 
 
-def get_dir_size(path: str):
+def get_dir_size(path: str, rotate_diff=3600*24*90):
 
     total_size, files_count = 0, 0
     for dirpath, dirnames, filenames in os.walk(path):
@@ -37,6 +36,17 @@ def get_dir_size(path: str):
             if not os.path.islink(fp):
                 total_size += os.path.getsize(fp)
                 files_count += 1
+
+            ctime = os.path.getctime(fp)
+            diff = dt.datetime.now().timestamp() - ctime
+            if rotate_diff is not None and diff >= rotate_diff:
+                if os.path.islink(fp):
+                    os.unlink(fp)
+                elif os.path.isfile(fp):
+                    os.remove(fp)
+                logging.info(f'File [{fp[len(thumbnails_path):]}] removed '
+                             'since it was changed '
+                             f'{diff / 3600 / 24:.1f} days ago')
 
     return total_size, files_count
 
@@ -173,14 +183,14 @@ def main(debug):
     else:
         logging.info('Running in production mode')
 
-    size, count = get_dir_size(thumbnails_path)
+    size, count = get_dir_size(thumbnails_path, rotate_diff=3600*24*15)
     logging.info('Before generation, the size of the thumbnail dir '
                  f'[{thumbnails_path}] is {size/1024/1024:.2f} MB and '
                  f'it contains {count} files.')
 
     generate_thumbnails(root_dir=root_dir)
 
-    size, count = get_dir_size(thumbnails_path)
+    size, count = get_dir_size(thumbnails_path, rotate_diff=None)
     logging.info('After generation, the size of the thumbnail dir '
                  f'[{thumbnails_path}] is {size/1024/1024:.2f} MB and '
                  f'it contains {count} files.')

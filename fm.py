@@ -171,7 +171,7 @@ def upload():
         except werkzeug.exceptions.NotFound:
             return Response('Potential chroot escape', 400)
         # safe_join can prevent base directory escaping
-        # [1:] is used to get ride of the initial /
+        # [1:] is used to get rid of the initial /
 
         selected_file.seek(0)
         # seek(0) means to go back to the start of the file.
@@ -204,7 +204,7 @@ def move():
         old_real_filepath = flask.safe_join(root_dir, old_filepath[1:])
         new_real_filepath = flask.safe_join(root_dir, new_filepath[1:])
         # safe_join can prevent base directory escaping
-        # [1:] is used to get ride of the initial /:
+        # [1:] is used to get rid of the initial /:
         # On the client side, old_filepath/new_filepath are considered real
         # path, so they have to start with a slash. However, when we need
         # to convert them into real_filepath on the server, a preceding slash
@@ -247,7 +247,7 @@ def remove():
     try:
         real_filepath = flask.safe_join(root_dir, filepath[1:])
         # safe_join can prevent base directory escaping
-        # [1:] is used to get ride of the initial /:
+        # [1:] is used to get rid of the initial /:
         # On the client side, filepath is considered real path, so it has
         # to start with a slash. However, when we need to convert it into
         # real_filepath on the server, a preceding slash will make flask
@@ -418,7 +418,7 @@ def extract_subtitles():
     try:
         video_path = flask.safe_join(root_dir, asset_dir[1:], video_name)
         # safe_join can prevent base directory escaping
-        # [1:] is used to get ride of the initial /;
+        # [1:] is used to get rid of the initial /;
         # otherwise safe_join will consider it a chroot escape attempt
 
         stream_no = int(request.form['stream_no'])
@@ -449,7 +449,7 @@ def get_media_info():
         media_filepath = flask.safe_join(root_dir, asset_dir[1:],
                                          media_filename)
         # safe_join can prevent base directory escaping
-        # [1:] is used to get ride of the initial /;
+        # [1:] is used to get rid of the initial /;
         # otherwise safe_join will consider it a chroot escape attempt
     except werkzeug.exceptions.NotFound:
         logging.exception(f'Parameters are {asset_dir}, {media_filename}')
@@ -658,7 +658,7 @@ def download():
         file_dir = flask.safe_join(root_dir, asset_dir[1:])
         file_path = flask.safe_join(file_dir, filename)
         # safe_join can prevent base directory escaping
-        # [1:] is used to get ride of the initial /:
+        # [1:] is used to get rid of the initial /:
         # otherwise safe_join will consider it a chroot escape attempt
         fid = get_file_id(file_path)
     except (werkzeug.exceptions.NotFound):
