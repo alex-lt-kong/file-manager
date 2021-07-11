@@ -367,7 +367,10 @@ def raw_info_to_video_info(ri):
     # Having an OrderedDict() is not enough, you need to set
     # app.config['JSON_SORT_KEYS'] = False to pass the order to the client.
     st['type'] = ri['codec_type']
-    st['format'] = ri['codec_name']
+    if 'codec_name' in ri:
+        st['format'] = ri['codec_name']
+    else:
+        st['format'] = '[unknown]'
 
     if ri['codec_type'] == 'video':
         # Note that "video" in this context includes both videos and images

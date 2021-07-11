@@ -79,7 +79,7 @@ def generate_thumbnails(root_dir: str):
         file_ext = os.path.splitext(file_path)[1].lower()
         file_size = os.path.getsize(file_path)
 
-        tn_path = os.path.join(thumbnails_path, file_name) + '.jpg'
+        tn_path = os.path.join(thumbnails_path, f'{file_name}_{file_size}.jpg')
 
         if os.path.isfile(tn_path):
             logging.debug('Thumbnail for [{}] exists'.format(

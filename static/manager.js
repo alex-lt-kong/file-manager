@@ -318,7 +318,7 @@ class FileManager extends React.Component {
     } else if (content.file_type === 1) { // file_type == 1: ordinary file
       if (content.media_type === 1) { // image
         thumbnail = (
-          <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
+          <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}_${content.size}.jpg`}
               style={{ maxWidth: "100%", maxHeight: "90vh", "display":"block", cursor: "pointer" }}
               onClick={() => this.onClickItem(key)}
               onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/image.svg"; e.target.style="width: 100%"}} />);
@@ -327,7 +327,7 @@ class FileManager extends React.Component {
             // Note for onError we need to specify a special style;
       } else if (content.media_type === 2) { // video
         thumbnail = (
-          <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}.jpg`}
+          <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}_${content.size}.jpg`}
               style={{ maxWidth: "100%", cursor: "pointer" }}
               onClick={() => this.onClickItem(key)}
               onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/video.svg"; e.target.style="width: 100%"}} />);
@@ -492,7 +492,7 @@ class FileManager extends React.Component {
           <div className="col">
             <div className="input-group d-flex justify-content-between mx-1 my-1">
               {/* d-flex and justify-content-between keep components in one line*/}
-              <span className="input-group-text" id="basic-addon1">Path</span>
+              <span className="input-group-text" id="basic-addon1"></span>
               <input type="text" className="form-control" placeholder="Address"
                   aria-label="Recipient's username" aria-describedby="button-addon2"
                   value={this.state.addressBar} onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress}  id="address-input" />
