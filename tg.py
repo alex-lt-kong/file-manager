@@ -28,6 +28,9 @@ video_extensions = None
 
 def get_dir_size(path: str, rotate_diff=3600*24*90):
 
+    logging.info(f'Getting size of {path}, ' + '' if rotate_diff is None
+                 else 'files older than '
+                 f'{rotate_diff / 3600 / 24:.1f} days will be removed')
     total_size, files_count = 0, 0
     for dirpath, dirnames, filenames in os.walk(path):
         for f in filenames:
@@ -62,7 +65,7 @@ def resize_image(basewidth: int, src_path: str, dst_path: str):
             img = img.convert('RGB')
         img.save(dst_path)
     except Exception:
-        logging.exception('')
+        logging.exception(f'resizing {src_path}')
         return False
     return True
 
@@ -121,8 +124,10 @@ def generate_thumbnails(root_dir: str):
 
             if p.returncode != 0:
                 error_count += 1
-                logging.error(f'ffmpeg non-zero exist code: {p.returncode}')
-                logging.error(f'stdout: {stderr.decode("utf-8")}')
+                # ffmpeg output will only be saved if debug mode is enabled;
+                # otherwise there will be too much of it.
+                logging.info(f'ffmpeg non-zero exist code: {p.returncode}')
+                logging.debug(f'stdout: {stderr.decode("utf-8")}')
 
             elif os.path.isfile(tn_path):
                 retval = resize_image(basewidth=240,
@@ -184,14 +189,14 @@ def main(debug):
         logging.info('Running in production mode')
 
     size, count = get_dir_size(thumbnails_path, rotate_diff=3600*24*15)
-    logging.info('Before generation, the size of the thumbnail dir '
+    logging.info('Before thumbnail generation, the size of the thumbnail dir '
                  f'[{thumbnails_path}] is {size/1024/1024:.2f} MB and '
                  f'it contains {count} files.')
 
     generate_thumbnails(root_dir=root_dir)
 
     size, count = get_dir_size(thumbnails_path, rotate_diff=None)
-    logging.info('After generation, the size of the thumbnail dir '
+    logging.info('After thumbnail generation, the size of the thumbnail dir '
                  f'[{thumbnails_path}] is {size/1024/1024:.2f} MB and '
                  f'it contains {count} files.')
 
