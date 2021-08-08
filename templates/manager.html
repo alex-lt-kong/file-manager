@@ -38,6 +38,9 @@
   https://stackoverflow.com/questions/32862394/bootstrap-modals-keep-adding-padding-right-to-body-after-closed
 -->
 <body>
+  <script>
+  window.app_address = "{{ app_address | safe }}";
+  </script>
   <div id="root"></div>
 </body>
 </html>

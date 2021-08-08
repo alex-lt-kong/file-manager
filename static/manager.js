@@ -36,7 +36,7 @@ class FileManager extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      appAddress: 'https://media.sz.lan',
+      appAddress: props.appAddress,
       addressBar: '',
       currentPath: '/',
       fileInfo: null,
@@ -540,7 +540,7 @@ class FileManager extends React.Component {
 
 ReactDOM.render(
   <div>
-      <FileManager />
+      <FileManager appAddress={app_address} />
   </div>,
   document.querySelector('#root'),
 );
