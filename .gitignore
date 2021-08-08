@@ -19,10 +19,10 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
+#downloads/
 eggs/
 .eggs/
-lib/
+#lib/
 lib64/
 parts/
 sdist/
