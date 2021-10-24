@@ -862,7 +862,7 @@ def stop_signal_handler(*args):
 @click.option('--debug', is_flag=True)
 def main(debug):
 
-    port = -1
+    local_port = -1
     global allowed_ext, app_address, debug_mode, direct_open_ext, emailer
     global root_dir, external_script_dir, file_stat, fs_path, log_path
     global thumbnails_path, image_extensions, video_extensions
@@ -872,7 +872,7 @@ def main(debug):
         with open(settings_path, 'r') as json_file:
             json_str = json_file.read()
             settings = json.loads(json_str)
-        port = settings['flask']['port']
+        local_port = settings['flask']['local_port']
         allowed_ext = settings['app']['allowed_ext']
         app_address = settings['app']['address']
         direct_open_ext = settings['app']['direct_open_extensions']
@@ -925,7 +925,7 @@ def main(debug):
                                         'delay': 0 if debug_mode else 300})
     th_email.start()
 
-    serve(app, host="127.0.0.1", port=port,
+    serve(app, host="127.0.0.1", port=local_port,
           max_request_body_size=2*1024*1024*1024,
           log_socket_errors=False)
     # You need the max_request_body_size to accept large upload file...
