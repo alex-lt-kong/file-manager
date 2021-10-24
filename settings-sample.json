@@ -17,6 +17,7 @@
         "image_extensions": [".jpg", ".jpeg", ".tiff", ".tif", ".gif", ".bmp", ".png", ".webp"]
     },
     "email": {
+        "path": "/root/bin/emailer/emailer.py",
         "from_address": "media@localhost",
         "from_password": "your-password",
         "from_name": "media",
