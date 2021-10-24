@@ -349,11 +349,9 @@ class FileManager extends React.Component {
         } else if ([".c"].includes(content.extension.toLowerCase())) {
           url = this.state.appAddress + "/static/icons/c.svg"; 
         } else if ([".py", ".pyc"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/py.svg"; 
-        } else if ([".rpm"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/rpm.svg"; 
-        } else if ([".apk", ".whl"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/py.svg"; 
+          url = this.state.appAddress + "/static/icons/python.svg"; 
+        } else if ([".apk", ".whl", ".rpm", ".deb"].includes(content.extension.toLowerCase())) {
+          url = this.state.appAddress + "/static/icons/package.svg"; 
         } else if ([".exe", ".bat"].includes(content.extension.toLowerCase())) {
           url = this.state.appAddress + "/static/icons/exe.svg"; 
         } else if ([".css"].includes(content.extension.toLowerCase())) {
