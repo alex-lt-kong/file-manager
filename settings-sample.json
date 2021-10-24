@@ -26,7 +26,6 @@
     },
     "flask" :{
         "max_upload_size": 2048000000,
-        "secret_key": "your-session-secret",
         "local_port": 31415
     }
 }

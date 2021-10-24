@@ -929,7 +929,7 @@ def main(debug):
     th_email.start()
 
     serve(app, host="127.0.0.1", port=local_port,
-          max_request_body_size=2*1024*1024*1024,
+          max_request_body_size=settings['flask']['max_upload_size'],
           log_socket_errors=False)
     # You need the max_request_body_size to accept large upload file...
     # The default value of max_request_body_size is 1GB
