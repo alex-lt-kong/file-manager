@@ -10,6 +10,7 @@ import click
 import datetime as dt
 import errno
 import flask
+import importlib.machinery
 import json
 import logging
 import os
@@ -21,12 +22,6 @@ import subprocess
 import sys
 import threading
 import werkzeug
-
-
-import importlib.machinery
-loader = importlib.machinery.SourceFileLoader('emailer',
-                                              '/root/bin/emailer/emailer.py')
-emailer = loader.load_module()
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
@@ -45,6 +40,7 @@ app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager'
 debug_mode = False
 direct_open_ext = None
+emailer = None
 external_script_dir = ''
 file_stat = None
 fs_path = ''
@@ -867,9 +863,9 @@ def stop_signal_handler(*args):
 def main(debug):
 
     port = -1
-    global allowed_ext, app_address, debug_mode, direct_open_ext, root_dir
-    global external_script_dir, file_stat, fs_path, log_path, thumbnails_path
-    global image_extensions, video_extensions
+    global allowed_ext, app_address, debug_mode, direct_open_ext, emailer
+    global root_dir, external_script_dir, file_stat, fs_path, log_path
+    global thumbnails_path, image_extensions, video_extensions
 
     debug_mode = debug
     try:
@@ -880,6 +876,11 @@ def main(debug):
         allowed_ext = settings['app']['allowed_ext']
         app_address = settings['app']['address']
         direct_open_ext = settings['app']['direct_open_extensions']
+        loader = importlib.machinery.SourceFileLoader(
+                    'emailer',
+                    settings['email']['path']
+                )
+        emailer = loader.load_module()
         external_script_dir = settings['app']['external_script_dir']
         fs_path = settings['app']['files_statistics']
         image_extensions = settings['app']['image_extensions']
