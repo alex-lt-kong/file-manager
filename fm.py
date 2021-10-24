@@ -834,6 +834,9 @@ def get_file_list():
     except werkzeug.exceptions.NotFound:
         logging.exception('')
         return Response('Potential chroot escape', 400)
+    except OSError as ex:
+        logging.exception('')
+        return Response(f'OSError: {ex.strerror}', 400)
     except Exception:
         logging.exception('')
         return Response('Internal Error', 500)
