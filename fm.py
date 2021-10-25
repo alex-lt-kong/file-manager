@@ -456,7 +456,11 @@ def get_media_info():
     if os.path.isfile(media_filepath) is False:
         return Response(f'Video file {media_filename} does not exist', 400)
 
-    ffmpeg_cmd = ['/usr/bin/ffprobe', '-v', 'quiet',
+    ffprobe_path = '/usr/bin/ffprobe'
+    if os.path.isfile(ffprobe_path) is False:
+        return Response(f'ffprobe not installed at {ffprobe_path}', 500)
+
+    ffmpeg_cmd = [ffprobe_path, '-v', 'quiet',
                   '-print_format', 'json', '-show_format', '-show_streams',
                   media_filepath]
     p = subprocess.Popen(
