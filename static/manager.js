@@ -340,6 +340,8 @@ class FileManager extends React.Component {
           url = this.state.appAddress + "/static/icons/word.svg"; 
         } else if ([".htm", ".html", ".mht", ".xml"].includes(content.extension.toLowerCase())) {
           url = this.state.appAddress + "/static/icons/ml.svg"; 
+        } else if ([".csv", ".xls", ".xlsm", ".xlsx"].includes(content.extension.toLowerCase())) {
+          url = this.state.appAddress + "/static/icons/xls.svg"; 
         } else if ([".pdf"].includes(content.extension.toLowerCase())) {
           url = this.state.appAddress + "/static/icons/pdf.svg";
         } else if ([".7z", ".zip", ".rar", ".tar", ".gz"].includes(content.extension.toLowerCase())) {
@@ -348,7 +350,7 @@ class FileManager extends React.Component {
           url = this.state.appAddress + "/static/icons/music.svg"; 
         } else if ([".c"].includes(content.extension.toLowerCase())) {
           url = this.state.appAddress + "/static/icons/c.svg"; 
-        } else if ([".py", ".pyc"].includes(content.extension.toLowerCase())) {
+        } else if ([".py", ".pyc", ".ipynb"].includes(content.extension.toLowerCase())) {
           url = this.state.appAddress + "/static/icons/python.svg"; 
         } else if ([".apk", ".whl", ".rpm", ".deb"].includes(content.extension.toLowerCase())) {
           url = this.state.appAddress + "/static/icons/package.svg"; 
