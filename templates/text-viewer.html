@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="shortcut icon" href="{{app_address}}/static/favicon.svg">
+<link rel="stylesheet" href="{{app_address}}/static/lib/codemirror/5.63.3/lib/codemirror.css">
+<script src="{{app_address}}/static/lib/codemirror/5.63.3/lib/codemirror.js"></script>
+<script src="{{app_address}}/static/lib/codemirror/5.63.3/mode/javascript/javascript.js"></script>
+
+<html>
+<head>
+<title>Text Viewer</title>
+</head>
+<style>
+  .CodeMirror { height: 100%; }
+</style>
+<body>
+  <script>
+    var paras = JSON.parse({{ paras | tojson }});
+    var myCodeMirror = CodeMirror(document.body, {
+    value: paras.text_content,
+    lineNumbers: true,
+    readOnly: true
+  });
+  </script>  
+</body>
+</html>

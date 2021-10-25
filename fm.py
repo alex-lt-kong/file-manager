@@ -632,6 +632,45 @@ def play_video():
                            mode='development' if debug_mode else 'production')
 
 
+@app.route('/view-text/', methods=['GET'])
+def view_text():
+
+    if 'asset_dir' not in request.args or 'filename' not in request.args:
+        return Response('Parameters asset_dir or filename not specified', 400)
+    asset_dir = request.args.get('asset_dir')
+    filename = request.args.get('filename')
+    try:
+        file_dir = flask.safe_join(root_dir, asset_dir[1:])
+        file_path = flask.safe_join(file_dir, filename)
+        # safe_join can prevent base directory escaping
+        # [1:] is used to get rid of the initial /:
+        # otherwise safe_join will consider it a chroot escape attempt
+        fid = get_file_id(file_path)
+    except (werkzeug.exceptions.NotFound):
+        logging.exception(f'Parameters are {root_dir}, {asset_dir}')
+        return Response('Potential chroot escape', 400)
+    except OSError:
+        # You canNOT catch FileNotFoundError here; otherwise Python will raise
+        # a "catching classes that do not inherit from BaseException is
+        # not allowed" error
+        logging.exception('')
+        return Response('OSError', 400)
+    except Exception:
+        logging.exception('')
+        return Response('Parameter error', 400)
+
+    paras = {}
+    try:
+        with open(file_path, 'r') as f:
+            paras['text_content'] = f.read()
+    except UnicodeDecodeError as ex:
+        paras['text_content'] = str(ex)
+
+    return render_template('text-viewer.html',
+                           app_address=app_address,
+                           paras=json.dumps(paras),
+                           mode='development' if debug_mode else 'production')
+
 @app.route('/get-thumbnail/', methods=['GET'])
 def get_thumbnail():
 

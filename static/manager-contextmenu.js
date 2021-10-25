@@ -11,6 +11,7 @@ class ContextMenu extends React.Component {
     this.dialogueShouldClose = this.dialogueShouldClose.bind(this);
     this.onExtractSubtitlesButtonClick = this.onExtractSubtitlesButtonClick.bind(this);
     this.onMoveButtonClick = this.onMoveButtonClick.bind(this);
+    this.onViewTextButtonClick = this.onViewTextButtonClick.bind(this);
     this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);    
     this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
     this.onMediaInfoButtonClick = this.onMediaInfoButtonClick.bind(this);
@@ -30,6 +31,13 @@ class ContextMenu extends React.Component {
                 refreshFileList={this.state.refreshFileList} />)
     });
     this.forceUpdate();
+  }
+
+  onViewTextButtonClick(event) {
+    window.open(this.state.appAddress + '/view-text/?asset_dir=' + 
+      encodeURIComponent(this.state.fileInfo.asset_dir) +
+      '&filename=' + encodeURIComponent(this.state.fileInfo.filename)
+    ); 
   }
   
   onExtractSubtitlesButtonClick(event) {
@@ -85,6 +93,7 @@ class ContextMenu extends React.Component {
         <i id="dropdownContextMenuButton" className="bi bi-three-dots-vertical" data-bs-toggle="dropdown"
            aria-expanded="false" style={{ cursor: "pointer", fontSize: "1.2em" }} ></i>
         <ul className="dropdown-menu" aria-labelledby="dropdownContextMenuButton">
+          <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onViewTextButtonClick}>View As Text</a></li>
           <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onMoveButtonClick}>Move</a></li>
           <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onRemoveButtonClick}>Remove</a></li>
           <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onMediaInfoButtonClick}>Media Info</a></li>
