@@ -18,6 +18,8 @@
     },
     "email": {
         "path": "/root/bin/emailer/emailer.py",
+        "from_host": "localhost",
+        "from_port": 587,
         "from_address": "media@localhost",
         "from_password": "your-password",
         "from_name": "media",
