@@ -967,7 +967,7 @@ def main(debug):
     th_email = threading.Thread(target=emailer.send_service_start_notification,
                                 kwargs={'settings_path': settings_path,
                                         'service_name': f'{app_name}',
-                                        'log_path': log_path,
+                                        'path_of_logs_to_send': log_path,
                                         'delay': 0 if debug_mode else 300})
     th_email.start()
 
