@@ -2,6 +2,8 @@ settings.json
 plan.json
 notes.json
 resources/files/
+resources/files
+# just in case files can be a mountpoint or a syslink
 resources/thumbnails/
 resources/files.json
 resources/thumbnail-rotate.state
