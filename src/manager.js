@@ -220,16 +220,14 @@ class FileManager extends React.Component {
       </div>
     );
     this.forceUpdate();
-    console.log(`fetchServerInfo()@manager.js`);
     // You set it to a spinner before fetching data from the server.
     axios.get('./get-server-info/')
         .then((response) => {
           this.setState({
             serverInfo: response.data
           }, ()=> {
-            console.log(this.state.serverInfo);
             const ffmpegItems = this.state.serverInfo.ffmpeg.map((ffmpegItem) =>
-              <li key={ffmpegItem.pid} style={{wordBreak: "break-all"}}>
+              <li key={ffmpegItem.pid} style={{wordBreak: 'break-all'}}>
                 {ffmpegItem.cmdline} <b>(since {ffmpegItem.since})</b>
               </li>
             );
@@ -400,13 +398,11 @@ class FileManager extends React.Component {
     const fileList = new Array(keys.length);
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
-      let retval = this.generateThumbnailAndMetaData(key, fic[key]);
-      let thumbnail = retval.thumbnail;
-      let fileMetaData = retval.fileMetaData;
-      console.log(`i=${i}`);
-      console.log(fic[key]);
+      const retval = this.generateThumbnailAndMetaData(key, fic[key]);
+      const thumbnail = retval.thumbnail;
+      const fileMetaData = retval.fileMetaData;
       fileList[i] = (
-        <li key={`${i}-${fic[key].fileName}`} className="list-group-item">
+        <li key={i} className="list-group-item">
           <div className="row" style={{display: 'grid', gridTemplateColumns: '8em 8fr 2.5em'}} >
             {/* Note that for gridTemplateColumns we canNOT use relative width for thumbnail. The reason is that
               common monitors are wide screen but smartphones are usually tall screen, so the preferred thumbnail
@@ -415,19 +411,18 @@ class FileManager extends React.Component {
               {thumbnail}
             </div>
             <div className="col" style={{display: 'flex', flexFlow: 'column'}} >
-              <div style={{flex: "1 1 auto", wordBreak: "break-all" }}>
-                <a value={key} style={{ textDecoration: "none", display: "block", cursor: "pointer" }}
+              <div style={{flex: '1 1 auto', wordBreak: 'break-all'}}>
+                <a value={key} style={{textDecoration: 'none', display: 'block', cursor: 'pointer'}}
                   onClick={() => this.onClickItem(key)}>
                   {key}
                 </a>
               </div>
-              <div style={{  flex: '0 1 1.5em'}} >
-                <div style={{ fontSize: '0.8em', color: '#808080' }}>{fileMetaData}</div>
+              <div style={{flex: '0 1 1.5em'}} >
+                <div style={{fontSize: '0.8em', color: '#808080'}}>{fileMetaData}</div>
               </div>
             </div>
             <div className="col">
-              <ContextMenu key={`${i}-${fic[key].fileName}`}
-                refreshFileList={this.fileListShouldRefresh} fileInfo={fic[key]} appAddress='.' />
+              <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fic[key]} appAddress='.' />
             </div>
           </div>
         </li>

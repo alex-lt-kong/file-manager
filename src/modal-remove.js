@@ -22,31 +22,33 @@ class ModalRemove extends React.Component {
   }
 
   handleSubmitClick() {
-    this.postDataToServer();    
+    this.postDataToServer();
   }
 
-  postDataToServer() {                    
+  postDataToServer() {
     const payload = new FormData();
     payload.append('filepath', this.state.fileInfo.asset_dir + this.state.fileInfo.filename);
     axios({
-      method: "post",
-      url: this.state.appAddress + "/remove/",
-      data: payload,
+      method: 'post',
+      url: './remove/',
+      data: payload
     })
-    .then(response => {
-      this.handleCloseClick();
-      if (this.state.refreshFileList != null) {
-        this.state.refreshFileList();
-      }
-    })
-    .catch(error => {
-      console.log(error);
-      this.setState({
-        responseMessage: (<div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
-                            Unable to remove <strong style={{ wordBreak: "break-all" }}>{this.state.fileInfo.filename}</strong>:<br />{error.response.data}
-                          </div>)
-      }); 
-    });
+        .then((response) => {
+          this.handleCloseClick();
+          if (this.state.refreshFileList != null) {
+            this.state.refreshFileList();
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          this.setState({
+            responseMessage: (
+              <div className="alert alert-danger my-2" role="alert" style={{wordBreak: 'break-word'}}>
+                Unable to remove <strong style={{wordBreak: 'break-all'}}>{this.state.fileInfo.filename}</strong>:<br />{error.response.data}
+              </div>
+            )
+          });
+        });
   }
 
   handleCloseClick() {
@@ -62,32 +64,31 @@ class ModalRemove extends React.Component {
   }
 
   render() {
-    
     if (this.state.show === false) {
       return null;
     }
 
     return (
-    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" data-bs-backdrop="static" 
-         aria-labelledby="modal-remove-file-title" aria-hidden="true">
-           {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
-               so the proper close methods will always be called.  */}
+      <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" data-bs-backdrop="static" 
+        aria-labelledby="modal-remove-file-title" aria-hidden="true">
+        {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
+                so the proper close methods will always be called.  */}
         <div className="modal-dialog modal-dialog-scrollable" role="document">
         <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="modal-remove-file-title" >Remove File</h5>
             </div>
             <div className="modal-body">
-            <div className="mb-3">
+              <div className="mb-3">
                 <span className="form-label" style={{ wordBreak: "break-all" }}>
                 Remove file <strong>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong>?
                 </span>
                 {this.state.responseMessage}
                 <div className="accordion my-2" id="accordionRemove">
                   <div className="accordion-item">
-                      <h2 className="accordion-header" id="headingRemove">
+                    <h2 className="accordion-header" id="headingRemove">
                       <button className="accordion-button collapsed" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
+                        data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
                       What's Happening Under the Hood?
                       </button>
                       </h2>
@@ -108,18 +109,18 @@ class ModalRemove extends React.Component {
                           <li>The serve returns an error if all of the above conditions are not met.</li>
                         </ol>
                       </div>
-                      </div>
+                    </div>
                   </div>
                 </div>
-            </div>
+              </div>
             </div>
             <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>No</button>
-            <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>YES!</button>
+              <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>No</button>
+              <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>YES!</button>
             </div>
+          </div>
         </div>
-        </div>
-    </div>
+      </div>
     );
   }
 }

@@ -4,6 +4,7 @@ import {ModalExtractSubtitles} from './modal-extract-subtitles';
 import {ModalMediaInfo} from './modal-media-info';
 import {ModalTranscode} from './modal-transcode';
 import React from 'react';
+import PropTypes from 'prop-types';
 
 class ContextMenu extends React.Component {
   constructor(props) {
@@ -14,15 +15,24 @@ class ContextMenu extends React.Component {
       refreshFileList: props.refreshFileList,
       fileInfo: props.fileInfo
     };
-    console.log(`fileInfo@ContextMenu:`);
-    console.log(props.fileInfo);
     this.dialogueShouldClose = this.dialogueShouldClose.bind(this);
     this.onExtractSubtitlesButtonClick = this.onExtractSubtitlesButtonClick.bind(this);
     this.onMoveButtonClick = this.onMoveButtonClick.bind(this);
     this.onViewTextButtonClick = this.onViewTextButtonClick.bind(this);
-    this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);    
+    this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);
     this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
     this.onMediaInfoButtonClick = this.onMediaInfoButtonClick.bind(this);
+  }
+
+  componentDidUpdate(prevProps) {
+    // If you component <ContextMenu /> as an object, React could re-use an existing
+    // <ContextMenu /> for different file items. Therefore, we canNOT rely on
+    // ContextMenu's constructor to fill in the fileInfo member.
+    if (prevProps.fileInfo !== this.props.fileInfo) {
+      this.setState({
+        fileInfo: this.props.fileInfo
+      });
+    }
   }
 
   dialogueShouldClose() {
@@ -113,5 +123,13 @@ class ContextMenu extends React.Component {
     );
   }
 }
+
+ContextMenu.propTypes = {
+  appAddress: PropTypes.string,
+  fileInfo: PropTypes.object,
+  enableUpload: PropTypes.bool
+};
+
+
 
 export {ContextMenu};

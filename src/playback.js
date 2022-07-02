@@ -1,12 +1,15 @@
-class PlayBack extends React.Component {
+import axios from 'axios';
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import syntaxHighlight from './utils';
 
+class PlayBack extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      appAddress: props.appAddress,
       assetDir: props.assetDir,
       jsonHTML: null,
-      subtitlesURL: props.appAddress + '/download/?asset_dir=' + encodeURIComponent(props.assetDir) + '&filename=' + encodeURIComponent(props.videoName) + '.vtt',
+      subtitlesURL: '../download/?asset_dir=' + encodeURIComponent(props.assetDir) + '&filename=' + encodeURIComponent(props.videoName) + '.vtt',
       lastView: props.lastView,
       videoInfo: null,
       videoName: props.videoName,
@@ -20,7 +23,7 @@ class PlayBack extends React.Component {
     this.onPlaySlowerButtonClick = this.onPlaySlowerButtonClick.bind(this);
     this.onSubtitlesURLTextareaChange = this.onSubtitlesURLTextareaChange.bind(this);
     this.onCanPlayEvent = this.onCanPlayEvent.bind(this);
-    this.videoURL = this.state.appAddress + '/download/?asset_dir=' + 
+    this.videoURL = '../download/?asset_dir=' + 
                     encodeURIComponent(this.state.assetDir) + '&filename=' +
                     encodeURIComponent(this.state.videoName) + '&as_attachment=0';
     this.videoRef = React.createRef();
@@ -29,12 +32,14 @@ class PlayBack extends React.Component {
   onPlaybackSpeedInputChange(event) {
     console.log('onPlaybackSpeedInputChange');
     if (isNaN(parseFloat(event.target.value)) || parseFloat(event.target.value) <= 0.2 ||
-        parseFloat(event.target.value) > 10) { return; }
-    console.log('onPlaybackSpeedInputChange continue');
-    console.log(parseFloat(event.target.value))
+        parseFloat(event.target.value) > 10) {
+      return;
+    }
     this.setState({
       videoPlaybackRate: parseFloat(event.target.value)
-    }, () => {this.videoRef.current.playbackRate = this.state.videoPlaybackRate});
+    }, () => {
+      this.videoRef.current.playbackRate = this.state.videoPlaybackRate;
+    });
   }
 
   onPlayFasterButtonClick(event) {
@@ -46,11 +51,11 @@ class PlayBack extends React.Component {
   onPlaySlowerButtonClick(event) {
     if (this.state.videoPlaybackRate <= 0.2) { return; }
 
-    this.setState(prevState =>({
+    this.setState((prevState) =>({
       videoPlaybackRate: prevState.videoPlaybackRate - 0.1
     }), () => {this.videoRef.current.playbackRate = this.state.videoPlaybackRate});
   }
-  
+
   onCanPlayEvent(event) {
     this.videoRef.current.playbackRate = 3;
   }
@@ -66,34 +71,28 @@ class PlayBack extends React.Component {
   }
   
   fetchDataFromServer() {
-
-    URL = this.state.appAddress + '/get-media-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&media_filename=' + encodeURIComponent(this.state.videoName);
-    axios.get(URL)
-      .then(response => {
-        this.setState({
-          videoInfo: null
-         });
-         this.setState({
-          videoInfo: response.data,
-          jsonHTML: syntaxHighlight(JSON.stringify(response.data.content, null, 2))
+    axios.get('../get-media-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&media_filename=' + encodeURIComponent(this.state.videoName))
+        .then((response) => {
+          this.setState({
+            videoInfo: response.data,
+            jsonHTML: syntaxHighlight(JSON.stringify(response.data.content, null, 2))
+          });
         })
-
-      })
-      .catch(error => {
-        this.setState({
-          jsonHTML: (
-            <div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
-              Unable to fetch information from media <strong style={{ wordBreak: "break-all" }}>{this.state.mediaFilename}</strong>:
-              <br />{error.response.data}
-            </div>
-          ),
-          mediaInfo: false
-         });
-      });
+        .catch((error) => {
+          console.error(error);
+          this.setState({
+            jsonHTML: (
+              <div className="alert alert-danger my-2" role="alert" style={{wordBreak: 'break-word'}}>
+                Unable to fetch information from media <strong style={{ wordBreak: "break-all" }}>{this.state.mediaFilename}</strong>:
+                <br />{error.response.data}
+              </div>
+            ),
+            mediaInfo: false
+          });
+        });
   }
 
   render() {
-
     return (
       <div className="container-fluid my-2">
         <div className="row flex-row-reverse">
@@ -166,12 +165,10 @@ class PlayBack extends React.Component {
   }
 }
 
+const container = document.getElementById('root');
+const root = createRoot(container);
 
-ReactDOM.render(
-  <div>
-      <PlayBack appAddress={app_address} assetDir={paras['asset_dir']} 
-                videoName={paras['video_name']} views={paras['views']}
-                lastView={paras['last_view']} />
-  </div>,
-  document.querySelector('#root'),
-);
+root.render(<div>
+  <PlayBack assetDir={paras['asset_dir']} videoName={paras['video_name']}
+    views={paras['views']} lastView={paras['last_view']} />
+</div>);

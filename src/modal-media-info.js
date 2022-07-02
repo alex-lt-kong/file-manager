@@ -1,10 +1,11 @@
+import axios from 'axios';
 import React from 'react';
+import syntaxHighlight from './utils';
 
 class ModalMediaInfo extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      appAddress: props.appAddress,
       assetDir: props.assetDir,
       dialogueShouldClose: props.dialogueShouldClose,
       jsonHTML: (
@@ -29,7 +30,7 @@ class ModalMediaInfo extends React.Component {
   }
 
   fetchDataFromServer() {
-    URL = this.state.appAddress + '/get-media-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&media_filename=' + encodeURIComponent(this.state.mediaFilename);
+    URL = './get-media-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&media_filename=' + encodeURIComponent(this.state.mediaFilename);
       axios.get(URL)
         .then(response => {
           this.setState({

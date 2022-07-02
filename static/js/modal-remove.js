@@ -3047,8 +3047,8 @@ var ModalRemove = /*#__PURE__*/function (_React$Component) {
       var payload = new FormData();
       payload.append('filepath', this.state.fileInfo.asset_dir + this.state.fileInfo.filename);
       axios({
-        method: "post",
-        url: this.state.appAddress + "/remove/",
+        method: 'post',
+        url: './remove/',
         data: payload
       }).then(function (response) {
         _this3.handleCloseClick();
@@ -3064,11 +3064,11 @@ var ModalRemove = /*#__PURE__*/function (_React$Component) {
             className: "alert alert-danger my-2",
             role: "alert",
             style: {
-              wordBreak: "break-word"
+              wordBreak: 'break-word'
             }
           }, "Unable to remove ", /*#__PURE__*/_react["default"].createElement("strong", {
             style: {
-              wordBreak: "break-all"
+              wordBreak: 'break-all'
             }
           }, _this3.state.fileInfo.filename), ":", /*#__PURE__*/_react["default"].createElement("br", null), error.response.data)
         });

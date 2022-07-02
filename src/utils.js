@@ -19,3 +19,5 @@ function syntaxHighlight(json) {
   pretty_json = {__html: pretty_json}
   return  <pre dangerouslySetInnerHTML={pretty_json}></pre>;
 }
+
+export {syntaxHighlight};
