@@ -1,3 +1,5 @@
+import React from 'react';
+
 class ModalMediaInfo extends React.Component {
   constructor(props) {
     super(props);
@@ -5,11 +7,13 @@ class ModalMediaInfo extends React.Component {
       appAddress: props.appAddress,
       assetDir: props.assetDir,
       dialogueShouldClose: props.dialogueShouldClose,
-      jsonHTML: (<div className="d-flex align-items-center justify-content-center">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                </div>),
+      jsonHTML: (
+        <div className="d-flex align-items-center justify-content-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      ),
       mediaFilename: props.mediaFilename,
       mediaInfo: null
     };
@@ -24,7 +28,7 @@ class ModalMediaInfo extends React.Component {
     }
   }
 
-  fetchDataFromServer() {                    
+  fetchDataFromServer() {
     URL = this.state.appAddress + '/get-media-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&media_filename=' + encodeURIComponent(this.state.mediaFilename);
       axios.get(URL)
         .then(response => {
@@ -84,3 +88,5 @@ class ModalMediaInfo extends React.Component {
     );
   }
 }
+
+export {ModalMediaInfo};

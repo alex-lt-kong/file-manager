@@ -207,12 +207,11 @@ class FileManager extends React.Component {
     }
   }
 
-  onClickMore(event) { 
+  onClickMore(event) {
     console.log('onClickMore!');
   };
 
   fetchServerInfo() {
-    const URL = './get-server-info/';
     this.serverInfoPanel = (
       <div className="d-flex align-items-center justify-content-center">
         <div className="spinner-border text-primary" role="status">
@@ -221,47 +220,49 @@ class FileManager extends React.Component {
       </div>
     );
     this.forceUpdate();
+    console.log(`fetchServerInfo()@manager.js`);
     // You set it to a spinner before fetching data from the server.
-    axios.get(URL)
+    axios.get('./get-server-info/')
         .then((response) => {
           this.setState({
-            serverInfo: null
-            // make it empty before fill it in again to force a re-rendering.
-          });
-          this.setState({
             serverInfo: response.data
-            // make it empty before fill it in again to force a re-rendering.
+          }, ()=> {
+            console.log(this.state.serverInfo);
+            const ffmpegItems = this.state.serverInfo.ffmpeg.map((ffmpegItem) =>
+              <li key={ffmpegItem.pid} style={{wordBreak: "break-all"}}>
+                {ffmpegItem.cmdline} <b>(since {ffmpegItem.since})</b>
+              </li>
+            );
+            this.serverInfoPanel = (
+              <div>
+                <p><b>CPU Usage: </b>{this.state.serverInfo.cpu.percent.map((p) => p.toString() + "% ")}</p>
+                <p>
+                  <b>Memory: </b>
+                  {
+                    Math.round(this.state.serverInfo.memory.physical_total / 1024 / 1024)
+                        .toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                  } MB in total,&nbsp;
+                  {
+                    Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024)
+                        .toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                  } MB free
+                  {/* The fancy regex is used to add a thousands separator */}
+                </p>
+                <b>System:</b>
+                <ul>
+                  <li><b>OS:</b> {this.state.serverInfo.version.os}</li>
+                  <li><b>Python:</b> {this.state.serverInfo.version.python}</li>
+                  <li><b>Flask:</b> {this.state.serverInfo.version.flask}</li>
+                </ul>
+                <b>FFmpeg:</b>
+                <ol>{ffmpegItems}</ol>
+              </div>
+            );
+            this.forceUpdate();
           });
-
-          const ffmpegItems = this.state.serverInfo.ffmpeg.map((ffmpegItem) =>
-            <li key={ffmpegItem.pid} style={{ wordBreak: "break-all" }}>
-              {ffmpegItem.cmdline} <b>(since {ffmpegItem.since})</b>
-            </li>
-          );
-
-          this.serverInfoPanel = (
-            <div>
-              <p><b>CPU Usage: </b>{this.state.serverInfo.cpu.percent.map((p) => p.toString() + "% ")}</p>            
-              <p>
-                <b>Memory: </b>
-                {Math.round(this.state.serverInfo.memory.physical_total / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB in total,&nbsp;
-                {Math.round(this.state.serverInfo.memory.physical_available / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB free
-                {/* The fancy regex is used to add a thousands separator */}
-              </p>
-              <b>System:</b>
-              <ul>
-                <li><b>OS:</b> {this.state.serverInfo.version.os}</li>
-                <li><b>Python:</b> {this.state.serverInfo.version.python}</li>
-                <li><b>Flask:</b> {this.state.serverInfo.version.flask}</li>
-              </ul>
-              <b>FFmpeg:</b>
-              <ol>{ffmpegItems}</ol>            
-            </div>
-          );
-
-          this.forceUpdate();
         })
         .catch((error) => {
+          console.log(error);
           alert(`Unable to fetch server info. Reason:` +
           (error.response !== undefined) ? JSON.stringify(error.response): error);
         });
@@ -396,38 +397,40 @@ class FileManager extends React.Component {
 
   generateFilesList(fic) {
     const keys = Object.keys(fic);
-    let fileList = new Array(keys.length);
+    const fileList = new Array(keys.length);
     for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];     
-      
+      const key = keys[i];
       let retval = this.generateThumbnailAndMetaData(key, fic[key]);
       let thumbnail = retval.thumbnail;
       let fileMetaData = retval.fileMetaData;
-
+      console.log(`i=${i}`);
+      console.log(fic[key]);
       fileList[i] = (
-      <li key={i} className="list-group-item">            
-        <div className="row" style={{ display: "grid", gridTemplateColumns: "8em 8fr 2.5em" }} >
-          {/* Note that for gridTemplateColumns we canNOT use relative width for thumbnail. The reason is that
-            common monitors are wide screen but smartphones are usually tall screen, so the preferred thumbnail
-            size is not the same. */}
-          <div className="col d-flex align-items-center justify-content-center">
-            {thumbnail}
-          </div>
-          <div className="col" style={{ display: "flex", flexFlow: "column" }} >
-            <div style={{flex: "1 1 auto", wordBreak: "break-all" }}>
-              <a value={key} style={{ textDecoration: "none", display: "block", cursor: "pointer" }} onClick={() => this.onClickItem(key)}>
-              {key}
-              </a>
+        <li key={`${i}-${fic[key].fileName}`} className="list-group-item">
+          <div className="row" style={{display: 'grid', gridTemplateColumns: '8em 8fr 2.5em'}} >
+            {/* Note that for gridTemplateColumns we canNOT use relative width for thumbnail. The reason is that
+              common monitors are wide screen but smartphones are usually tall screen, so the preferred thumbnail
+              size is not the same. */}
+            <div className="col d-flex align-items-center justify-content-center">
+              {thumbnail}
             </div>
-            <div style={{  flex: "0 1 1.5em"}} >
-            <div style={{ fontSize: "0.8em", color: "#808080" }}>{fileMetaData}</div>
+            <div className="col" style={{display: 'flex', flexFlow: 'column'}} >
+              <div style={{flex: "1 1 auto", wordBreak: "break-all" }}>
+                <a value={key} style={{ textDecoration: "none", display: "block", cursor: "pointer" }}
+                  onClick={() => this.onClickItem(key)}>
+                  {key}
+                </a>
+              </div>
+              <div style={{  flex: '0 1 1.5em'}} >
+                <div style={{ fontSize: '0.8em', color: '#808080' }}>{fileMetaData}</div>
+              </div>
+            </div>
+            <div className="col">
+              <ContextMenu key={`${i}-${fic[key].fileName}`}
+                refreshFileList={this.fileListShouldRefresh} fileInfo={fic[key]} appAddress='.' />
             </div>
           </div>
-          <div className="col">
-            <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fic[key]} appAddress='.' /> 
-          </div>
-        </div>     
-      </li>
+        </li>
       );
     }
 
@@ -477,9 +480,9 @@ class FileManager extends React.Component {
                       <input onChange={this.onFileChange} type="file" className="my-3"></input>
                       <p>Interestingly, while it may appear that the page only supports single-file upload, you can actually upload more
                         files even if previous ones are still being transferred. (But multiple upload processes will share the same progress bar ¯\_(ツ)_/¯)</p>
-                    </div>                    
+                    </div>
               </div>
-            </div>        
+            </div>
             <button className="btn btn-primary mx-1 my-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottomServerInfo"
                     aria-controls="offcanvasBottomServerInfo"
                 onClick={this.onServerInfoClick}>
@@ -530,19 +533,24 @@ class FileManager extends React.Component {
         {this.navigationBar}
         <div>
           <ul className="list-group overflow-auto"
-              style={{ maxWidth: "1000px", maxHeight: "100%", minHeight: "60vh", marginLeft: "auto", marginRight: "auto" }}>
+            style={{
+              maxWidth: '1000px', maxHeight: '100%', minHeight: '60vh', marginLeft: 'auto', marginRight: 'auto'
+            }}>
             {/* The maxHeight: 100% is used to solve a very nasty bug. The bug is like this:
-                First, it only happens on smartphone and will not happen on desktop browser. On a mobile device, if you have a long file list and
-                you try to open the context menu for the file items shown on the last page of the list (i.e. not necessarily the last one, but the ones
-                could be shown on the last page of the screen) you will notice that the poge will scroll up a little bit at the moment you click the
+                First, it only happens on smartphone and will not happen on desktop browser.
+                On a mobile device, if you have a long file list and you try to open the
+                menu for the file items shown on the last page of the list (i.e. not necessarily
+                the last one, but the ones could be shown on the last page of the screen) you will
+                notice that the poge will scroll up a little bit at the moment you click the
                 "more" button. I failed to find any solutions or even references to this bug online.
-                After a lot of trial-and-error, it turns out that if we set the maxHeight of the file list to the height of the monitor,
-                the bug disappears... 
-                minHeight is used to fix another issue: suppose we set maxHeight only, if the content height is too small,
-                the context menu can actually be higher than the content height, forcing the browser to show a scrollbar
-                in order to accommodate the height of the context menu. If we set minHeight == 60vh, the content height
-                will never to too small to accomodate the context menu.*/}
-          {fileList}
+                After a lot of trial-and-error, it turns out that if we set the maxHeight of the file
+                list to the height of the monitor, the bug disappears...
+                minHeight is used to fix another issue: suppose we set maxHeight only, if the content
+                height is too small, the context menu can actually be higher than the content height,
+                forcing the browser to show a scrollbar in order to accommodate the height of the context
+                menu. If we set minHeight == 60vh, the content height will never to too small to accomodate
+                the context menu.*/}
+            {fileList}
           </ul>
         </div>
         {this.state.modalDialogue}

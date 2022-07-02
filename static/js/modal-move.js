@@ -3012,7 +3012,6 @@ var ModalMove = /*#__PURE__*/function (_React$Component) {
 
     _this = _super.call(this, props);
     _this.state = {
-      appAddress: props.appAddress,
       dialogueShouldClose: props.dialogueShouldClose,
       disableSubmitByDirName: false,
       disableSubmitByFileName: false,
@@ -3073,7 +3072,7 @@ var ModalMove = /*#__PURE__*/function (_React$Component) {
       payload.append('new_filepath', this.state.newFileDir + this.state.newFileName);
       axios({
         method: "post",
-        url: this.state.appAddress + "/move/",
+        url: "./move/",
         data: payload
       }).then(function (response) {
         _this3.handleCloseClick();
@@ -3212,11 +3211,11 @@ var ModalMove = /*#__PURE__*/function (_React$Component) {
       }, /*#__PURE__*/_react["default"].createElement("label", {
         className: "form-label",
         style: {
-          wordBreak: "break-word"
+          wordBreak: 'break-word'
         }
       }, "Move the file from ", /*#__PURE__*/_react["default"].createElement("strong", {
         style: {
-          wordBreak: "break-all"
+          wordBreak: 'break-all'
         }
       }, this.state.fileInfo.asset_dir + this.state.fileInfo.filename), " to:"), /*#__PURE__*/_react["default"].createElement("div", {
         className: "input-group mb-1"

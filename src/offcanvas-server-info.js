@@ -17,20 +17,19 @@ class OffcanvasServerInfo extends React.Component {
   }
 
   fetchServerInfo() {
-    URL = './get-server-info/';
-
     this.setState({
       serverInfoPanel: (
         <div className="d-flex align-items-center justify-content-center">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-        </div>)
+        </div>
+      )
     });
     this.forceUpdate();
 
     // You set it to a spinner before fetching data from the server.
-    axios.get(URL)
+    axios.get('./get-server-info/')
         .then((response) => {
           this.setState({
             serverInfo: null
@@ -42,7 +41,7 @@ class OffcanvasServerInfo extends React.Component {
           });
 
           const ffmpegItems = this.state.serverInfo.ffmpeg.map((ffmpegItem) =>
-            <li key={ffmpegItem.pid} style={{ wordBreak: "break-all" }}>
+            <li key={ffmpegItem.pid} style={{wordBreak: 'break-all'}}>
               {ffmpegItem.cmdline} <b>(since {ffmpegItem.since})</b>
             </li>
           );
@@ -50,7 +49,7 @@ class OffcanvasServerInfo extends React.Component {
           this.setState({
             serverInfoPanel: (
               <div>
-                <p><b>CPU Usage: </b>{this.state.serverInfo.cpu.percent.map((p) => p.toString() + "% ")}</p>            
+                <p><b>CPU Usage: </b>{this.state.serverInfo.cpu.percent.map((p) => p.toString() + "% ")}</p>
                 <p>
                   <b>Memory: </b>
                   {Math.round(this.state.serverInfo.memory.physical_total / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} MB in total,&nbsp;
@@ -64,7 +63,7 @@ class OffcanvasServerInfo extends React.Component {
                   <li><b>Flask:</b> {this.state.serverInfo.version.flask}</li>
                 </ul>
                 <b>FFMPEG:</b>
-                <ol>{ffmpegItems}</ol>            
+                <ol>{ffmpegItems}</ol>
               </div>
             )
           });

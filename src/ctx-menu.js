@@ -1,5 +1,8 @@
 import {ModalMove} from './modal-move';
 import {ModalRemove} from './modal-remove';
+import {ModalExtractSubtitles} from './modal-extract-subtitles';
+import {ModalMediaInfo} from './modal-media-info';
+import {ModalTranscode} from './modal-transcode';
 import React from 'react';
 
 class ContextMenu extends React.Component {
@@ -11,6 +14,8 @@ class ContextMenu extends React.Component {
       refreshFileList: props.refreshFileList,
       fileInfo: props.fileInfo
     };
+    console.log(`fileInfo@ContextMenu:`);
+    console.log(props.fileInfo);
     this.dialogueShouldClose = this.dialogueShouldClose.bind(this);
     this.onExtractSubtitlesButtonClick = this.onExtractSubtitlesButtonClick.bind(this);
     this.onMoveButtonClick = this.onMoveButtonClick.bind(this);
@@ -69,11 +74,10 @@ class ContextMenu extends React.Component {
 
   onMoveButtonClick(event) {
     this.setState({
-      modalDialogue: (<ModalMove 
-          dialogueShouldClose={this.dialogueShouldClose}
-           fileInfo={this.state.fileInfo}
-           appAddress={this.state.appAddress}
-           refreshFileList={this.state.refreshFileList}/>)
+      modalDialogue: (
+        <ModalMove dialogueShouldClose={this.dialogueShouldClose}
+          fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList}/>
+      )
     });
     this.forceUpdate();
   }
@@ -93,9 +97,9 @@ class ContextMenu extends React.Component {
 
   render() {
     return (
-      <div className="dropdown"  href = "javascript:return false;" style={{position: "relative" }} >
+      <div className="dropdown"  href = "javascript:return false;" style={{position: 'relative'}} >
         <i id="dropdownContextMenuButton" className="bi bi-three-dots-vertical" data-bs-toggle="dropdown"
-           aria-expanded="false" style={{ cursor: "pointer", fontSize: "1.2em" }} ></i>
+           aria-expanded="false" style={{cursor: 'pointer', fontSize: '1.2em'}} ></i>
         <ul className="dropdown-menu" aria-labelledby="dropdownContextMenuButton">
           <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onViewTextButtonClick}>View As Text</a></li>
           <li><a className="dropdown-item py-2" style={{ cursor: "pointer" }} onClick={this.onMoveButtonClick}>Move</a></li>

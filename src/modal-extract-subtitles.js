@@ -1,3 +1,5 @@
+import React from 'react';
+
 class ModalExtractSubtitles extends React.Component {
 
   constructor(props) {
@@ -27,7 +29,7 @@ class ModalExtractSubtitles extends React.Component {
     this.postDataToServer();    
   }
 
-  postDataToServer() {                    
+  postDataToServer() {
     const payload = new FormData();
     payload.append('asset_dir', this.state.assetDir);
     payload.append('video_name', this.state.videoName);
@@ -121,3 +123,5 @@ class ModalExtractSubtitles extends React.Component {
     );
   }
 }
+
+export {ModalExtractSubtitles};

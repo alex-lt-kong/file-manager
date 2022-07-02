@@ -4,7 +4,6 @@ class ModalMove extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      appAddress: props.appAddress,
       dialogueShouldClose: props.dialogueShouldClose,
       disableSubmitByDirName: false,
       disableSubmitByFileName: false,
@@ -52,7 +51,7 @@ class ModalMove extends React.Component {
     payload.append('new_filepath', this.state.newFileDir + this.state.newFileName);
     axios({
       method: "post",
-      url: this.state.appAddress + "/move/",
+      url: "./move/",
       data: payload,
     })
     .then(response => {
@@ -143,8 +142,8 @@ class ModalMove extends React.Component {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label className="form-label" style={{ wordBreak: "break-word" }}>
-                    Move the file from <strong style={{ wordBreak: "break-all" }}>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong> to:
+                  <label className="form-label" style={{wordBreak: 'break-word'}}>
+                    Move the file from <strong style={{wordBreak: 'break-all'}}>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong> to:
                   </label>
                   <div className="input-group mb-1">
                     <span className="input-group-text font-monospace">Directory</span>

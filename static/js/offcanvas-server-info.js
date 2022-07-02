@@ -7231,7 +7231,6 @@ var OffcanvasServerInfo = /*#__PURE__*/function (_React$Component) {
     value: function fetchServerInfo() {
       var _this2 = this;
 
-      URL = './get-server-info/';
       this.setState({
         serverInfoPanel: /*#__PURE__*/_react["default"].createElement("div", {
           className: "d-flex align-items-center justify-content-center"
@@ -7244,7 +7243,7 @@ var OffcanvasServerInfo = /*#__PURE__*/function (_React$Component) {
       });
       this.forceUpdate(); // You set it to a spinner before fetching data from the server.
 
-      _axios["default"].get(URL).then(function (response) {
+      _axios["default"].get('./get-server-info/').then(function (response) {
         _this2.setState({
           serverInfo: null // make it empty before fill it in again to force a re-rendering.
 
@@ -7259,7 +7258,7 @@ var OffcanvasServerInfo = /*#__PURE__*/function (_React$Component) {
           return /*#__PURE__*/_react["default"].createElement("li", {
             key: ffmpegItem.pid,
             style: {
-              wordBreak: "break-all"
+              wordBreak: 'break-all'
             }
           }, ffmpegItem.cmdline, " ", /*#__PURE__*/_react["default"].createElement("b", null, "(since ", ffmpegItem.since, ")"));
         });

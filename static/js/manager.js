@@ -38199,6 +38199,12 @@ var _modalMove = require("./modal-move");
 
 var _modalRemove = require("./modal-remove");
 
+var _modalExtractSubtitles = require("./modal-extract-subtitles");
+
+var _modalMediaInfo = require("./modal-media-info");
+
+var _modalTranscode = require("./modal-transcode");
+
 var _react = _interopRequireDefault(require("react"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
@@ -38240,6 +38246,8 @@ var ContextMenu = /*#__PURE__*/function (_React$Component) {
       refreshFileList: props.refreshFileList,
       fileInfo: props.fileInfo
     };
+    console.log("fileInfo@ContextMenu:");
+    console.log(props.fileInfo);
     _this.dialogueShouldClose = _this.dialogueShouldClose.bind(_assertThisInitialized(_this));
     _this.onExtractSubtitlesButtonClick = _this.onExtractSubtitlesButtonClick.bind(_assertThisInitialized(_this));
     _this.onMoveButtonClick = _this.onMoveButtonClick.bind(_assertThisInitialized(_this));
@@ -38280,7 +38288,7 @@ var ContextMenu = /*#__PURE__*/function (_React$Component) {
     key: "onExtractSubtitlesButtonClick",
     value: function onExtractSubtitlesButtonClick(event) {
       this.setState({
-        modalDialogue: /*#__PURE__*/_react["default"].createElement(ModalExtractSubtitles, {
+        modalDialogue: /*#__PURE__*/_react["default"].createElement(_modalExtractSubtitles.ModalExtractSubtitles, {
           appAddress: this.state.appAddress,
           assetDir: this.state.fileInfo.asset_dir,
           dialogueShouldClose: this.dialogueShouldClose,
@@ -38294,7 +38302,7 @@ var ContextMenu = /*#__PURE__*/function (_React$Component) {
     key: "onMediaInfoButtonClick",
     value: function onMediaInfoButtonClick(event) {
       this.setState({
-        modalDialogue: /*#__PURE__*/_react["default"].createElement(ModalMediaInfo, {
+        modalDialogue: /*#__PURE__*/_react["default"].createElement(_modalMediaInfo.ModalMediaInfo, {
           appAddress: this.state.appAddress,
           assetDir: this.state.fileInfo.asset_dir,
           dialogueShouldClose: this.dialogueShouldClose,
@@ -38310,7 +38318,6 @@ var ContextMenu = /*#__PURE__*/function (_React$Component) {
         modalDialogue: /*#__PURE__*/_react["default"].createElement(_modalMove.ModalMove, {
           dialogueShouldClose: this.dialogueShouldClose,
           fileInfo: this.state.fileInfo,
-          appAddress: this.state.appAddress,
           refreshFileList: this.state.refreshFileList
         })
       });
@@ -38320,7 +38327,7 @@ var ContextMenu = /*#__PURE__*/function (_React$Component) {
     key: "onTranscodeButtonClick",
     value: function onTranscodeButtonClick(event) {
       this.setState({
-        modalDialogue: /*#__PURE__*/_react["default"].createElement(ModalTranscode, {
+        modalDialogue: /*#__PURE__*/_react["default"].createElement(_modalTranscode.ModalTranscode, {
           fileInfo: this.state.fileInfo,
           appAddress: this.state.appAddress,
           dialogueShouldClose: this.dialogueShouldClose,
@@ -38338,7 +38345,7 @@ var ContextMenu = /*#__PURE__*/function (_React$Component) {
         className: "dropdown",
         href: "javascript:return false;",
         style: {
-          position: "relative"
+          position: 'relative'
         }
       }, /*#__PURE__*/_react["default"].createElement("i", {
         id: "dropdownContextMenuButton",
@@ -38346,8 +38353,8 @@ var ContextMenu = /*#__PURE__*/function (_React$Component) {
         "data-bs-toggle": "dropdown",
         "aria-expanded": "false",
         style: {
-          cursor: "pointer",
-          fontSize: "1.2em"
+          cursor: 'pointer',
+          fontSize: '1.2em'
         }
       }), /*#__PURE__*/_react["default"].createElement("ul", {
         className: "dropdown-menu",
@@ -38397,7 +38404,7 @@ var ContextMenu = /*#__PURE__*/function (_React$Component) {
 
 exports.ContextMenu = ContextMenu;
 
-},{"./modal-move":51,"./modal-remove":52,"react":43}],49:[function(require,module,exports){
+},{"./modal-extract-subtitles":50,"./modal-media-info":51,"./modal-move":53,"./modal-remove":54,"./modal-transcode":55,"react":43}],49:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -38686,7 +38693,6 @@ var FileManager = /*#__PURE__*/function (_React$Component) {
     value: function fetchServerInfo() {
       var _this2 = this;
 
-      var URL = './get-server-info/';
       this.serverInfoPanel = /*#__PURE__*/_react["default"].createElement("div", {
         className: "d-flex align-items-center justify-content-center"
       }, /*#__PURE__*/_react["default"].createElement("div", {
@@ -38695,34 +38701,32 @@ var FileManager = /*#__PURE__*/function (_React$Component) {
       }, /*#__PURE__*/_react["default"].createElement("span", {
         className: "visually-hidden"
       }, "Loading...")));
-      this.forceUpdate(); // You set it to a spinner before fetching data from the server.
+      this.forceUpdate();
+      console.log("fetchServerInfo()@manager.js"); // You set it to a spinner before fetching data from the server.
 
-      _axios["default"].get(URL).then(function (response) {
+      _axios["default"].get('./get-server-info/').then(function (response) {
         _this2.setState({
-          serverInfo: null // make it empty before fill it in again to force a re-rendering.
+          serverInfo: response.data
+        }, function () {
+          console.log(_this2.state.serverInfo);
 
+          var ffmpegItems = _this2.state.serverInfo.ffmpeg.map(function (ffmpegItem) {
+            return /*#__PURE__*/_react["default"].createElement("li", {
+              key: ffmpegItem.pid,
+              style: {
+                wordBreak: "break-all"
+              }
+            }, ffmpegItem.cmdline, " ", /*#__PURE__*/_react["default"].createElement("b", null, "(since ", ffmpegItem.since, ")"));
+          });
+
+          _this2.serverInfoPanel = /*#__PURE__*/_react["default"].createElement("div", null, /*#__PURE__*/_react["default"].createElement("p", null, /*#__PURE__*/_react["default"].createElement("b", null, "CPU Usage: "), _this2.state.serverInfo.cpu.percent.map(function (p) {
+            return p.toString() + "% ";
+          })), /*#__PURE__*/_react["default"].createElement("p", null, /*#__PURE__*/_react["default"].createElement("b", null, "Memory: "), Math.round(_this2.state.serverInfo.memory.physical_total / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','), " MB in total,\xA0", Math.round(_this2.state.serverInfo.memory.physical_available / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','), " MB free"), /*#__PURE__*/_react["default"].createElement("b", null, "System:"), /*#__PURE__*/_react["default"].createElement("ul", null, /*#__PURE__*/_react["default"].createElement("li", null, /*#__PURE__*/_react["default"].createElement("b", null, "OS:"), " ", _this2.state.serverInfo.version.os), /*#__PURE__*/_react["default"].createElement("li", null, /*#__PURE__*/_react["default"].createElement("b", null, "Python:"), " ", _this2.state.serverInfo.version.python), /*#__PURE__*/_react["default"].createElement("li", null, /*#__PURE__*/_react["default"].createElement("b", null, "Flask:"), " ", _this2.state.serverInfo.version.flask)), /*#__PURE__*/_react["default"].createElement("b", null, "FFmpeg:"), /*#__PURE__*/_react["default"].createElement("ol", null, ffmpegItems));
+
+          _this2.forceUpdate();
         });
-
-        _this2.setState({
-          serverInfo: response.data // make it empty before fill it in again to force a re-rendering.
-
-        });
-
-        var ffmpegItems = _this2.state.serverInfo.ffmpeg.map(function (ffmpegItem) {
-          return /*#__PURE__*/_react["default"].createElement("li", {
-            key: ffmpegItem.pid,
-            style: {
-              wordBreak: "break-all"
-            }
-          }, ffmpegItem.cmdline, " ", /*#__PURE__*/_react["default"].createElement("b", null, "(since ", ffmpegItem.since, ")"));
-        });
-
-        _this2.serverInfoPanel = /*#__PURE__*/_react["default"].createElement("div", null, /*#__PURE__*/_react["default"].createElement("p", null, /*#__PURE__*/_react["default"].createElement("b", null, "CPU Usage: "), _this2.state.serverInfo.cpu.percent.map(function (p) {
-          return p.toString() + "% ";
-        })), /*#__PURE__*/_react["default"].createElement("p", null, /*#__PURE__*/_react["default"].createElement("b", null, "Memory: "), Math.round(_this2.state.serverInfo.memory.physical_total / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","), " MB in total,\xA0", Math.round(_this2.state.serverInfo.memory.physical_available / 1024 / 1024).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","), " MB free"), /*#__PURE__*/_react["default"].createElement("b", null, "System:"), /*#__PURE__*/_react["default"].createElement("ul", null, /*#__PURE__*/_react["default"].createElement("li", null, /*#__PURE__*/_react["default"].createElement("b", null, "OS:"), " ", _this2.state.serverInfo.version.os), /*#__PURE__*/_react["default"].createElement("li", null, /*#__PURE__*/_react["default"].createElement("b", null, "Python:"), " ", _this2.state.serverInfo.version.python), /*#__PURE__*/_react["default"].createElement("li", null, /*#__PURE__*/_react["default"].createElement("b", null, "Flask:"), " ", _this2.state.serverInfo.version.flask)), /*#__PURE__*/_react["default"].createElement("b", null, "FFmpeg:"), /*#__PURE__*/_react["default"].createElement("ol", null, ffmpegItems));
-
-        _this2.forceUpdate();
       })["catch"](function (error) {
+        console.log(error);
         alert("Unable to fetch server info. Reason:" + (error.response !== undefined) ? JSON.stringify(error.response) : error);
       });
     }
@@ -38940,22 +38944,24 @@ var FileManager = /*#__PURE__*/function (_React$Component) {
 
         var thumbnail = retval.thumbnail;
         var fileMetaData = retval.fileMetaData;
+        console.log("i=".concat(i));
+        console.log(fic[key]);
         fileList[i] = /*#__PURE__*/_react["default"].createElement("li", {
-          key: i,
+          key: "".concat(i, "-").concat(fic[key].fileName),
           className: "list-group-item"
         }, /*#__PURE__*/_react["default"].createElement("div", {
           className: "row",
           style: {
-            display: "grid",
-            gridTemplateColumns: "8em 8fr 2.5em"
+            display: 'grid',
+            gridTemplateColumns: '8em 8fr 2.5em'
           }
         }, /*#__PURE__*/_react["default"].createElement("div", {
           className: "col d-flex align-items-center justify-content-center"
         }, thumbnail), /*#__PURE__*/_react["default"].createElement("div", {
           className: "col",
           style: {
-            display: "flex",
-            flexFlow: "column"
+            display: 'flex',
+            flexFlow: 'column'
           }
         }, /*#__PURE__*/_react["default"].createElement("div", {
           style: {
@@ -38974,16 +38980,17 @@ var FileManager = /*#__PURE__*/function (_React$Component) {
           }
         }, key)), /*#__PURE__*/_react["default"].createElement("div", {
           style: {
-            flex: "0 1 1.5em"
+            flex: '0 1 1.5em'
           }
         }, /*#__PURE__*/_react["default"].createElement("div", {
           style: {
-            fontSize: "0.8em",
-            color: "#808080"
+            fontSize: '0.8em',
+            color: '#808080'
           }
         }, fileMetaData))), /*#__PURE__*/_react["default"].createElement("div", {
           className: "col"
         }, /*#__PURE__*/_react["default"].createElement(_ctxMenu.ContextMenu, {
+          key: "".concat(i, "-").concat(fic[key].fileName),
           refreshFileList: _this5.fileListShouldRefresh,
           fileInfo: fic[key],
           appAddress: "."
@@ -39135,11 +39142,11 @@ var FileManager = /*#__PURE__*/function (_React$Component) {
       return /*#__PURE__*/_react["default"].createElement("div", null, this.navigationBar, /*#__PURE__*/_react["default"].createElement("div", null, /*#__PURE__*/_react["default"].createElement("ul", {
         className: "list-group overflow-auto",
         style: {
-          maxWidth: "1000px",
-          maxHeight: "100%",
-          minHeight: "60vh",
-          marginLeft: "auto",
-          marginRight: "auto"
+          maxWidth: '1000px',
+          maxHeight: '100%',
+          minHeight: '60vh',
+          marginLeft: 'auto',
+          marginRight: 'auto'
         }
       }, fileList)), this.state.modalDialogue);
     }
@@ -39154,7 +39161,389 @@ root.render( /*#__PURE__*/_react["default"].createElement("div", null, /*#__PURE
   appAddress: app_address
 })));
 
-},{"./ctx-menu.js":48,"./modal-mkdir.js":50,"axios":1,"react":43,"react-dom/client":39}],50:[function(require,module,exports){
+},{"./ctx-menu.js":48,"./modal-mkdir.js":52,"axios":1,"react":43,"react-dom/client":39}],50:[function(require,module,exports){
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.ModalExtractSubtitles = void 0;
+
+var _react = _interopRequireDefault(require("react"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var ModalExtractSubtitles = /*#__PURE__*/function (_React$Component) {
+  _inherits(ModalExtractSubtitles, _React$Component);
+
+  var _super = _createSuper(ModalExtractSubtitles);
+
+  function ModalExtractSubtitles(props) {
+    var _this;
+
+    _classCallCheck(this, ModalExtractSubtitles);
+
+    _this = _super.call(this, props);
+    _this.state = {
+      appAddress: props.appAddress,
+      assetDir: props.assetDir,
+      dialogueShouldClose: props.dialogueShouldClose,
+      refreshFileList: props.refreshFileList,
+      responseMessage: null,
+      streamNo: 0,
+      videoName: props.videoName
+    };
+    _this.handleCloseClick = _this.handleCloseClick.bind(_assertThisInitialized(_this));
+    _this.onstreamNoChange = _this.onstreamNoChange.bind(_assertThisInitialized(_this));
+    _this.handleSubmitClick = _this.handleSubmitClick.bind(_assertThisInitialized(_this));
+    return _this;
+  }
+
+  _createClass(ModalExtractSubtitles, [{
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      var _this2 = this;
+
+      $(this.modal).modal('show');
+
+      window.onpopstate = function (e) {
+        _this2.handleCloseClick();
+      };
+    }
+  }, {
+    key: "handleSubmitClick",
+    value: function handleSubmitClick() {
+      this.postDataToServer();
+    }
+  }, {
+    key: "postDataToServer",
+    value: function postDataToServer() {
+      var _this3 = this;
+
+      var payload = new FormData();
+      payload.append('asset_dir', this.state.assetDir);
+      payload.append('video_name', this.state.videoName);
+      payload.append('stream_no', this.state.streamNo);
+      axios({
+        method: "post",
+        url: this.state.appAddress + "/extract-subtitles/",
+        data: payload
+      }).then(function (response) {
+        _this3.handleCloseClick();
+
+        if (_this3.state.refreshFileList != null) {
+          _this3.state.refreshFileList();
+        }
+      })["catch"](function (error) {
+        console.log(error);
+
+        _this3.setState({
+          responseMessage: /*#__PURE__*/_react["default"].createElement("div", {
+            className: "alert alert-danger my-2",
+            role: "alert",
+            style: {
+              wordBreak: "break-word"
+            }
+          }, "Unable to extract subtitles from ", /*#__PURE__*/_react["default"].createElement("strong", {
+            style: {
+              wordBreak: "break-all"
+            }
+          }, _this3.state.videoName), ":", /*#__PURE__*/_react["default"].createElement("br", null), error.response.data)
+        });
+      });
+    }
+  }, {
+    key: "onstreamNoChange",
+    value: function onstreamNoChange(event) {
+      this.setState({
+        streamNo: event.target.value
+      });
+    }
+  }, {
+    key: "handleCloseClick",
+    value: function handleCloseClick() {
+      $(this.modal).modal('hide');
+
+      if (this.state.dialogueShouldClose != null) {
+        this.state.dialogueShouldClose();
+      }
+      /* When we want to close it, we need to do two things:
+        1. we set hide to the modal within this component;
+        2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
+        We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
+      */
+
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this4 = this;
+
+      return /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal fade",
+        ref: function ref(modal) {
+          return _this4.modal = modal;
+        },
+        role: "dialog",
+        "aria-labelledby": "modal-extract-subtitles-title",
+        "aria-hidden": "true",
+        "data-bs-backdrop": "static"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-dialog modal-dialog-scrollable",
+        role: "document"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-content"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-header"
+      }, /*#__PURE__*/_react["default"].createElement("h5", {
+        className: "modal-title",
+        id: "modal-extract-subtitles-title"
+      }, "Extract Subtitles")), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-body"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "mb-3"
+      }, /*#__PURE__*/_react["default"].createElement("label", {
+        htmlFor: "folder-name-input",
+        className: "form-label"
+      }, "Specify the stream ID (starting from 0) of the subtitles to be extracted:"), /*#__PURE__*/_react["default"].createElement("input", {
+        id: "folder-name-input",
+        type: "text",
+        className: "form-control",
+        placeholder: "Input folder name",
+        value: this.state.streamNo,
+        onChange: this.onstreamNoChange
+      }), this.state.responseMessage, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "accordion my-2",
+        id: "accordionRemove"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "accordion-item"
+      }, /*#__PURE__*/_react["default"].createElement("h2", {
+        className: "accordion-header",
+        id: "headingRemove"
+      }, /*#__PURE__*/_react["default"].createElement("button", {
+        className: "accordion-button collapsed",
+        type: "button",
+        "data-bs-toggle": "collapse",
+        "data-bs-target": "#collapseRemoveOne",
+        "aria-expanded": "false",
+        "aria-controls": "collapseRemoveOne"
+      }, "What's Happening Under the Hood?")), /*#__PURE__*/_react["default"].createElement("div", {
+        id: "collapseRemoveOne",
+        className: "accordion-collapse collapse",
+        "aria-labelledby": "headingRemove",
+        "data-bs-parent": "#accordionRemove"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "accordion-body"
+      }, /*#__PURE__*/_react["default"].createElement("ol", null, /*#__PURE__*/_react["default"].createElement("li", null, "Subtitle extraction is much less expensive compared with transcoding. You could expect the result within minutes;"), /*#__PURE__*/_react["default"].createElement("li", null, "You can check the ID of a stream by using the Video Info function;"), /*#__PURE__*/_react["default"].createElement("li", null, "The server uses ", /*#__PURE__*/_react["default"].createElement("code", null, "ffmpeg"), " to do the extraction. If ", /*#__PURE__*/_react["default"].createElement("code", null, "ffmpeg"), " returns a non-zero exit code, a log file will be generated.")))))))), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-footer"
+      }, /*#__PURE__*/_react["default"].createElement("button", {
+        type: "button",
+        className: "btn btn-secondary",
+        onClick: this.handleCloseClick
+      }, "Close"), /*#__PURE__*/_react["default"].createElement("button", {
+        type: "button",
+        className: "btn btn-primary",
+        onClick: this.handleSubmitClick
+      }, "Submit")))));
+    }
+  }]);
+
+  return ModalExtractSubtitles;
+}(_react["default"].Component);
+
+exports.ModalExtractSubtitles = ModalExtractSubtitles;
+
+},{"react":43}],51:[function(require,module,exports){
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.ModalMediaInfo = void 0;
+
+var _react = _interopRequireDefault(require("react"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var ModalMediaInfo = /*#__PURE__*/function (_React$Component) {
+  _inherits(ModalMediaInfo, _React$Component);
+
+  var _super = _createSuper(ModalMediaInfo);
+
+  function ModalMediaInfo(props) {
+    var _this;
+
+    _classCallCheck(this, ModalMediaInfo);
+
+    _this = _super.call(this, props);
+    _this.state = {
+      appAddress: props.appAddress,
+      assetDir: props.assetDir,
+      dialogueShouldClose: props.dialogueShouldClose,
+      jsonHTML: /*#__PURE__*/_react["default"].createElement("div", {
+        className: "d-flex align-items-center justify-content-center"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "spinner-border text-primary",
+        role: "status"
+      }, /*#__PURE__*/_react["default"].createElement("span", {
+        className: "visually-hidden"
+      }, "Loading..."))),
+      mediaFilename: props.mediaFilename,
+      mediaInfo: null
+    };
+    _this.handleOKClick = _this.handleOKClick.bind(_assertThisInitialized(_this));
+
+    _this.fetchDataFromServer();
+
+    return _this;
+  }
+
+  _createClass(ModalMediaInfo, [{
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      var _this2 = this;
+
+      $(this.modal).modal('show');
+
+      window.onpopstate = function (e) {
+        _this2.handleOKClick();
+      };
+    }
+  }, {
+    key: "fetchDataFromServer",
+    value: function fetchDataFromServer() {
+      var _this3 = this;
+
+      URL = this.state.appAddress + '/get-media-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&media_filename=' + encodeURIComponent(this.state.mediaFilename);
+      axios.get(URL).then(function (response) {
+        _this3.setState({
+          mediaInfo: null
+        });
+
+        _this3.setState({
+          mediaInfo: response.data,
+          jsonHTML: syntaxHighlight(JSON.stringify(response.data.content, null, 2))
+        });
+      })["catch"](function (error) {
+        _this3.setState({
+          jsonHTML: /*#__PURE__*/_react["default"].createElement("div", {
+            className: "alert alert-danger my-2",
+            role: "alert",
+            style: {
+              wordBreak: "break-word"
+            }
+          }, "Unable to fetch information from media file ", /*#__PURE__*/_react["default"].createElement("strong", {
+            style: {
+              wordBreak: "break-all"
+            }
+          }, _this3.state.mediaFilename), ":", /*#__PURE__*/_react["default"].createElement("br", null), error.response.data),
+          mediaInfo: false
+        });
+      });
+    }
+  }, {
+    key: "handleOKClick",
+    value: function handleOKClick() {
+      $(this.modal).modal('hide');
+
+      if (this.state.dialogueShouldClose != null) {
+        this.state.dialogueShouldClose();
+      }
+      /* When we want to close it, we need to do two things:
+        1. we set hide to the modal within this component;
+        2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
+        We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
+      */
+
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this4 = this;
+
+      return /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal fade",
+        ref: function ref(modal) {
+          return _this4.modal = modal;
+        },
+        role: "dialog",
+        "aria-labelledby": "mediaInformationModalTitle",
+        "aria-hidden": "true",
+        "data-bs-backdrop": "static"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-dialog  modal-dialog-scrollable",
+        role: "document"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-content"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-header"
+      }, /*#__PURE__*/_react["default"].createElement("h5", {
+        className: "modal-title",
+        id: "mediaInformationModalTitle"
+      }, "Media Information")), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-body"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "mb-3"
+      }, this.state.jsonHTML)), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-footer"
+      }, /*#__PURE__*/_react["default"].createElement("button", {
+        type: "button",
+        className: "btn btn-primary",
+        onClick: this.handleOKClick
+      }, "OK")))));
+    }
+  }]);
+
+  return ModalMediaInfo;
+}(_react["default"].Component);
+
+exports.ModalMediaInfo = ModalMediaInfo;
+
+},{"react":43}],52:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -39345,7 +39734,7 @@ var ModalMkdir = /*#__PURE__*/function (_React$Component) {
 
 exports.ModalMkdir = ModalMkdir;
 
-},{"react":43}],51:[function(require,module,exports){
+},{"react":43}],53:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -39391,7 +39780,6 @@ var ModalMove = /*#__PURE__*/function (_React$Component) {
 
     _this = _super.call(this, props);
     _this.state = {
-      appAddress: props.appAddress,
       dialogueShouldClose: props.dialogueShouldClose,
       disableSubmitByDirName: false,
       disableSubmitByFileName: false,
@@ -39452,7 +39840,7 @@ var ModalMove = /*#__PURE__*/function (_React$Component) {
       payload.append('new_filepath', this.state.newFileDir + this.state.newFileName);
       axios({
         method: "post",
-        url: this.state.appAddress + "/move/",
+        url: "./move/",
         data: payload
       }).then(function (response) {
         _this3.handleCloseClick();
@@ -39591,11 +39979,11 @@ var ModalMove = /*#__PURE__*/function (_React$Component) {
       }, /*#__PURE__*/_react["default"].createElement("label", {
         className: "form-label",
         style: {
-          wordBreak: "break-word"
+          wordBreak: 'break-word'
         }
       }, "Move the file from ", /*#__PURE__*/_react["default"].createElement("strong", {
         style: {
-          wordBreak: "break-all"
+          wordBreak: 'break-all'
         }
       }, this.state.fileInfo.asset_dir + this.state.fileInfo.filename), " to:"), /*#__PURE__*/_react["default"].createElement("div", {
         className: "input-group mb-1"
@@ -39677,7 +40065,7 @@ var ModalMove = /*#__PURE__*/function (_React$Component) {
 
 exports.ModalMove = ModalMove;
 
-},{"react":43}],52:[function(require,module,exports){
+},{"react":43}],54:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -39898,5 +40286,324 @@ var ModalRemove = /*#__PURE__*/function (_React$Component) {
 }(_react["default"].Component);
 
 exports.ModalRemove = ModalRemove;
+
+},{"react":43}],55:[function(require,module,exports){
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+var _react = _interopRequireDefault(require("react"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var ModalTranscode = /*#__PURE__*/function (_React$Component) {
+  _inherits(ModalTranscode, _React$Component);
+
+  var _super = _createSuper(ModalTranscode);
+
+  function ModalTranscode(props) {
+    var _this;
+
+    _classCallCheck(this, ModalTranscode);
+
+    _this = _super.call(this, props);
+    _this.state = {
+      appAddress: props.appAddress,
+      audioID: -1,
+      crf: 30,
+      dialogueShouldClose: props.dialogueShouldClose,
+      fileInfo: props.fileInfo,
+      refreshFileList: props.refreshFileList,
+      resolution: -1,
+      threads: 0
+    };
+    _this.onAudioIDChange = _this.onAudioIDChange.bind(_assertThisInitialized(_this));
+    _this.handleCloseClick = _this.handleCloseClick.bind(_assertThisInitialized(_this));
+    _this.onCRFChange = _this.onCRFChange.bind(_assertThisInitialized(_this));
+    _this.onResolutionChange = _this.onResolutionChange.bind(_assertThisInitialized(_this));
+    _this.onThreadsChange = _this.onThreadsChange.bind(_assertThisInitialized(_this));
+    _this.handleSubmitClick = _this.handleSubmitClick.bind(_assertThisInitialized(_this));
+    return _this;
+  }
+
+  _createClass(ModalTranscode, [{
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      var _this2 = this;
+
+      $(this.modal).modal('show');
+
+      window.onpopstate = function (e) {
+        _this2.handleCloseClick();
+      };
+    }
+  }, {
+    key: "handleSubmitClick",
+    value: function handleSubmitClick() {
+      this.postDataToServer();
+    }
+  }, {
+    key: "postDataToServer",
+    value: function postDataToServer() {
+      var _this3 = this;
+
+      var payload = new FormData();
+      payload.append('asset_dir', this.state.fileInfo.asset_dir);
+      payload.append('audio_id', this.state.audioID);
+      payload.append('video_name', this.state.fileInfo.filename);
+      payload.append('crf', this.state.crf);
+      payload.append('resolution', this.state.resolution);
+      payload.append('threads', this.state.threads);
+      axios({
+        method: "post",
+        url: this.state.appAddress + "/video-transcode/",
+        data: payload
+      }).then(function (response) {
+        _this3.handleCloseClick();
+
+        if (_this3.state.refreshFileList != null) {
+          _this3.state.refreshFileList();
+        }
+      })["catch"](function (error) {
+        _this3.setState({
+          responseMessage: /*#__PURE__*/_react["default"].createElement("div", {
+            className: "alert alert-danger my-2",
+            role: "alert",
+            style: {
+              wordBreak: "break-word"
+            }
+          }, "Unable to transcode ", /*#__PURE__*/_react["default"].createElement("strong", {
+            style: {
+              wordBreak: "break-all"
+            }
+          }, payload.get('video_name')), ":", /*#__PURE__*/_react["default"].createElement("br", null), error.response.data)
+        });
+      });
+    }
+  }, {
+    key: "onResolutionChange",
+    value: function onResolutionChange(event) {
+      this.setState({
+        resolution: event.target.value
+      });
+      var autoCRF = 0;
+
+      if (event.target.value === '1080') {
+        autoCRF = 31;
+      } else if (event.target.value === '720') {
+        autoCRF = 32;
+      } else if (event.target.value === '480') {
+        autoCRF = 33;
+      } else if (event.target.value === '360') {
+        autoCRF = 36;
+      } else if (event.target.value === '240') {
+        autoCRF = 37;
+      }
+
+      if (autoCRF != 0) {
+        this.setState({
+          crf: autoCRF
+        });
+      }
+    }
+  }, {
+    key: "onCRFChange",
+    value: function onCRFChange(event) {
+      this.setState({
+        crf: event.target.value
+      });
+    }
+  }, {
+    key: "onThreadsChange",
+    value: function onThreadsChange(event) {
+      this.setState({
+        threads: event.target.value
+      });
+    }
+  }, {
+    key: "onAudioIDChange",
+    value: function onAudioIDChange(event) {
+      this.setState({
+        audioID: event.target.value
+      });
+    }
+  }, {
+    key: "handleCloseClick",
+    value: function handleCloseClick() {
+      $(this.modal).modal('hide');
+
+      if (this.state.dialogueShouldClose != null) {
+        this.state.dialogueShouldClose();
+      }
+      /* When we want to close it, we need to do two things:
+        1. we set hide to the modal within this component;
+        2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
+        We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
+      */
+
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this4 = this;
+
+      if (this.state.show === false) {
+        return null;
+      }
+
+      return /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal fade",
+        ref: function ref(modal) {
+          return _this4.modal = modal;
+        },
+        role: "dialog",
+        "data-bs-backdrop": "static",
+        "aria-labelledby": "modal-video-transcode-title",
+        "aria-hidden": "true"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-dialog modal-dialog-scrollable",
+        role: "document"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-content"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-header"
+      }, /*#__PURE__*/_react["default"].createElement("h5", {
+        className: "modal-title",
+        id: "modal-video-transcode-title"
+      }, "Video Transcode")), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-body"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "mb-3"
+      }, /*#__PURE__*/_react["default"].createElement("span", {
+        htmlFor: "exampleFormControlInput1",
+        className: "form-label",
+        style: {
+          wordBreak: "break-word"
+        }
+      }, "Transcode video ", /*#__PURE__*/_react["default"].createElement("b", {
+        style: {
+          wordBreak: "break-all"
+        }
+      }, this.state.fileInfo.filename), " to WebM format (VP9) with the following parameters:"), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "input-group my-1"
+      }, /*#__PURE__*/_react["default"].createElement("span", {
+        className: "input-group-text"
+      }, "CRF"), /*#__PURE__*/_react["default"].createElement("input", {
+        type: "text",
+        className: "form-control",
+        placeholder: "CRF",
+        value: this.state.crf,
+        onChange: this.onCRFChange
+      }), /*#__PURE__*/_react["default"].createElement("span", {
+        className: "input-group-text"
+      }, "Audio ID"), /*#__PURE__*/_react["default"].createElement("input", {
+        type: "text",
+        className: "form-control",
+        placeholder: "Audio stream ID",
+        value: this.state.audioID,
+        onChange: this.onAudioIDChange
+      })), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "input-group my-1"
+      }, /*#__PURE__*/_react["default"].createElement("label", {
+        className: "input-group-text",
+        htmlFor: "inputSelectResolution"
+      }, "Resolution"), /*#__PURE__*/_react["default"].createElement("select", {
+        className: "form-select",
+        id: "inputSelectResolution",
+        defaultValue: -1,
+        onChange: this.onResolutionChange
+      }, /*#__PURE__*/_react["default"].createElement("option", {
+        value: "-1"
+      }, "Original"), /*#__PURE__*/_react["default"].createElement("option", {
+        value: "1080"
+      }, "1080p"), /*#__PURE__*/_react["default"].createElement("option", {
+        value: "720"
+      }, "720p"), /*#__PURE__*/_react["default"].createElement("option", {
+        value: "480"
+      }, "480p"), /*#__PURE__*/_react["default"].createElement("option", {
+        value: "360"
+      }, "360p"), /*#__PURE__*/_react["default"].createElement("option", {
+        value: "240"
+      }, "240p"), /*#__PURE__*/_react["default"].createElement("option", {
+        value: "144"
+      }, "144p"))), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "input-group my-1"
+      }, /*#__PURE__*/_react["default"].createElement("span", {
+        className: "input-group-text"
+      }, "Threads"), /*#__PURE__*/_react["default"].createElement("input", {
+        type: "number",
+        className: "form-control",
+        placeholder: "Number of threads",
+        min: "1",
+        max: "8",
+        value: this.state.threads,
+        onChange: this.onThreadsChange
+      })), this.state.responseMessage, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "accordion my-2",
+        id: "accordionRemove"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "accordion-item"
+      }, /*#__PURE__*/_react["default"].createElement("h2", {
+        className: "accordion-header",
+        id: "headingRemove"
+      }, /*#__PURE__*/_react["default"].createElement("button", {
+        className: "accordion-button collapsed",
+        type: "button",
+        "data-bs-toggle": "collapse",
+        "data-bs-target": "#collapseRemoveOne",
+        "aria-expanded": "false",
+        "aria-controls": "collapseRemoveOne"
+      }, "What's Happening Under the Hood?")), /*#__PURE__*/_react["default"].createElement("div", {
+        id: "collapseRemoveOne",
+        className: "accordion-collapse collapse",
+        "aria-labelledby": "headingRemove",
+        "data-bs-parent": "#accordionRemove"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "accordion-body"
+      }, /*#__PURE__*/_react["default"].createElement("ol", null, /*#__PURE__*/_react["default"].createElement("li", null, "The server will start a separate ", /*#__PURE__*/_react["default"].createElement("code", null, "ffmpeg"), " process to do the conversion;"), /*#__PURE__*/_react["default"].createElement("li", null, "The constant rate factor (CRF) can be from 0-63. Lower values mean better quality; According to ", /*#__PURE__*/_react["default"].createElement("a", {
+        href: "https://trac.ffmpeg.org/wiki/Encode/VP9",
+        target: "_blank"
+      }, "ffmpeg's manual"), ", for WebM format (VP9 video encoder), recommended values range from 15-35;"), /*#__PURE__*/_react["default"].createElement("li", null, "After selecting the video quality, a CRF value will be automatically set according to ", /*#__PURE__*/_react["default"].createElement("a", {
+        href: "https://developers.google.com/media/vp9/settings/vod/",
+        target: "_blank"
+      }, "Google's recommendation"), ";"), /*#__PURE__*/_react["default"].createElement("li", null, "According to ", /*#__PURE__*/_react["default"].createElement("a", {
+        href: "https://developers.google.com/media/vp9/the-basics",
+        target: "_blank"
+      }, "Google's manual"), ", for VP9, 480p is considered a safe resolution for a broad range of mobile and web devices."), /*#__PURE__*/_react["default"].createElement("li", null, "Since modern browsers will pick the first audio stream (ID==0) and manual audio stream selection is usually not possible, you can pick the preferred audio stream by its ID before transcoding so that it becomes the only audio stream which will definitely be selected by browsers. You can find the ID using ", /*#__PURE__*/_react["default"].createElement("code", null, "Video Info"), " function."), /*#__PURE__*/_react["default"].createElement("li", null, /*#__PURE__*/_react["default"].createElement("code", null, "threads"), " can only be from 0 to 8 where 0 means ffmpeg selects the optimal value by itself. Note that a large ", /*#__PURE__*/_react["default"].createElement("code", null, "threads"), " value may or may not translate to high performance but a small ", /*#__PURE__*/_react["default"].createElement("code", null, "threads"), " will guarantee lower CPU usage.")))))))), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "modal-footer"
+      }, /*#__PURE__*/_react["default"].createElement("button", {
+        type: "button",
+        className: "btn btn-secondary",
+        onClick: this.handleCloseClick
+      }, "Close"), /*#__PURE__*/_react["default"].createElement("button", {
+        type: "button",
+        className: "btn btn-primary",
+        onClick: this.handleSubmitClick
+      }, "Submit")))));
+    }
+  }]);
+
+  return ModalTranscode;
+}(_react["default"].Component);
 
 },{"react":43}]},{},[49]);
