@@ -1,3 +1,5 @@
+import React from 'react';
+
 class ModalMove extends React.Component {
   constructor(props) {
     super(props);
@@ -24,7 +26,7 @@ class ModalMove extends React.Component {
     $(this.modal).modal('show');
     window.onpopstate = e => {
       this.handleCloseClick();
-    }
+    };
   }
 
   handleSubmitClick() {
@@ -196,3 +198,5 @@ class ModalMove extends React.Component {
     );
   }
 }
+
+export {ModalMove};

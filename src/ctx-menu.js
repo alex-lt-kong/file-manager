@@ -1,8 +1,11 @@
-class ContextMenu extends React.Component {
+import {ModalMove} from './modal-move';
+import {ModalRemove} from './modal-remove';
+import React from 'react';
 
+class ContextMenu extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {      
+    this.state = {
       appAddress: props.appAddress,
       modalDialogue: null,
       refreshFileList: props.refreshFileList,
@@ -16,19 +19,20 @@ class ContextMenu extends React.Component {
     this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
     this.onMediaInfoButtonClick = this.onMediaInfoButtonClick.bind(this);
   }
-  
+
   dialogueShouldClose() {
-    this.state.modalDialogue = null;
+    this.setState({
+      modalDialogue: null
+    });
     this.forceUpdate();
   }
-  
+
   onRemoveButtonClick(event) {
     this.setState({
-      modalDialogue: (<ModalRemove
-                fileInfo={this.state.fileInfo}
-                appAddress={this.state.appAddress}
-                dialogueShouldClose={this.dialogueShouldClose}
-                refreshFileList={this.state.refreshFileList} />)
+      modalDialogue: (
+        <ModalRemove fileInfo={this.state.fileInfo} appAddress='.'
+          dialogueShouldClose={this.dialogueShouldClose} refreshFileList={this.state.refreshFileList} />
+      )
     });
     this.forceUpdate();
   }
@@ -37,9 +41,9 @@ class ContextMenu extends React.Component {
     window.open(this.state.appAddress + '/view-text/?asset_dir=' + 
       encodeURIComponent(this.state.fileInfo.asset_dir) +
       '&filename=' + encodeURIComponent(this.state.fileInfo.filename)
-    ); 
+    );
   }
-  
+
   onExtractSubtitlesButtonClick(event) {
     this.setState({
       modalDialogue: (<ModalExtractSubtitles

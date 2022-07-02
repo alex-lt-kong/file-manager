@@ -1,3 +1,5 @@
+import React from 'react';
+
 class ModalRemove extends React.Component {
   constructor(props) {
     super(props);
@@ -121,3 +123,5 @@ class ModalRemove extends React.Component {
     );
   }
 }
+
+export {ModalRemove};

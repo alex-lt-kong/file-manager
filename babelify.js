@@ -2,10 +2,10 @@ const fs = require('fs');
 const browserify = require('browserify');
 
 const srcList = [
-  'common.js', 'manager-contextmenu.js', 'manager-modalextractsubtitles.js',
-  'manager-modalmkdir.js', 'manager-modalmove.js', 'manager-modalremove.js',
+  'common.js', 'ctx-menu.js', 'manager-modalextractsubtitles.js',
+  'modal-mkdir.js', 'modal-move.js', 'modal-remove.js',
   'manager-modaltranscode.js', 'manager-modalvideoinfo.js',
-  'manager-offcanvas-server-info.js', 'manager.js', 'playback.js'
+  'offcanvas-server-info.js', 'manager.js', 'playback.js'
 ];
 
 if (process.argv.length !== 3 || (process.argv[2] !== '--prod' && process.argv[2] !== '--dev')) {

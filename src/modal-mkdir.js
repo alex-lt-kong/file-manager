@@ -1,5 +1,6 @@
-class ModalMkdir extends React.Component {
+import React from 'react';
 
+class ModalMkdir extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -88,7 +89,7 @@ class ModalMkdir extends React.Component {
                   Input the name of the folder to be created:
                 </label>
                 <input id="folder-name-input" type="text" className="form-control"
-                    placeholder="Input folder name" value={this.state.folderName} onChange={this.onFolderNameChange}/>   
+                  placeholder="Input folder name" value={this.state.folderName} onChange={this.onFolderNameChange}/>   
               </div>
               {this.state.responseMessage}
             </div>
