@@ -9,6 +9,33 @@ A web-based file manager with a focus on video manipulation and streaming.
 * Backend: Python(Flask) + FFmpeg (for video manipulation)
 * Frontend: React.js + Bootstrap
 
+## Environment
+
+### Base system
+
+* Tested versions:
+    * Python: `3.9`
+    * Node.js: `14.19`, `18.04`
+    * npm: `6.14`,
+
+### Python environment
+
+```
+python3 -m venv ./.venv/
+source ./.venv/bin/activate
+pip3 install -r requirements.txt
+```
+
+### Node.js environment
+
+```
+npm install
+```
+
+## Deployment
+
+* Compile/Transpile : `node babelify.js [--dev|--prod]`
+
 ## Screenshots
 
 * File List

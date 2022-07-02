@@ -10,15 +10,6 @@
 <script src="{{app_address}}/static/js/lib/jquery-3.6.0.{{mode}}.js"></script>
 <script src="{{app_address}}/static/js/lib/react.{{mode}}-17.0.2.js"></script>
 <script src="{{app_address}}/static/js/lib/react-dom.{{mode}}-17.0.2.js"></script>
-<script src="{{app_address}}/static/js/common.js" type="text/jsx"></script>
-<script src="{{app_address}}/static/js/manager.js" type="text/jsx"></script>
-<script src="{{app_address}}/static/js/manager-contextmenu.js" type="text/jsx"></script>
-<script src="{{app_address}}/static/js/manager-modalvideoinfo.js" type="text/jsx"></script>
-<script src="{{app_address}}/static/js/manager-modalextractsubtitles.js" type="text/jsx"></script>
-<script src="{{app_address}}/static/js/manager-modalmkdir.js" type="text/jsx"></script>
-<script src="{{app_address}}/static/js/manager-modalmove.js" type="text/jsx"></script>
-<script src="{{app_address}}/static/js/manager-modalremove.js" type="text/jsx"></script>
-<script src="{{app_address}}/static/js/manager-modaltranscode.js" type="text/jsx"></script>
 
 <html>
 <head>
@@ -42,5 +33,6 @@
   window.app_address = "{{ app_address | safe }}";
   </script>
   <div id="root"></div>
+  <script src="./static/js/manager.js"></script>
 </body>
 </html>

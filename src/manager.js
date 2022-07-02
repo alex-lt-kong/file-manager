@@ -1,3 +1,8 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {ContextMenu} from './manager-contextmenu.js';
+import {ModalMkdir} from './manager-modalmkdir.js';
+
 /**
  * Format bytes as human-readable text.
  * 
@@ -8,13 +13,13 @@
  * 
  * @return Formatted string.
  */
- function humanFileSize(bytes, si=false, dp=1) {
+function humanFileSize(bytes, si=false, dp=1) {
   const thresh = si ? 1000 : 1024;
-  
+
   if (Math.abs(bytes) < thresh) {
     return bytes + ' B';
   }
-  
+
   const units = si 
     ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
     : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
@@ -29,14 +34,12 @@
   
   return bytes.toFixed(dp) + ' ' + units[u];
   }
-  
+
 
 class FileManager extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
-      appAddress: props.appAddress,
       addressBar: '',
       currentPath: '/',
       fileInfo: null,
@@ -64,82 +67,79 @@ class FileManager extends React.Component {
   }
 
 
-  onServerInfoClick(event) { 
+  onServerInfoClick(event) {
     this.fetchServerInfo();
   }
 
-  onFileChange(event) { 
+  onFileChange(event) {
     for (let i = 0; i < event.target.files.length; i++) {
-      if(event.target.files[0].size > 2048000000){
-        alert("The file to be uploaded canNOT be larger than 2048 MB");
+      if (event.target.files[0].size > 2048000000) {
+        alert('The file to be uploaded canNOT be larger than 2048 MB');
         return;
-        };
-        this.setState(
-          {
-            selectedFile: event.target.files[i]
-          }
-        );
+      };
+      this.setState({
+        selectedFile: event.target.files[i]
+      });
       this.onFileUpload(event.target.files[i]);
-    }    
-  }; 
+    }
+  }
 
   onFileUpload(selectedFiles) {
     const payload = new FormData();
     payload.append('selected_files', selectedFiles);
-    payload.append('asset_dir', this.state.currentPath); 
-    var config = {
+    payload.append('asset_dir', this.state.currentPath);
+    const config = {
       onUploadProgress: function(progressEvent) {
-        var percentCompleted = ((progressEvent.loaded * 100) / progressEvent.total).toFixed(2);
+        let percentCompleted = ((progressEvent.loaded * 100) / progressEvent.total).toFixed(2);
         // Here we ceil() the percentage point to an integer. If we don't round it, the number will change very freqneutly.
-        // As a result, the page will be re-render()ed and for whatever reason the context menu may jump a little bit 
+        // As a result, the page will be re-render()ed and for whatever reason the context menu may jump a little bit
         // if it is clicked when the page is render()ed.
         // Note that we use Math.ceil() instead of round() so that the page will show 1% immediately after the upload starts
 
         // However, the above issue appears to have been solved by limiting the height of filelist ul to 100vh. So now
         // we keep two decimal places to make the update more frequent--so that users will notice smaller upload progress
         // if the file being uploaded is large.
-        if (percentCompleted < 100)
+        if (percentCompleted < 100) {
           this.setState({uploadProgress: percentCompleted}); //How set state with percentCompleted?
-        else
+        } else {
           this.setState({
             selectedFile: null,
             uploadProgress: null
-            
           });
+        }
         console.log(percentCompleted);
       }.bind(this)
     };
-  
-    axios.post(this.state.appAddress + "/upload/", payload, config)
-    .then(response => {
-      alert('File uploaded! You need to manually refresh the file list to see the new file.');
-      // Auto refresh when the offcanvas is still opened causes issues...
-      // to make it simpler, I just remove the auto refresh function.
-    })
-    .catch(error => {
-      console.log(error);
-      alert('Unable to upload files:\n' + error.response.data);
-    });
+
+    axios.post('./upload/', payload, config)
+        .then((response) => {
+          alert('File uploaded! You need to manually refresh the file list to see the new file.');
+          // Auto refresh when the offcanvas is still opened causes issues...
+          // to make it simpler, I just remove the auto refresh function.
+        })
+        .catch((error) => {
+          console.log(error);
+          alert('Unable to upload files:\n' + error.response.data);
+        });
   }
 
   componentDidMount() {
-    
     this.fetchDataFromServer(this.state.currentPath);
-     // this.Modal = null;
+    // this.Modal = null;
 
     window.history.pushState(null, document.title, window.location.href);
     const self = this;
     // to make "this" work inside a eventlistener callback function,
     // we need to define self...
-    window.addEventListener('popstate', function (event){
+    window.addEventListener('popstate', function(event) {
       console.log('back button clicked!');
       if (self.state.pathStack.length >= 2) {
-        self.setState(prevState => ({
+        self.setState((prevState) => ({
           currentPath: prevState.pathStack[prevState.pathStack.length - 2],
           pathStack: prevState.pathStack.slice(0, -1).slice(0, -1)
         }), () => self.fetchDataFromServer(self.state.currentPath));
       }
-      window.history.pushState(null, document.title,  window.location.href);
+      window.history.pushState(null, document.title, window.location.href);
     });
   }
 
@@ -153,10 +153,10 @@ class FileManager extends React.Component {
 
   onNewFolderClick(event) {
     this.setState({
-      modalDialogue: (<ModalMkdir assetDir={this.state.currentPath}
-                                  appAddress={this.state.appAddress}
-                                  refreshFileList={this.fileListShouldRefresh} 
-                                  dialogueShouldClose={this.dialogueShouldClose} />)
+      modalDialogue: (
+        <ModalMkdir assetDir={this.state.currentPath} appAddress='.'
+          refreshFileList={this.fileListShouldRefresh} dialogueShouldClose={this.dialogueShouldClose} />
+      )
       // Tried many different solutions, a callback
       // to destory the Modal is still the best way 
       // to handle the close() event.
@@ -195,10 +195,10 @@ class FileManager extends React.Component {
     } else if (this.state.fileInfo.content[value].file_type === 1) {
       console.log('ordinary file [' + value + '] clicked');
       if (this.state.fileInfo.content[value].media_type < 2) {
-        window.open(this.state.appAddress + '/download/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
+        window.open('./download/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
                                '&filename=' + encodeURIComponent(value)); 
       } else if (this.state.fileInfo.content[value].media_type === 2) {
-        window.open(this.state.appAddress + '/play-video/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
+        window.open('./play-video/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
                                '&video_name=' + encodeURIComponent(value)); 
       }
     } else {
@@ -212,7 +212,7 @@ class FileManager extends React.Component {
     
   fetchServerInfo() {
 
-    URL = this.state.appAddress + '/get-server-info/';
+    URL = './get-server-info/';
     this.serverInfoPanel = (
       <div className="d-flex align-items-center justify-content-center">
         <div className="spinner-border text-primary" role="status">
@@ -269,7 +269,7 @@ class FileManager extends React.Component {
   
   fetchDataFromServer(asset_dir) {
 
-    URL = this.state.appAddress + '/get-file-list/?asset_dir=' + encodeURIComponent(asset_dir);
+    URL = './get-file-list/?asset_dir=' + encodeURIComponent(asset_dir);
 
     axios.get(URL)
       .then(response => {
@@ -310,7 +310,7 @@ class FileManager extends React.Component {
       */
     if (content.file_type === 0) { // file_type == 0: ordinary directory
       thumbnail = (
-        <img src={`${this.state.appAddress}/static/icons/folder.svg`} style={{ width: "100%", cursor: "pointer" }}
+        <img src={`./static/icons/folder.svg`} style={{width: '100%', cursor: 'pointer'}}
               onClick={() => this.onClickItem(key)} />
         );
         // For svg <img>, we specify width: 100%;
@@ -318,48 +318,48 @@ class FileManager extends React.Component {
     } else if (content.file_type === 1) { // file_type == 1: ordinary file
       if (content.media_type === 1) { // image
         thumbnail = (
-          <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}_${content.size}.jpg`}
+          <img src={`./get-thumbnail/?filename=${encodeURIComponent(key)}_${content.size}.jpg`}
               style={{ maxWidth: "100%", maxHeight: "90vh", "display":"block", cursor: "pointer" }}
               onClick={() => this.onClickItem(key)}
-              onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/image.svg"; e.target.style="width: 100%"}} />);
+              onError={(e)=>{e.target.onerror = null; e.target.src="./static/icons/image.svg"; e.target.style="width: 100%"}} />);
             // For svg <img>, we specify width: 100%;
             // For ordinary image we specify maxWidth: 100%;
             // Note for onError we need to specify a special style;
       } else if (content.media_type === 2) { // video
         thumbnail = (
-          <img src={`${this.state.appAddress}/get-thumbnail/?filename=${encodeURIComponent(key)}_${content.size}.jpg`}
-              style={{ maxWidth: "100%", cursor: "pointer" }}
+          <img src={`./get-thumbnail/?filename=${encodeURIComponent(key)}_${content.size}.jpg`}
+              style={{maxWidth: '100%', cursor: 'pointer'}}
               onClick={() => this.onClickItem(key)}
-              onError={(e)=>{e.target.onerror = null; e.target.src=this.state.appAddress + "/static/icons/video.svg"; e.target.style="width: 100%"}} />);
+              onError={(e)=>{e.target.onerror = null; e.target.src = "./static/icons/video.svg"; e.target.style="width: 100%"}} />);
             // For svg <img>, we specify width: 100%;
             // For ordinary image we specify maxWidth: 100%;
             // Note for onError we need to specify a special style;
       } else if (content.media_type === 0) { // not a media file
         let url = null;
         if ([".doc", ".docx", ".odt", ".rtf", ".docm", ".docx", "wps"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/word.svg"; 
+          url = "./static/icons/word.svg"; 
         } else if ([".htm", ".html", ".mht", ".xml"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/ml.svg"; 
+          url = "./static/icons/ml.svg"; 
         } else if ([".csv", ".xls", ".xlsm", ".xlsx"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/xls.svg"; 
+          url = "./static/icons/xls.svg"; 
         } else if ([".pdf"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/pdf.svg";
+          url = "./static/icons/pdf.svg";
         } else if ([".7z", ".zip", ".rar", ".tar", ".gz"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/archive.svg"; 
+          url = "./static/icons/archive.svg"; 
         } else if ([".mka", ".mp3", ".wma", ".wav", ".ogg", ".flac"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/music.svg"; 
+          url = "./static/icons/music.svg"; 
         } else if ([".c"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/c.svg"; 
+          url = "./static/icons/c.svg"; 
         } else if ([".py", ".pyc", ".ipynb"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/python.svg"; 
+          url = "./static/icons/python.svg"; 
         } else if ([".apk", ".whl", ".rpm", ".deb"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/package.svg"; 
+          url = "./static/icons/package.svg"; 
         } else if ([".exe", ".bat"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/exe.svg"; 
+          url = "./static/icons/exe.svg"; 
         } else if ([".css"].includes(content.extension.toLowerCase())) {
-          url = this.state.appAddress + "/static/icons/css.svg"; 
+          url = "./static/icons/css.svg"; 
         } else {
-          url = this.state.appAddress + "/static/icons/misc.svg"; 
+          url = "./static/icons/misc.svg"; 
         }
         thumbnail = (<img src={url} style={{ width: "100%", "display":"block", float:"left", cursor: "pointer" }}
                   onClick={() => this.onClickItem(key)} />);
@@ -370,7 +370,7 @@ class FileManager extends React.Component {
     } else if (content.file_type === 2) { // file_type == 2: mountpoint
       fileMetaData = 'mountpoint';
       thumbnail = (
-        <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
+        <img src={`./static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
               onClick={() => this.onClickItem(key)} />
         );
         // For svg <img>, we specify width: 100%;
@@ -378,13 +378,13 @@ class FileManager extends React.Component {
     } else if (content.file_type === 3) { // file_type == 3: symbolic link
       fileMetaData = 'symbolic link';
       thumbnail = (
-        <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
+        <img src={`./static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
               onClick={() => this.onClickItem(key)} />
         );
     } else {
       fileMetaData = '??Unknown file type??';
       thumbnail = (
-        <img src={`${this.state.appAddress}/static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
+        <img src={`./static/icons/special-folder.svg`} style={{ width: "100%", cursor: "pointer" }}
               onClick={() => this.onClickItem(key)} />
         );
     }
@@ -425,7 +425,7 @@ class FileManager extends React.Component {
             </div>
           </div>
           <div className="col">
-            <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fic[key]} appAddress={this.state.appAddress} /> 
+            <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fic[key]} appAddress='.' /> 
           </div>
         </div>     
       </li>
@@ -550,9 +550,9 @@ class FileManager extends React.Component {
   }
 }
 
-ReactDOM.render(
-  <div>
-      <FileManager appAddress={app_address} />
-  </div>,
-  document.querySelector('#root'),
-);
+const container = document.getElementById('root');
+const root = createRoot(container);
+
+root.render(<div>
+  <FileManager appAddress={app_address} />
+</div>);

@@ -102,3 +102,5 @@ class ModalMkdir extends React.Component {
     );
   }
 }
+
+export {ModalMkdir};
