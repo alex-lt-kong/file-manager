@@ -51,11 +51,15 @@ class ContextMenu extends React.Component {
     this.forceUpdate();
   }
 
-  onViewTextButtonClick(event) {
-    window.open('./view-text/?asset_dir=' +
-      encodeURIComponent(this.state.fileInfo.asset_dir) +
-      '&filename=' + encodeURIComponent(this.state.fileInfo.filename)
-    );
+
+  onViewTextButtonClick() {
+    const params = {
+      asset_dir: encodeURIComponent(this.state.fileInfo.asset_dir),
+      filename: encodeURIComponent(this.state.fileInfo.filename)
+    };
+    const url = `./?page=viewer-text&params=${JSON.stringify(params)}`;
+    console.log(url);
+    window.open(url);
   }
 
   onExtractSubtitlesButtonClick(event) {

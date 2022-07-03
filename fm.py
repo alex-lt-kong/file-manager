@@ -613,7 +613,8 @@ def play_video():
         # a "catching classes that do not inherit from BaseException is
         # not allowed" error
         logging.exception('')
-        return Response('Error')
+        return Response('OSError', 400)
+        # Can't just return ex to client--it will expose sensitive server-side information.
     except Exception:
         logging.exception(f'parameters: {root_dir}, {asset_dir}, {video_name}')
         return Response('Parameters error', 400)
@@ -713,7 +714,8 @@ def download():
         # a "catching classes that do not inherit from BaseException is
         # not allowed" error
         logging.exception('')
-        return Response('Error', 400)
+        return Response('OSError, the most likely cause is FileNotFound', 400)
+        # Can't just return ex to client--it will expose sensitive server-side information.
     except Exception:
         logging.exception('')
         return Response('Parameter error', 400)
@@ -879,9 +881,10 @@ def get_file_list():
     except werkzeug.exceptions.NotFound:
         logging.exception('')
         return Response('Potential chroot escape', 400)
-    except OSError as ex:
+    except OSError:
         logging.exception('')
-        return Response(f'OSError: {ex.strerror}', 400)
+        return Response('OSError', 400)
+        # Can't just return ex to client--it will expose sensitive server-side information.
     except Exception:
         logging.exception('')
         return Response('Internal Error', 500)
