@@ -16,7 +16,7 @@ A web-based file manager with a focus on video manipulation and streaming.
 * Tested versions:
     * Python: `3.9`
     * Node.js: `14.19`, `18.04`
-    * npm: `6.14`,
+    * npm: `6.14`, `8.12`
 
 ### Python environment
 
