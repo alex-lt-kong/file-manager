@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from collections import OrderedDict
+from urllib import response
 from flask import Flask, render_template, Response, request
 from flask_cors import CORS
 from PIL import ImageFile
@@ -897,8 +898,16 @@ def index():
                            app_address=app_address,
                            mode='development' if debug_mode else 'production')
 
+    params_str = ''
+    if 'params' in request.args:
+        try:
+            params_str = str(request.args['params'])
+            json.loads(params_str)
+        except Exception:
+            logging.exception('')
+            return flask.Response(f'Failed to parse params [{params_str}] as a JSON object', 400)
     if request.args['page'] == 'viewer-text':
-        return render_template('viewer/text.html')
+        return render_template('viewer/text.html', params=params_str)
 
 
 def stop_signal_handler(*args):
