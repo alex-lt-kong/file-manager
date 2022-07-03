@@ -888,13 +888,17 @@ def get_file_list():
     return flask.jsonify(file_info)
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
 
     global app_address, debug_mode
-    return render_template('manager.html',
+    if 'page' not in request.args:
+        return render_template('manager.html',
                            app_address=app_address,
                            mode='development' if debug_mode else 'production')
+
+    if request.args['page'] == 'viewer-text':
+        return render_template('viewer/text.html')
 
 
 def stop_signal_handler(*args):
