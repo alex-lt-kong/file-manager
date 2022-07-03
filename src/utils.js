@@ -1,23 +1,27 @@
+import React from 'react';
+
 function syntaxHighlight(json) {
   // This method needs corresponding css settings to work.
   json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  let pretty_json = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-      var cls = 'number';
-      if (/^"/.test(match)) {
+  let prettyJson = json.replace(
+      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+      (match) => {
+        let cls = 'number';
+        if (/^"/.test(match)) {
           if (/:$/.test(match)) {
-              cls = 'key';
+            cls = 'key';
           } else {
-              cls = 'string';
+            cls = 'string';
           }
-      } else if (/true|false/.test(match)) {
+        } else if (/true|false/.test(match)) {
           cls = 'boolean';
-      } else if (/null/.test(match)) {
+        } else if (/null/.test(match)) {
           cls = 'null';
-      }
-      return '<span class="' + cls + '">' + match + '</span>';
-  })
-  pretty_json = {__html: pretty_json}
-  return  <pre dangerouslySetInnerHTML={pretty_json}></pre>;
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+      });
+  prettyJson = {__html: prettyJson};
+  return <pre dangerouslySetInnerHTML={prettyJson}></pre>;
 }
 
 export {syntaxHighlight};

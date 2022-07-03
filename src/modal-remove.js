@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 
 class ModalRemove extends React.Component {
   constructor(props) {
@@ -18,7 +19,7 @@ class ModalRemove extends React.Component {
     $(this.modal).modal('show');
     window.onpopstate = e => {
       this.handleCloseClick();
-    }
+    };
   }
 
   handleSubmitClick() {

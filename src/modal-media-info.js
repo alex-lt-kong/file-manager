@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React from 'react';
-import syntaxHighlight from './utils';
+import {syntaxHighlight} from './utils';
+import PropTypes from 'prop-types';
 
 class ModalMediaInfo extends React.Component {
   constructor(props) {
@@ -16,7 +17,7 @@ class ModalMediaInfo extends React.Component {
         </div>
       ),
       mediaFilename: props.mediaFilename,
-      mediaInfo: null
+      mediaInfo: nullPropTypes
     };
     this.handleOKClick = this.handleOKClick.bind(this);
     this.fetchDataFromServer();
@@ -26,31 +27,32 @@ class ModalMediaInfo extends React.Component {
     $(this.modal).modal('show');
     window.onpopstate = e => {
       this.handleOKClick();
-    }
+    };
   }
 
   fetchDataFromServer() {
-    URL = './get-media-info/?asset_dir=' + encodeURIComponent(this.state.assetDir) + '&media_filename=' + encodeURIComponent(this.state.mediaFilename);
-      axios.get(URL)
-        .then(response => {
+    axios.get(
+        `./get-media-info/?asset_dir=${encodeURIComponent(this.state.assetDir)}&` +
+        `media_filename=${encodeURIComponent(this.state.mediaFilename)}`
+    )
+        .then((response) => {
+          console.log(response.data);
           this.setState({
-           mediaInfo: null
+            mediaInfo: response.data,
+            jsonHTML: syntaxHighlight(JSON.stringify(response.data.content, null, 2))
           });
-          this.setState({
-           mediaInfo: response.data,
-           jsonHTML: syntaxHighlight(JSON.stringify(response.data.content, null, 2))
-         });
         })
-        .catch(error => {   
+        .catch((error) => {
+          console.error(error);
           this.setState({
             jsonHTML: (
-              <div className="alert alert-danger my-2" role="alert" style={{ wordBreak: "break-word" }}>
-                Unable to fetch information from media file <strong style={{ wordBreak: "break-all" }}>{this.state.mediaFilename}</strong>:
+              <div className="alert alert-danger my-2" role="alert" style={{wordBreak: 'break-word'}}>
+                Unable to fetch information from media file <strong style={{wordBreak: 'break-all'}}>{this.state.mediaFilename}</strong>:
                 <br />{error.response.data}
               </div>
             ),
             mediaInfo: false
-           });
+          });
         });
   }
 
@@ -61,33 +63,40 @@ class ModalMediaInfo extends React.Component {
     }
     /* When we want to close it, we need to do two things:
       1. we set hide to the modal within this component;
-      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
+      2. we need to call a callback function to notify the parent component 
+        that the children component wants itself to be closed.
       We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
     */
   }
 
   render() {
-
     return (
-    <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" aria-labelledby="mediaInformationModalTitle"
-         aria-hidden="true" data-bs-backdrop="static">
+      <div className="modal fade" ref={(modal)=> this.modal = modal}
+        role="dialog" aria-labelledby="mediaInformationModalTitle"
+        aria-hidden="true" data-bs-backdrop="static">
         <div className="modal-dialog  modal-dialog-scrollable" role="document">
           {/* Turned out that modal-dialog-scrollable is buggy on smartphone devices... */}
-        <div className="modal-content">
+          <div className="modal-content">
             <div className="modal-header">
-            <h5 className="modal-title" id="mediaInformationModalTitle" >Media Information</h5>
+              <h5 className="modal-title" id="mediaInformationModalTitle" >Media Information</h5>
             </div>
             <div className="modal-body">
               <div className="mb-3">{this.state.jsonHTML}</div>
             </div>
             <div className="modal-footer">
-            <button type="button" className="btn btn-primary" onClick={this.handleOKClick}>OK</button>
+              <button type="button" className="btn btn-primary" onClick={this.handleOKClick}>OK</button>
             </div>
+          </div>
         </div>
       </div>
-    </div>
     );
   }
 }
+
+ModalMediaInfo.propTypes = {
+  assetDir: PropTypes.string,
+  dialogueShouldClose: PropTypes.bool
+};
+
 
 export {ModalMediaInfo};

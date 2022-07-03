@@ -270,24 +270,23 @@ class FileManager extends React.Component {
     const URL = './get-file-list/?asset_dir=' + encodeURIComponent(asset_dir);
 
     axios.get(URL)
-      .then(response => {
-        // handle success
-        this.setState({
-          fileInfo: null
-          // make it empty before fill it in again to force a re-rendering.
+        .then((response) => {
+          // handle success
+          this.setState({
+            fileInfo: null
+            // make it empty before fill it in again to force a re-rendering.
+          });
+          this.setState((prevState) => ({
+            addressBar: response.data.metadata.asset_dir,
+            fileInfo: response.data,
+            currentPath: response.data.metadata.asset_dir,
+            pathStack: [...prevState.pathStack, response.data.metadata.asset_dir]
+          }));
+        })
+        .catch((error) => {
+          console.log(error);
+          alert('Unable to fetch fileInfo:\n' + error.response.data);
         });
-        this.setState(prevState => ({
-          addressBar: response.data.metadata.asset_dir,
-          fileInfo: response.data,
-          currentPath: response.data.metadata.asset_dir,
-          pathStack:  [...prevState.pathStack, response.data.metadata.asset_dir]
-        }));
-      })
-      .catch(error => {
-        console.log(error);
-        alert('Unable to fetch fileInfo:\n' + error.response.data);
-        
-      });
   }
 
   ListItemLink(props) {
@@ -422,7 +421,7 @@ class FileManager extends React.Component {
               </div>
             </div>
             <div className="col">
-              <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fic[key]} appAddress='.' />
+              <ContextMenu refreshFileList={this.fileListShouldRefresh} fileInfo={fic[key]} />
             </div>
           </div>
         </li>

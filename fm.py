@@ -4,7 +4,6 @@ from collections import OrderedDict
 from flask import Flask, render_template, Response, request
 from flask_cors import CORS
 from PIL import ImageFile
-from waitress import serve
 
 import click
 import datetime as dt
@@ -21,7 +20,9 @@ import signal
 import subprocess
 import sys
 import threading
+import waitress
 import werkzeug
+
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
@@ -971,9 +972,9 @@ def main(debug):
                                         'delay': 0 if debug_mode else 300})
     th_email.start()
 
-    serve(app, host="127.0.0.1", port=local_port,
+    waitress.serve(app, host="127.0.0.1", port=local_port,
           max_request_body_size=settings['flask']['max_upload_size'],
-          log_socket_errors=False)
+          log_socket_errors=False, threads=8)
     # You need the max_request_body_size to accept large upload file...
     # The default value of max_request_body_size is 1GB
     # serve() will not explicit raise an exception is this parameter is NOT
