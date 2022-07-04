@@ -122,7 +122,7 @@ def create_folder():
     folder_name = request.form['folder_name']
 
     try:
-        folder_path = flask.safe_join(root_dir, asset_dir[1:], folder_name)
+        folder_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:], folder_name)
     except werkzeug.exceptions.NotFound:
         return Response('Potential chroot escape', 400)
 
@@ -159,7 +159,7 @@ def upload():
                             f'{allowed_ext}', 400)
 
         try:
-            filepath = flask.safe_join(root_dir, asset_dir[1:],
+            filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:],
                                        selected_file.filename)
         except werkzeug.exceptions.NotFound:
             return Response('Potential chroot escape', 400)
@@ -194,8 +194,8 @@ def move():
         new_filepath = new_filepath.replace('\n', '').replace('\r', '')
         # send_from_directory() will raise ValueError if it detects
         # newline, so let's just remove them.
-        old_real_filepath = flask.safe_join(root_dir, old_filepath[1:])
-        new_real_filepath = flask.safe_join(root_dir, new_filepath[1:])
+        old_real_filepath = werkzeug.utils.safe_join(root_dir, old_filepath[1:])
+        new_real_filepath = werkzeug.utils.safe_join(root_dir, new_filepath[1:])
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /:
         # On the client side, old_filepath/new_filepath are considered real
@@ -238,7 +238,7 @@ def remove():
     filepath = request.form['filepath']
 
     try:
-        real_filepath = flask.safe_join(root_dir, filepath[1:])
+        real_filepath = werkzeug.utils.safe_join(root_dir, filepath[1:])
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /:
         # On the client side, filepath is considered real path, so it has
@@ -412,7 +412,7 @@ def extract_subtitles():
     video_name = request.form['video_name']
 
     try:
-        video_path = flask.safe_join(root_dir, asset_dir[1:], video_name)
+        video_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:], video_name)
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /;
         # otherwise safe_join will consider it a chroot escape attempt
@@ -442,7 +442,7 @@ def get_media_info():
     media_filename = request.args.get('media_filename')
 
     try:
-        media_filepath = flask.safe_join(root_dir, asset_dir[1:],
+        media_filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:],
                                          media_filename)
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /;
@@ -559,9 +559,9 @@ def video_transcode():
         # For resolution, however, we can simply pass -1 to ffmpeg, meaning
         # that we keep the original resolution of the video.
 
-        abs_path = flask.safe_join(root_dir, asset_dir[1:])
+        abs_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
 
-        video_path = flask.safe_join(abs_path, video_name)
+        video_path = werkzeug.utils.safe_join(abs_path, video_name)
         if os.path.isfile(video_path) is False:
             return Response(f'video {video_name} not found', 400)
 
@@ -602,7 +602,7 @@ def play_video():
     video_name = request.args.get('video_name')
 
     try:
-        fid = get_file_id(flask.safe_join(root_dir, asset_dir[1:], video_name))
+        fid = get_file_id(werkzeug.utils.safe_join(root_dir, asset_dir[1:], video_name))
     except OSError:
         # You canNOT catch FileNotFoundError here; otherwise Python will raise
         # a "catching classes that do not inherit from BaseException is
@@ -642,8 +642,8 @@ def view_text():
     asset_dir = request.args.get('asset_dir')
     filename = request.args.get('filename')
     try:
-        file_dir = flask.safe_join(root_dir, asset_dir[1:])
-        file_path = flask.safe_join(file_dir, filename)
+        file_dir = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
+        file_path = werkzeug.utils.safe_join(file_dir, filename)
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /:
         # otherwise safe_join will consider it a chroot escape attempt
@@ -680,10 +680,7 @@ def get_thumbnail():
         return Response('Parameter filename not specified', 400)
 
     filename = request.args.get('filename')
-    return flask.send_from_directory(directory=thumbnails_path,
-                                     filename=filename,
-                                     as_attachment=False,
-                                     attachment_filename=filename)
+    return flask.send_from_directory(directory=thumbnails_path, path=filename, as_attachment=False)
 
 
 @app.route('/download/', methods=['GET'])
@@ -695,8 +692,8 @@ def download():
     filename = request.args.get('filename')
 
     try:
-        file_dir = flask.safe_join(root_dir, asset_dir[1:])
-        file_path = flask.safe_join(file_dir, filename)
+        file_dir = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
+        file_path = werkzeug.utils.safe_join(file_dir, filename)
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /:
         # otherwise safe_join will consider it a chroot escape attempt
@@ -759,9 +756,8 @@ def download():
     except Exception:
         logging.exception('')
         return Response('Internal error: unable to save files statistics', 500)
-    return flask.send_from_directory(directory=file_dir, filename=filename,
+    return flask.send_from_directory(directory=file_dir, path=filename,
                                      as_attachment=as_attachment,
-                                     attachment_filename=filename,
                                      conditional=True)
 # conditional=True allows the sending of partial content
 # That is, allowing users to seek an html5 video.)
@@ -819,7 +815,7 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
             basename, ext = os.path.splitext(fn)
             fic['basename'] = basename
             fic['extension'] = ext
-            file_path = flask.safe_join(abs_path, fn)
+            file_path = werkzeug.utils.safe_join(abs_path, fn)
             if file_path is None:
                 # implies chroot escape attempt!
                 raise PermissionError('chroot escape attempt detected???')
@@ -860,7 +856,7 @@ def get_file_list():
         return Response('parameter [asset_dir] not specified', 400)
     try:
         asset_dir = request.args.get('asset_dir')
-        abs_path = flask.safe_join(root_dir, asset_dir[1:])
+        abs_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
         asset_dir = abs_path[len(root_dir):]
 
         if asset_dir == '/.':
@@ -946,8 +942,10 @@ def main(debug):
         thumbnails_path = settings['app']['thumbnails_path']
         log_path = settings['app']['log_path']
         video_extensions = settings['app']['video_extensions']
-    except Exception as e:
-        print(f'Unable to read settings: {e}')
+        if root_dir[-1] == '/':
+            raise ValueError('root_dir should not end with a "/"')
+    except Exception as ex:
+        print(f'Load settings failed: {ex}')
         return
 
     try:
@@ -983,7 +981,7 @@ def main(debug):
                                         'delay': 0 if debug_mode else 300})
     th_email.start()
 
-    waitress.serve(app, host="127.0.0.1", port=local_port,
+    waitress.serve(app, host=settings['flask']['interface'], port=local_port,
           max_request_body_size=settings['flask']['max_upload_size'],
           log_socket_errors=False, threads=8)
     # You need the max_request_body_size to accept large upload file...

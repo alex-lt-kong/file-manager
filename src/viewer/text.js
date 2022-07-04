@@ -1,8 +1,11 @@
 import axios from 'axios';
 import React from 'react';
+import PropTypes from 'prop-types';
 import {createRoot} from 'react-dom/client';
 import SyntaxHighlighter from 'react-syntax-highlighter';
-import {docco} from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import {stackoverflowLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
+// eslint-disable-next-line max-len
+// Available styles: https://github.com/react-syntax-highlighter/react-syntax-highlighter/blob/master/AVAILABLE_STYLES_HLJS.MD
 
 class TextViewer extends React.Component {
   constructor(props) {
@@ -23,7 +26,6 @@ class TextViewer extends React.Component {
           this.setState({
             plainTextContent: response.data
           });
-          console.log(response);
         })
         .catch((error) => {
           console.error(error);
@@ -31,8 +33,11 @@ class TextViewer extends React.Component {
   }
 
   detectLanguageFromFilename() {
+    if (this.state.params.filename[0] === '.') {
+      console.log(`filename ${this.state.params.filename} starts with ".", we will assume it to be a bash script`);
+      return 'bash';
+    }
     const fileExt = this.state.params.filename.split('.').pop();
-    console.log(fileExt);
     const extLangMapping = {
       c: 'c',
       cpp: 'cpp',
@@ -41,25 +46,32 @@ class TextViewer extends React.Component {
       js: 'javascript',
       json: 'json',
       php: 'php',
+      ps1: 'powershell',
       py: 'python',
       sql: 'sql',
       xml: 'xml'
     };
     if (extLangMapping.hasOwnProperty(fileExt)) {
+      console.log(`fileExt is ${fileExt} and it is mapped to ${extLangMapping[fileExt]}`);
       return extLangMapping[fileExt];
     }
+    console.warn(`fileExt ${fileExt} does not have a defined mapping, returning text`);
     return 'text';
   }
 
   render() {
     return (
-      <SyntaxHighlighter language={this.detectLanguageFromFilename()} style={docco}
-        showLineNumbers={true} wrapLongLines={true}>
+      <SyntaxHighlighter language={this.detectLanguageFromFilename()} style={stackoverflowLight}
+        showLineNumbers={true} showInlineLineNumbers={false} wrapLongLines={true}>
         {this.state.plainTextContent === null ? 'Error' : this.state.plainTextContent}
       </SyntaxHighlighter>
     );
   }
 }
+
+TextViewer.propTypes = {
+  params: PropTypes.object
+};
 
 const container = document.getElementById('root');
 const root = createRoot(container);

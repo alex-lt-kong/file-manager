@@ -3,6 +3,7 @@ import {ModalRemove} from './modal-remove';
 import {ModalExtractSubtitles} from './modal-extract-subtitles';
 import {ModalMediaInfo} from './modal-media-info';
 import {ModalTranscode} from './modal-transcode';
+import Dropdown from 'react-bootstrap/Dropdown';
 import React from 'react';
 import PropTypes from 'prop-types';
 
@@ -65,7 +66,6 @@ class ContextMenu extends React.Component {
   onExtractSubtitlesButtonClick(event) {
     this.setState({
       modalDialogue: (<ModalExtractSubtitles
-        appAddress='.'
         assetDir={this.state.fileInfo.asset_dir}
         dialogueShouldClose={this.dialogueShouldClose}
         videoName={this.state.fileInfo.filename}
@@ -77,7 +77,6 @@ class ContextMenu extends React.Component {
   onMediaInfoButtonClick(event) {
     this.setState({
       modalDialogue: (<ModalMediaInfo
-        appAddress='.'
         assetDir={this.state.fileInfo.asset_dir}
         dialogueShouldClose={this.dialogueShouldClose}
         mediaFilename={this.state.fileInfo.filename} />)
@@ -99,7 +98,6 @@ class ContextMenu extends React.Component {
     this.setState({
       modalDialogue: (<ModalTranscode
         fileInfo={this.state.fileInfo}
-        appAddress='.'
         dialogueShouldClose={this.dialogueShouldClose}
         refreshFileList={this.state.refreshFileList} />)
       // By adding a key attribute, Modal will be created each time, so we
@@ -109,42 +107,41 @@ class ContextMenu extends React.Component {
   }
 
   render() {
+    const ContextMenuToggle = React.forwardRef(({onClick}, ref) => (
+      <a href="" ref={ref} onClick={(e) => {
+        e.preventDefault();
+        onClick(e);
+      }}
+      >
+        <span className="bi bi-three-dots-vertical" />
+      </a>
+    ));
+    ContextMenuToggle.displayName = 'ContextMenuToggle';
+
     return (
-      <div className="dropdown" href="javascript:return false;" style={{position: 'relative'}} >
-        <i id="dropdownContextMenuButton" className="bi bi-three-dots-vertical" data-bs-toggle="dropdown"
-          aria-expanded="false" style={{cursor: 'pointer', fontSize: '1.2em'}} ></i>
-        <ul className="dropdown-menu" aria-labelledby="dropdownContextMenuButton">
-          <li>
-            <a className="dropdown-item py-2" style={{cursor: 'pointer'}} onClick={this.onViewTextButtonClick}>
-              View As Text
-            </a>
-          </li>
-          <li>
-            <a className="dropdown-item py-2" style={{cursor: 'pointer'}} onClick={this.onMoveButtonClick}>Move</a>
-          </li>
-          <li>
-            <a className="dropdown-item py-2" style={{cursor: 'pointer'}} onClick={this.onRemoveButtonClick}>
-              Remove
-            </a>
-          </li>
-          <li>
-            <a className="dropdown-item py-2" style={{cursor: 'pointer'}} onClick={this.onMediaInfoButtonClick}>
-              Media Info
-            </a>
-          </li>
-          <li>
-            <a className="dropdown-item py-2" style={{cursor: 'pointer'}} onClick={this.onTranscodeButtonClick}>
-              Transcode to WebM
-            </a>
-          </li>
-          <li>
-            <a className="dropdown-item py-2" style={{cursor: 'pointer'}} onClick={this.onExtractSubtitlesButtonClick}>
-              Extract Subtitles
-            </a>
-          </li>
-        </ul>
+      <>
+        <Dropdown>
+          <Dropdown.Toggle as={ContextMenuToggle} />
+          <Dropdown.Menu>
+            {
+              this.state.fileInfo.file_type !== 1 ? null : // 1 means it is an ordinary file
+              <><Dropdown.Item onClick={this.onViewTextButtonClick}>View As Text</Dropdown.Item><Dropdown.Divider /></>
+            }
+            <Dropdown.Item onClick={this.onMoveButtonClick}>Move</Dropdown.Item>
+            <Dropdown.Item onClick={this.onRemoveButtonClick}>Remove</Dropdown.Item>
+            {
+              this.state.fileInfo.file_type !== 1 ? null : // 1 means it is an ordinary file
+              <>
+                <Dropdown.Divider />
+                <Dropdown.Item onClick={this.onMediaInfoButtonClick}>Media Info</Dropdown.Item>
+                <Dropdown.Item onClick={this.onTranscodeButtonClick}>Transcode to WebM</Dropdown.Item>
+                <Dropdown.Item onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</Dropdown.Item>
+              </>
+            }
+          </Dropdown.Menu>
+        </Dropdown>
         {this.state.modalDialogue}
-      </div>
+      </>
     );
   }
 }
