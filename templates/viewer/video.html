@@ -1,24 +1,20 @@
 <!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="shortcut icon" href="{{app_address}}/static/img/favicon.svg">
-<link rel="stylesheet" href="{{app_address}}/static/css/playback.css">
-<link rel="stylesheet" href="{{app_address}}/static/js/lib/bootstrap-icons.{{mode}}-1.5.0.css">
-<link rel="stylesheet" href="{{app_address}}/static/js/lib/bootstrap/5.0.2/bootstrap.{{mode}}.css">
-<script src="{{app_address}}/static/js/lib/bootstrap/5.0.2/bootstrap.bundle.{{mode}}.js"></script>
-<script src="{{app_address}}/static/js/lib/jquery-3.6.0.{{mode}}.js"></script>
+<link rel="shortcut icon" href="./static/img/favicon.svg">
+<link rel="stylesheet" href="./static/css/playback.css">
+<link rel="stylesheet" href="./static/js/lib/bootstrap-icons.production-1.5.0.css">
+<link rel="stylesheet" href="./static/js/lib/bootstrap/5.0.2/bootstrap.production.css">
 
 <html>
 
 <head>
-<title>Playback</title>
+<title>Video Viewer</title>
 </head>
 <body>
-  <script>
-    window.app_address = "{{ app_address | safe }}";
-    var paras = JSON.parse({{ paras | tojson }});
-    document.title = 'Playback[' + paras.video_name + ']';
-  </script>
   <div id="root"></div>
-  <script src="../static/js/viewer/video.js"></script>
+  <script>
+    const params = JSON.parse({{params | tojson}});
+  </script>
+  <script src="./static/js/viewer/video.js"></script>
 </body>
 </html>

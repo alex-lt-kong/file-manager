@@ -59,7 +59,6 @@ class ContextMenu extends React.Component {
       filename: encodeURIComponent(this.state.fileInfo.filename)
     };
     const url = `./?page=viewer-text&params=${JSON.stringify(params)}`;
-    console.log(url);
     window.open(url);
   }
 

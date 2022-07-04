@@ -592,17 +592,21 @@ def video_transcode():
     return Response('success', 200)
 
 
-@app.route('/play-video/', methods=['GET'])
-def play_video():
+@app.route('/get-file-stats/', methods=['GET'])
+def get_file_stats():
 
-    if 'asset_dir' not in request.args or 'video_name' not in request.args:
-        return Response('Parameters asset_dir or video_name not specified',
-                        400)
+    if 'filename' not in request.args or 'asset_dir' not in request.args:
+        return Response('Parameter filename or asset_dir not specified', 400)
+
     asset_dir = request.args.get('asset_dir')
-    video_name = request.args.get('video_name')
+    filename = request.args.get('filename')
 
+    file_dir = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
+    file_path = werkzeug.utils.safe_join(file_dir, filename)
+    # safe_join can prevent base directory escaping. [1:] is used to get rid of the initial /;
+    # otherwise safe_join will consider it a chroot escape attempt
     try:
-        fid = get_file_id(werkzeug.utils.safe_join(root_dir, asset_dir[1:], video_name))
+        fid = get_file_id(file_path)
     except OSError:
         # You canNOT catch FileNotFoundError here; otherwise Python will raise
         # a "catching classes that do not inherit from BaseException is
@@ -611,8 +615,8 @@ def play_video():
         return Response('OSError', 400)
         # Can't just return ex to client--it will expose sensitive server-side information.
     except Exception:
-        logging.exception(f'parameters: {root_dir}, {asset_dir}, {video_name}')
-        return Response('Parameters error', 400)
+        logging.exception('')
+        return Response('Unknown error', 500)
     if fid in file_stat['content']:
         views = file_stat['content'][fid]['downloads']
         last_view = file_stat['content'][fid]['last_download']
@@ -622,56 +626,14 @@ def play_video():
 
     global debug_mode
 
-    paras = {}
-    paras['asset_dir'] = asset_dir
-    paras['video_name'] = video_name
-    paras['views'] = views
-    paras['last_view'] = last_view
+    data = {
+        'asset_dir': asset_dir,
+        'filename': filename,
+        'views': views,
+        'last_view': last_view
+    }
+    return flask.jsonify(data)
 
-    return render_template('./viewer/video.html',
-                           app_address=app_address,
-                           paras=json.dumps(paras),
-                           mode='development' if debug_mode else 'production')
-
-
-@app.route('/view-text/', methods=['GET'])
-def view_text():
-
-    if 'asset_dir' not in request.args or 'filename' not in request.args:
-        return Response('Parameters asset_dir or filename not specified', 400)
-    asset_dir = request.args.get('asset_dir')
-    filename = request.args.get('filename')
-    try:
-        file_dir = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
-        file_path = werkzeug.utils.safe_join(file_dir, filename)
-        # safe_join can prevent base directory escaping
-        # [1:] is used to get rid of the initial /:
-        # otherwise safe_join will consider it a chroot escape attempt
-        fid = get_file_id(file_path)
-    except (werkzeug.exceptions.NotFound):
-        logging.exception(f'Parameters are {root_dir}, {asset_dir}')
-        return Response('Potential chroot escape', 400)
-    except OSError:
-        # You canNOT catch FileNotFoundError here; otherwise Python will raise
-        # a "catching classes that do not inherit from BaseException is
-        # not allowed" error
-        logging.exception('')
-        return Response('OSError', 400)
-    except Exception:
-        logging.exception('')
-        return Response('Parameter error', 400)
-
-    paras = {}
-    try:
-        with open(file_path, 'r') as f:
-            paras['text_content'] = f.read()
-    except UnicodeDecodeError as ex:
-        paras['text_content'] = str(ex)
-
-    return render_template('text-viewer.html',
-                           app_address=app_address,
-                           paras=json.dumps(paras),
-                           mode='development' if debug_mode else 'production')
 
 @app.route('/get-thumbnail/', methods=['GET'])
 def get_thumbnail():
@@ -902,6 +864,8 @@ def index():
             return flask.Response(f'Failed to parse params [{params_str}] as a JSON object', 400)
     if request.args['page'] == 'viewer-text':
         return render_template('viewer/text.html', params=params_str)
+    if request.args['page'] == 'viewer-video':
+        return render_template('viewer/video.html', params=params_str)
 
 
 def stop_signal_handler(*args):

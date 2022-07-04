@@ -174,16 +174,16 @@ class FileManager extends React.Component {
       addressBar: event.target.value
     });
   }
-  
+
   onClickAddressBarGo(event) {
     this.fetchDataFromServer(this.state.addressBar);
   } 
-  
+
   onAddressBarEnterPress(event) {
     console.log('onAddressBarEnterPress');
     this.fetchDataFromServer(this.state.addressBar);
   } 
-  
+
   onClickItem(value) {
     if (this.state.fileInfo.content[value].file_type != 1) {
       this.fetchDataFromServer(this.state.currentPath + value + '/');
@@ -197,10 +197,14 @@ class FileManager extends React.Component {
       console.log('ordinary file [' + value + '] clicked');
       if (this.state.fileInfo.content[value].media_type < 2) {
         window.open('./download/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
-                               '&filename=' + encodeURIComponent(value)); 
+                               '&filename=' + encodeURIComponent(value));
       } else if (this.state.fileInfo.content[value].media_type === 2) {
-        window.open('./play-video/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
-                               '&video_name=' + encodeURIComponent(value)); 
+        const params = {
+          asset_dir: encodeURIComponent(this.state.fileInfo.metadata.asset_dir),
+          filename: encodeURIComponent(value)
+        };
+        const url = `./?page=viewer-video&params=${JSON.stringify(params)}`;
+        window.open(url);
       }
     } else {
       console.log('special file [' + value + '] clicked');
