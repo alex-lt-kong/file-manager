@@ -117,7 +117,8 @@ class ContextMenu extends React.Component {
       </a>
     ));
     ContextMenuToggle.displayName = 'ContextMenuToggle';
-
+    console.log(this.state.fileInfo.extension);
+    console.log(['.mp4', '.mkv', '.avi'].includes(this.state.fileInfo.extension));
     return (
       <>
         <Dropdown>
@@ -130,13 +131,19 @@ class ContextMenu extends React.Component {
             <Dropdown.Item onClick={this.onMoveButtonClick}>Move</Dropdown.Item>
             <Dropdown.Item onClick={this.onRemoveButtonClick}>Remove</Dropdown.Item>
             {
-              this.state.fileInfo.file_type !== 1 ? null : // 1 means it is an ordinary file
+              (this.state.fileInfo.file_type === 1 && // 1 means it is an ordinary file
+                [
+                  '.3gp', '.asf', '.avi', '.flv', '.m4v', '.mkv', '.mov', 'mp2', '.mp4', 'mpg', 'mpg', 'mpeg',
+                  '.rm', '.wmv', '.rmvb', '.srt'
+                ].includes(
+                    this.state.fileInfo.extension.toLowerCase())
+              ) ?
               <>
                 <Dropdown.Divider />
                 <Dropdown.Item onClick={this.onMediaInfoButtonClick}>Media Info</Dropdown.Item>
                 <Dropdown.Item onClick={this.onTranscodeButtonClick}>Transcode to WebM</Dropdown.Item>
                 <Dropdown.Item onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</Dropdown.Item>
-              </>
+              </> : null
             }
           </Dropdown.Menu>
         </Dropdown>

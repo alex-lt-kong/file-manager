@@ -13,6 +13,8 @@ A web-based file manager with a focus on video manipulation and streaming.
 
 ### Base system
 
+* ffmpeg for video manipulation: `apt install ffmpeg`
+
 * Tested versions:
     * Python: `3.9`
     * Node.js: `14.19`, `18.04`

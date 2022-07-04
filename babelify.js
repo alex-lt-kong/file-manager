@@ -5,7 +5,7 @@ const srcList = [
   'utils.js', 'ctx-menu.js', 'modal-extract-subtitles.js',
   'modal-mkdir.js', 'modal-move.js', 'modal-remove.js',
   'modal-transcode.js', 'modal-media-info.js',
-  'offcanvas-server-info.js', 'manager.js', 'playback.js', './viewer/text.js'
+  'offcanvas-server-info.js', 'manager.js', './viewer/video.js', './viewer/text.js'
 ];
 
 if (process.argv.length !== 3 || (process.argv[2] !== '--prod' && process.argv[2] !== '--dev')) {

@@ -37,7 +37,7 @@ class TextViewer extends React.Component {
       console.log(`filename ${this.state.params.filename} starts with ".", we will assume it to be a bash script`);
       return 'bash';
     }
-    const fileExt = this.state.params.filename.split('.').pop();
+    const fileExt = this.state.params.filename.split('.').pop().toLowerCase();
     const extLangMapping = {
       c: 'c',
       cpp: 'cpp',
@@ -45,6 +45,7 @@ class TextViewer extends React.Component {
       ini: 'ini',
       js: 'javascript',
       json: 'json',
+      md: 'markdown',
       php: 'php',
       ps1: 'powershell',
       py: 'python',

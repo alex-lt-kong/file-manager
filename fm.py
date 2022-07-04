@@ -628,7 +628,7 @@ def play_video():
     paras['views'] = views
     paras['last_view'] = last_view
 
-    return render_template('playback.html',
+    return render_template('./viewer/video.html',
                            app_address=app_address,
                            paras=json.dumps(paras),
                            mode='development' if debug_mode else 'production')
