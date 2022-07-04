@@ -3,7 +3,6 @@
 from collections import OrderedDict
 from urllib import response
 from flask import Flask, render_template, Response, request
-from flask_cors import CORS
 from PIL import ImageFile
 
 import click
@@ -29,10 +28,6 @@ app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 thread_lock = threading.Lock()
-
-CORS(app)
-# This necessary for javascript to access a telemetry link without opening it:
-# https://stackoverflow.com/questions/22181384/javascript-no-access-control-allow-origin-header-is-present-on-the-requested
 
 allowed_ext = None
 # app_address: the app's address on the Internet
