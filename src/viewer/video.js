@@ -1,5 +1,6 @@
 import axios from 'axios';
 import React from 'react';
+import Alert from 'react-bootstrap/Alert';
 import {createRoot} from 'react-dom/client';
 import {syntaxHighlight} from '../utils';
 import PropTypes from 'prop-types';
@@ -97,12 +98,12 @@ class VideoViewer extends React.Component {
           console.error(error);
           this.setState({
             jsonHTML: (
-              <div className="alert alert-danger my-2" role="alert" style={{wordBreak: 'break-word'}}>
+              <Alert variant='danger'>
                 Unable to fetch information from media <strong style={{wordBreak: 'break-all'}}>
                   {this.state.mediaFilename}
                 </strong>:
                 <br />{error.response.data}
-              </div>
+              </Alert>
             ),
             mediaInfo: false
           });

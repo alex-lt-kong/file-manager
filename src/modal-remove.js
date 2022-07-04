@@ -1,12 +1,16 @@
 import React from 'react';
 import axios from 'axios';
+import Alert from 'react-bootstrap/Alert';
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
+import PropTypes from 'prop-types';
+import Accordion from 'react-bootstrap/Accordion';
 
 class ModalRemove extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      appAddress: props.appAddress,
-      dialogueShouldClose: props.dialogueShouldClose,
+      show: props.show,
       fileInfo: props.fileInfo,
       refreshFileList: props.refreshFileList,
       responseMessage: null
@@ -15,11 +19,14 @@ class ModalRemove extends React.Component {
     this.handleSubmitClick = this.handleSubmitClick.bind(this);
   }
 
-  componentDidMount() {
-    $(this.modal).modal('show');
-    window.onpopstate = e => {
-      this.handleCloseClick();
-    };
+  componentDidUpdate(prevProps) {
+    console.log(`componentDidUpdate() fired!`);
+    console.log(`prevProps.show == ${prevProps.show}, this.props.show == ${this.props.show}`);
+    if (prevProps.show !== this.props.show) {
+      this.setState({
+        show: this.props.show
+      });
+    }
   }
 
   handleSubmitClick() {
@@ -44,86 +51,103 @@ class ModalRemove extends React.Component {
           console.log(error);
           this.setState({
             responseMessage: (
-              <div className="alert alert-danger my-2" role="alert" style={{wordBreak: 'break-word'}}>
-                Unable to remove <strong style={{wordBreak: 'break-all'}}>{this.state.fileInfo.filename}</strong>:<br />{error.response.data}
-              </div>
+              <Alert key='danger' className="my-2" style={{wordBreak: 'break-word'}}>
+                Unable to remove <strong style={{wordBreak: 'break-all'}}>
+                  {this.state.fileInfo.filename}
+                </strong>:<br />{error.response.data}
+              </Alert>
             )
           });
         });
   }
 
   handleCloseClick() {
-    $(this.modal).modal('hide');
-    if (this.state.dialogueShouldClose != null) {
-      this.state.dialogueShouldClose();
-    }
-    /* When we want to close it, we need to do two things:
-      1. we set hide to the modal within this component;
-      2. we need to call a callback function to notify the parent component that the children component wants itself to be closed.
-      We canNOT only do the 1st thing; otherwise the modal dialogue will be hidden, but it is not destroyed.
-    */
+    console.log(`handleCloseClick() fired`);
+    this.setState({
+      show: false
+    }, () => {
+      console.log(this.state.show);
+    });
   }
 
   render() {
-    if (this.state.show === false) {
-      return null;
-    }
-
     return (
-      <div className="modal fade" ref={modal=> this.modal = modal} role="dialog" data-bs-backdrop="static" 
-        aria-labelledby="modal-remove-file-title" aria-hidden="true">
-        {/* Always set data-bs-backdrop="static" so clients can only close the dialogue with the close button,
-                so the proper close methods will always be called.  */}
-        <div className="modal-dialog modal-dialog-scrollable" role="document">
-        <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="modal-remove-file-title" >Remove File</h5>
-            </div>
-            <div className="modal-body">
-              <div className="mb-3">
-                <span className="form-label" style={{ wordBreak: "break-all" }}>
-                Remove file <strong>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong>?
-                </span>
-                {this.state.responseMessage}
-                <div className="accordion my-2" id="accordionRemove">
-                  <div className="accordion-item">
-                    <h2 className="accordion-header" id="headingRemove">
-                      <button className="accordion-button collapsed" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#collapseRemoveOne" aria-expanded="false" aria-controls="collapseRemoveOne">
-                      What's Happening Under the Hood?
-                      </button>
-                      </h2>
-                      <div id="collapseRemoveOne" className="accordion-collapse collapse" aria-labelledby="headingRemove" data-bs-parent="#accordionRemove">
-                      <div className="accordion-body">
-                        <ol>
-                          <li>The server returns an error message if <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount" target="_blank">
-                          os.path.ismount()</a> returns true;</li>
-                          <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.unlink" target="_blank">
-                          os.unlink()</a> if <a href="https://docs.python.org/3/library/os.path.html#os.path.islink" target="_blank">
-                          os.path.islink()</a> returns true;</li>
-                          <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.remove" target="_blank">
-                          os.remove()</a> if <a href="https://docs.python.org/3/library/os.path.html#os.path.isfile" target="_blank">
-                          os.path.isfile()</a> returns true;</li>
-                          <li>The server calls <a href="https://docs.python.org/3/library/os.html#os.rmdir" target="_blank">
-                          shutil.rmtree()</a> if <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" target="_blank">
-                          os.path.isdir()</a> returns true;</li>
-                          <li>The serve returns an error if all of the above conditions are not met.</li>
-                        </ol>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={this.handleCloseClick}>No</button>
-              <button type="button" className="btn btn-primary" onClick={this.handleSubmitClick}>YES!</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Modal show={this.state.show} onHide={this.handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Remove File</Modal.Title>
+        </Modal.Header>
+        <Modal.Body md={3}>
+          <span className="form-label" style={{wordBreak: 'break-all'}}>
+          Remove file <strong>{this.state.fileInfo.asset_dir + this.state.fileInfo.filename}</strong>?
+          </span>
+          {this.state.responseMessage}
+          <Accordion className="my-2">
+            <Accordion.Item eventKey="0">
+              <Accordion.Header>What&apos;s Happening Under the Hood?</Accordion.Header>
+              <Accordion.Body>
+                <ol>
+                  <li>
+                    The server returns an error message if&nbsp;
+                    <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount"
+                      target="_blank" rel="noreferrer">
+                      os.path.ismount()
+                    </a>&nbsp;
+                    returns true;
+                  </li>
+                  <li>
+                    The server calls&nbsp;
+                    <a href="https://docs.python.org/3/library/os.html#os.unlink" target="_blank" rel="noreferrer">
+                      os.unlink()
+                    </a>&nbsp;
+                    if&nbsp;
+                    <a href="https://docs.python.org/3/library/os.path.html#os.path.islink"
+                      target="_blank" rel="noreferrer">
+                      os.path.islink()
+                    </a>&nbsp;
+                    returns true;
+                  </li>
+                  <li>
+                    The server calls&nbsp;
+                    <a href="https://docs.python.org/3/library/os.html#os.remove" target="_blank">
+                      os.remove()
+                    </a>&nbsp;
+                    if&nbsp;
+                    <a href="https://docs.python.org/3/library/os.path.html#os.path.isfile" target="_blank">
+                      os.path.isfile()
+                    </a>&nbsp;
+                    returns true;
+                  </li>
+                  <li>
+                    The server calls&nbsp;
+                    <a href="https://docs.python.org/3/library/os.html#os.rmdir" target="_blank">
+                      shutil.rmtree()
+                    </a>&nbsp;
+                    if&nbsp;
+                    <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" target="_blank">
+                      os.path.isdir()
+                    </a>&nbsp;
+                    returns true;
+                  </li>
+                  <li>The serve returns an error if all of the above conditions are not met.</li>
+                </ol>
+              </Accordion.Body>
+            </Accordion.Item>
+          </Accordion>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={this.handleCloseClick}>No</Button>
+          <Button variant="primary" onClick={this.handleSubmitClick}>YES!</Button>
+        </Modal.Footer>
+      </Modal>
     );
   }
 }
+
+ModalRemove.propTypes = {
+  show: PropTypes.bool,
+  fileInfo: PropTypes.object,
+  refreshFileList: PropTypes.func
+};
+
 
 export {ModalRemove};

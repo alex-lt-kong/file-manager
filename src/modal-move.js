@@ -17,7 +17,7 @@ class ModalMove extends React.Component {
     };
     this.handleCloseClick = this.handleCloseClick.bind(this);
     this.handleRegularizationClick = this.handleRegularizationClick.bind(this);
-    this.handleSubmitClick = this.handleSubmitClick.bind(this);    
+    this.handleSubmitClick = this.handleSubmitClick.bind(this);
     this.onFileDirChange = this.onFileDirChange.bind(this);
     this.onFileNameChange = this.onFileNameChange.bind(this);
   }

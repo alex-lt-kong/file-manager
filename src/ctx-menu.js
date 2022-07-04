@@ -42,14 +42,20 @@ class ContextMenu extends React.Component {
     this.forceUpdate();
   }
 
-  onRemoveButtonClick(event) {
+  onRemoveButtonClick() {
+    // Note this funny design: we firstly set show to false and then flip it to true, so that we make sure
+    // React will know this is an update.
     this.setState({
       modalDialogue: (
-        <ModalRemove fileInfo={this.state.fileInfo} appAddress='.'
-          dialogueShouldClose={this.dialogueShouldClose} refreshFileList={this.state.refreshFileList} />
+        <ModalRemove fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList} show={false} />
       )
+    }, ()=> {
+      this.setState({
+        modalDialogue: (
+          <ModalRemove fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList} show={true} />
+        )
+      });
     });
-    this.forceUpdate();
   }
 
 
@@ -116,10 +122,9 @@ class ContextMenu extends React.Component {
       </a>
     ));
     ContextMenuToggle.displayName = 'ContextMenuToggle';
-    console.log(this.state.fileInfo.extension);
-    console.log(['.mp4', '.mkv', '.avi'].includes(this.state.fileInfo.extension));
     return (
       <>
+        {this.state.modalDialogue}
         <Dropdown>
           <Dropdown.Toggle as={ContextMenuToggle} />
           <Dropdown.Menu>
@@ -146,7 +151,6 @@ class ContextMenu extends React.Component {
             }
           </Dropdown.Menu>
         </Dropdown>
-        {this.state.modalDialogue}
       </>
     );
   }
