@@ -9,10 +9,10 @@
                         ".wma", ".wmv", ".xls", ".xlsx", ".xml", ".zip"],
         "direct_open_extensions": [".bmp", ".gif", ".jpg", ".jpeg", ".log-does-not-work", ".mp3", ".mp4", ".pdf", ".png", ".srt", ".txt", ".vtt-does-not-work", ".webm", ".webp"],
         "external_script_dir": "https://localhost//resources",
-        "files_statistics": "/bin/file-manager/resources/files.json",
+        "files_statistics": "/var/fm/stats.json",
         "log_path": "/var/log/file-manager.log",
-        "root_dir": "/bin/file-manager/resources/files",
-        "thumbnails_path": "/bin/file-manager/resources/thumbnails",
+        "root_dir": "/var/fm/files",
+        "thumbnails_path": "/var/fm/thumbnails",
         "video_extensions": [".mp4", ".wmv", ".webm", ".avi", ".mkv", ".flv", ".mov", ".rm", ".rmvb", ".mpg", ".mpeg", ".m4v", ".f4v", ".3gp", ".asf"],
         "image_extensions": [".jpg", ".jpeg", ".tiff", ".tif", ".gif", ".bmp", ".png", ".webp"]
     },
