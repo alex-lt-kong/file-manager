@@ -2,7 +2,7 @@ import {ModalMove} from './modal/move';
 import {ModalRemove} from './modal/remove';
 import {ModalExtractSubtitles} from './modal-extract-subtitles';
 import {ModalMediaMetadata} from './modal/media-metadata';
-import {ModalTranscode} from './modal-transcode';
+import {ModalTranscode} from './modal/transcode';
 import Dropdown from 'react-bootstrap/Dropdown';
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -91,7 +91,6 @@ class ContextMenu extends React.Component {
   }
 
   onMoveButtonClick() {
-    console.log(`onMoveButtonClick()`);
     this.setState({
       modalDialogue: null
     }, ()=> {
@@ -105,14 +104,14 @@ class ContextMenu extends React.Component {
 
   onTranscodeButtonClick() {
     this.setState({
-      modalDialogue: (<ModalTranscode
-        fileInfo={this.state.fileInfo}
-        dialogueShouldClose={this.dialogueShouldClose}
-        refreshFileList={this.state.refreshFileList} />)
-      // By adding a key attribute, Modal will be created each time, so we
-      // can pass different show attribute to it.
+      modalDialogue: null
+    }, ()=> {
+      this.setState({
+        modalDialogue: (
+          <ModalTranscode fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList} show={true} />
+        )
+      });
     });
-    this.forceUpdate();
   }
 
   render() {
@@ -142,7 +141,7 @@ class ContextMenu extends React.Component {
               (this.state.fileInfo.file_type === 1 && // 1 means it is an ordinary file
                 [
                   '.3gp', '.asf', '.avi', '.flv', '.m4v', '.mkv', '.mov', 'mp2', '.mp4', 'mpg', 'mpg', 'mpeg',
-                  '.rm', '.wmv', '.rmvb', '.srt'
+                  '.rm', '.webm', '.wmv', '.rmvb', '.srt'
                 ].includes(
                     this.state.fileInfo.extension.toLowerCase())
               ) ?

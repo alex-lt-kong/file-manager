@@ -42,6 +42,7 @@ class TextViewer extends React.Component {
       c: 'c',
       cpp: 'cpp',
       cs: 'csharp',
+      h: 'c',
       ini: 'ini',
       js: 'javascript',
       json: 'json',
@@ -49,6 +50,7 @@ class TextViewer extends React.Component {
       php: 'php',
       ps1: 'powershell',
       py: 'python',
+      pyi: 'python',
       sql: 'sql',
       xml: 'xml'
     };
