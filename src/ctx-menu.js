@@ -1,5 +1,5 @@
-import {ModalMove} from './modal-move';
-import {ModalRemove} from './modal-remove';
+import {ModalMove} from './modal/move';
+import {ModalRemove} from './modal/remove';
 import {ModalExtractSubtitles} from './modal-extract-subtitles';
 import {ModalMediaInfo} from './modal-media-info';
 import {ModalTranscode} from './modal-transcode';
@@ -43,12 +43,10 @@ class ContextMenu extends React.Component {
   }
 
   onRemoveButtonClick() {
-    // Note this funny design: we firstly set show to false and then flip it to true, so that we make sure
-    // React will know this is an update.
+    // Note this funny design: we firstly set modalDialogue to NULL and then, in its callback, we set modalDialogue
+    // to a component, so that we make sure React knows this update.
     this.setState({
-      modalDialogue: (
-        <ModalRemove fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList} show={false} />
-      )
+      modalDialogue: null
     }, ()=> {
       this.setState({
         modalDialogue: (
@@ -68,7 +66,7 @@ class ContextMenu extends React.Component {
     window.open(url);
   }
 
-  onExtractSubtitlesButtonClick(event) {
+  onExtractSubtitlesButtonClick() {
     this.setState({
       modalDialogue: (<ModalExtractSubtitles
         assetDir={this.state.fileInfo.asset_dir}
@@ -79,7 +77,7 @@ class ContextMenu extends React.Component {
     this.forceUpdate();
   }
 
-  onMediaInfoButtonClick(event) {
+  onMediaInfoButtonClick() {
     this.setState({
       modalDialogue: (<ModalMediaInfo
         assetDir={this.state.fileInfo.asset_dir}
@@ -89,17 +87,20 @@ class ContextMenu extends React.Component {
     this.forceUpdate();
   }
 
-  onMoveButtonClick(event) {
+  onMoveButtonClick() {
+    console.log(`onMoveButtonClick()`);
     this.setState({
-      modalDialogue: (
-        <ModalMove dialogueShouldClose={this.dialogueShouldClose}
-          fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList}/>
-      )
+      modalDialogue: null
+    }, ()=> {
+      this.setState({
+        modalDialogue: (
+          <ModalMove fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList} show={true} />
+        )
+      });
     });
-    this.forceUpdate();
   }
 
-  onTranscodeButtonClick(event) {
+  onTranscodeButtonClick() {
     this.setState({
       modalDialogue: (<ModalTranscode
         fileInfo={this.state.fileInfo}

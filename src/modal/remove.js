@@ -20,8 +20,6 @@ class ModalRemove extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    console.log(`componentDidUpdate() fired!`);
-    console.log(`prevProps.show == ${prevProps.show}, this.props.show == ${this.props.show}`);
     if (prevProps.show !== this.props.show) {
       this.setState({
         show: this.props.show
@@ -62,18 +60,15 @@ class ModalRemove extends React.Component {
   }
 
   handleCloseClick() {
-    console.log(`handleCloseClick() fired`);
     this.setState({
       show: false
-    }, () => {
-      console.log(this.state.show);
     });
   }
 
   render() {
     return (
-      <Modal show={this.state.show} onHide={this.handleClose}>
-        <Modal.Header closeButton>
+      <Modal show={this.state.show}>
+        <Modal.Header>
           <Modal.Title>Remove File</Modal.Title>
         </Modal.Header>
         <Modal.Body md={3}>
@@ -91,42 +86,45 @@ class ModalRemove extends React.Component {
                     <a href="https://docs.python.org/3/library/os.path.html#os.path.ismount"
                       target="_blank" rel="noreferrer">
                       os.path.ismount()
-                    </a>&nbsp;
-                    returns true;
+                    </a>
+                    &nbsp;returns true;
                   </li>
                   <li>
                     The server calls&nbsp;
                     <a href="https://docs.python.org/3/library/os.html#os.unlink" target="_blank" rel="noreferrer">
                       os.unlink()
-                    </a>&nbsp;
-                    if&nbsp;
+                    </a>
+                    &nbsp;if&nbsp;
                     <a href="https://docs.python.org/3/library/os.path.html#os.path.islink"
                       target="_blank" rel="noreferrer">
                       os.path.islink()
-                    </a>&nbsp;
-                    returns true;
+                    </a>
+                    &nbsp;returns true;
                   </li>
                   <li>
                     The server calls&nbsp;
-                    <a href="https://docs.python.org/3/library/os.html#os.remove" target="_blank">
+                    <a href="https://docs.python.org/3/library/os.html#os.remove" target="_blank" rel="noreferrer">
                       os.remove()
-                    </a>&nbsp;
-                    if&nbsp;
-                    <a href="https://docs.python.org/3/library/os.path.html#os.path.isfile" target="_blank">
+                    </a>
+                    &nbsp;if&nbsp;
+                    <a href="https://docs.python.org/3/library/os.path.html#os.path.isfile" target="_blank"
+                      rel="noreferrer">
                       os.path.isfile()
-                    </a>&nbsp;
-                    returns true;
+                    </a>
+                    &nbsp;returns true;
                   </li>
                   <li>
                     The server calls&nbsp;
-                    <a href="https://docs.python.org/3/library/os.html#os.rmdir" target="_blank">
+                    <a href="https://docs.python.org/3/library/os.html#os.rmdir" target="_blank"
+                      rel="noreferrer">
                       shutil.rmtree()
-                    </a>&nbsp;
-                    if&nbsp;
-                    <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" target="_blank">
+                    </a>
+                    &nbsp;if&nbsp;
+                    <a href="https://docs.python.org/3/library/shutil.html#shutil.rmtree" target="_blank"
+                      rel="noreferrer">
                       os.path.isdir()
-                    </a>&nbsp;
-                    returns true;
+                    </a>
+                    &nbsp;returns true;
                   </li>
                   <li>The serve returns an error if all of the above conditions are not met.</li>
                 </ol>

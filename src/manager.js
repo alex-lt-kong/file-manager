@@ -200,10 +200,10 @@ class FileManager extends React.Component {
                                '&filename=' + encodeURIComponent(value));
       } else if (this.state.fileInfo.content[value].media_type === 2) {
         const params = {
-          asset_dir: encodeURIComponent(this.state.fileInfo.metadata.asset_dir),
-          filename: encodeURIComponent(value)
+          asset_dir: this.state.fileInfo.metadata.asset_dir,
+          filename: value
         };
-        const url = `./?page=viewer-video&params=${JSON.stringify(params)}`;
+        const url = `./?page=viewer-video&params=${encodeURIComponent(JSON.stringify(params))}`;
         window.open(url);
       }
     } else {
