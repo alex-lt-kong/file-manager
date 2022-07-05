@@ -3,6 +3,7 @@ import React from 'react';
 import Alert from 'react-bootstrap/Alert';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
+import Form from 'react-bootstrap/Form';
 import PropTypes from 'prop-types';
 import Accordion from 'react-bootstrap/Accordion';
 
@@ -64,11 +65,11 @@ class ModalMove extends React.Component {
           console.log(error);
           this.setState({
             responseMessage: (
-              <div className="alert alert-danger my-2" role="alert" style={{wordBreak: 'break-word'}}>
+              <Alert variant="danger" my={2} style={{wordBreak: 'break-word'}}>
                 Unable to move file from <strong style={{wordBreak: 'break-all'}}>{payload.get('old_filepath')}
                 </strong> to <strong style={{wordBreak: 'break-all'}}>{payload.get('new_filepath')}</strong>:
                 <br />{error.response.data}
-              </div>
+              </Alert>
             )
           });
         });
@@ -144,16 +145,16 @@ class ModalMove extends React.Component {
               {this.state.fileInfo.asset_dir + this.state.fileInfo.filename}
             </strong> to:
           </label>
-          <div className="input-group mb-1">
-            <span className="input-group-text font-monospace">Directory</span>
+          <Form.Group className="mb-1">
+            <Form.Label>Directory</Form.Label>
             <textarea type="text" className="form-control" rows="2" style={{wordBreak: 'break-all'}}
               placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
-          </div>
-          <div className="input-group mb-3">
-            <span className="input-group-text font-monospace">Filename&nbsp;</span>
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Filename&nbsp;</Form.Label>
             <textarea type="text" className="form-control" rows="2" style={{wordBreak: 'break-all'}}
               placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
-          </div>
+          </Form.Group>
           {this.state.responseMessage}
           <Accordion className="my-2">
             <Accordion.Item eventKey="0">

@@ -19,14 +19,6 @@ class ModalRemove extends React.Component {
     this.handleSubmitClick = this.handleSubmitClick.bind(this);
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.show !== this.props.show) {
-      this.setState({
-        show: this.props.show
-      });
-    }
-  }
-
   handleSubmitClick() {
     this.postDataToServer();
   }

@@ -113,7 +113,7 @@ def get_server_info():
     return flask.jsonify(info)
 
 
-@app.route('/create-folder/', methods=['POST'])
+@app.route('/make-dir/', methods=['POST'])
 def create_folder():
 
     if 'asset_dir' not in request.form or 'folder_name' not in request.form:
@@ -123,7 +123,10 @@ def create_folder():
 
     try:
         folder_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:], folder_name)
+        assert folder_path is not None
     except werkzeug.exceptions.NotFound:
+        return Response('Potential chroot escape', 400)
+    except AssertionError:
         return Response('Potential chroot escape', 400)
 
     if (os.path.isfile(folder_path) or os.path.isdir(folder_path) or

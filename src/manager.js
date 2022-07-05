@@ -2,7 +2,7 @@ import axios from 'axios';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {ContextMenu} from './ctx-menu.js';
-import {ModalMkdir} from './modal-mkdir.js';
+import {ModalMkdir} from './modal/mkdir.js';
 
 /**
  * Format bytes as human-readable text.
@@ -154,19 +154,15 @@ class FileManager extends React.Component {
 
   onNewFolderClick(event) {
     this.setState({
-      modalDialogue: (
-        <ModalMkdir assetDir={this.state.currentPath} appAddress='.'
-          refreshFileList={this.fileListShouldRefresh} dialogueShouldClose={this.dialogueShouldClose} />
-      )
-      // Tried many different solutions, a callback
-      // to destory the Modal is still the best way 
-      // to handle the close() event.
+      modalDialogue: null
+    }, () => {
+      console.log('onNewFolderClick()\'s callback fired!');
+      this.setState({
+        modalDialogue: (
+          <ModalMkdir assetDir={this.state.currentPath} refreshFileList={this.fileListShouldRefresh} show={true} />
+        )
+      });
     });
-    this.forceUpdate();
-    // A forceUpdate() is needed; otherwise, react.js won't know
-    // that a render() is needed since there isn't a state change.
-    // What if we make Modal a member of the state?
-    // Haven't tried!
   }
 
   onAddressBarChange(event) {
@@ -194,7 +190,6 @@ class FileManager extends React.Component {
       No, you canNOT set currentPath here--sometimes tthe fetchDataFromServer() will fail.
       In this situtaion, we want to keep the original currentPath. */
     } else if (this.state.fileInfo.content[value].file_type === 1) {
-      console.log('ordinary file [' + value + '] clicked');
       if (this.state.fileInfo.content[value].media_type < 2) {
         window.open('./download/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
                                '&filename=' + encodeURIComponent(value));

@@ -64,7 +64,7 @@ class TextViewer extends React.Component {
     return (
       <SyntaxHighlighter language={this.detectLanguageFromFilename()} style={stackoverflowLight}
         showLineNumbers={true} showInlineLineNumbers={false} wrapLongLines={true}>
-        {this.state.plainTextContent === null ? 'Error' : this.state.plainTextContent}
+        {this.state.plainTextContent === null ? '' : this.state.plainTextContent}
       </SyntaxHighlighter>
     );
   }
