@@ -1,7 +1,7 @@
 import {ModalMove} from './modal/move';
 import {ModalRemove} from './modal/remove';
 import {ModalExtractSubtitles} from './modal-extract-subtitles';
-import {ModalMediaInfo} from './modal-media-info';
+import {ModalMediaMetadata} from './modal/media-metadata';
 import {ModalTranscode} from './modal-transcode';
 import Dropdown from 'react-bootstrap/Dropdown';
 import React from 'react';
@@ -21,7 +21,7 @@ class ContextMenu extends React.Component {
     this.onViewTextButtonClick = this.onViewTextButtonClick.bind(this);
     this.onRemoveButtonClick = this.onRemoveButtonClick.bind(this);
     this.onTranscodeButtonClick = this.onTranscodeButtonClick.bind(this);
-    this.onMediaInfoButtonClick = this.onMediaInfoButtonClick.bind(this);
+    this.onMediaMetadataButtonClick = this.onMediaMetadataButtonClick.bind(this);
   }
 
   componentDidUpdate(prevProps) {
@@ -77,14 +77,17 @@ class ContextMenu extends React.Component {
     this.forceUpdate();
   }
 
-  onMediaInfoButtonClick() {
+  onMediaMetadataButtonClick() {
     this.setState({
-      modalDialogue: (<ModalMediaInfo
-        assetDir={this.state.fileInfo.asset_dir}
-        dialogueShouldClose={this.dialogueShouldClose}
-        mediaFilename={this.state.fileInfo.filename} />)
+      modalDialogue: null
+    }, ()=> {
+      this.setState({
+        modalDialogue: (
+          <ModalMediaMetadata assetDir={this.state.fileInfo.asset_dir}
+            mediaFilename={this.state.fileInfo.filename} show={true}/>
+        )
+      });
     });
-    this.forceUpdate();
   }
 
   onMoveButtonClick() {
@@ -145,7 +148,7 @@ class ContextMenu extends React.Component {
               ) ?
               <>
                 <Dropdown.Divider />
-                <Dropdown.Item onClick={this.onMediaInfoButtonClick}>Media Info</Dropdown.Item>
+                <Dropdown.Item onClick={this.onMediaMetadataButtonClick}>Media Metadata</Dropdown.Item>
                 <Dropdown.Item onClick={this.onTranscodeButtonClick}>Transcode to WebM</Dropdown.Item>
                 <Dropdown.Item onClick={this.onExtractSubtitlesButtonClick}>Extract Subtitles</Dropdown.Item>
               </> : null
