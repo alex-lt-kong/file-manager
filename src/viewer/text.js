@@ -23,9 +23,19 @@ class TextViewer extends React.Component {
       `&filename=${encodeURIComponent(this.state.params.filename)}&as_attachment=0`;
     axios.get(fileUrl)
         .then((response) => {
-          this.setState({
-            plainTextContent: response.data
-          });
+          if (typeof response.data === 'string' || response.data instanceof String) {
+            this.setState({
+              plainTextContent: response.data
+            });
+          } else if (typeof response.data === 'object' ) {
+            this.setState({
+              plainTextContent: JSON.stringify(response.data)
+            });
+          } else {
+            this.setState({
+              plainTextContent: `typeof response.data === ${typeof response.data}, its content is:\n${response.data}`
+            });
+          }
         })
         .catch((error) => {
           console.error(error);

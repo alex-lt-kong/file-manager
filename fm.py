@@ -950,7 +950,7 @@ def main(debug):
 
     waitress.serve(app, host=settings['flask']['interface'], port=local_port,
           max_request_body_size=settings['flask']['max_upload_size'],
-          log_socket_errors=False, threads=8)
+          log_socket_errors=False, threads=16)
     # You need the max_request_body_size to accept large upload file...
     # The default value of max_request_body_size is 1GB
     # serve() will not explicit raise an exception is this parameter is NOT

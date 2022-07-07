@@ -6,6 +6,8 @@ import Modal from 'react-bootstrap/Modal';
 import Form from 'react-bootstrap/Form';
 import PropTypes from 'prop-types';
 import Accordion from 'react-bootstrap/Accordion';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
 
 class ModalMove extends React.Component {
   constructor(props) {
@@ -145,15 +147,19 @@ class ModalMove extends React.Component {
               {this.state.fileInfo.asset_dir + this.state.fileInfo.filename}
             </strong> to:
           </label>
-          <Form.Group className="mb-1">
-            <Form.Label>Directory</Form.Label>
-            <textarea type="text" className="form-control" rows="2" style={{wordBreak: 'break-all'}}
-              placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
+          <Form.Group as={Row} className="mb-1">
+            <Form.Label column sm={2}>Directory</Form.Label>
+            <Col sm={10}>
+              <textarea type="text" className="form-control" rows="2" style={{wordBreak: 'break-all'}}
+                placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
+            </Col>
           </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Filename&nbsp;</Form.Label>
-            <textarea type="text" className="form-control" rows="2" style={{wordBreak: 'break-all'}}
-              placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
+          <Form.Group as={Row} className="mb-3">
+            <Form.Label column sm={2}>Filename&nbsp;</Form.Label>
+            <Col sm={10}>
+              <textarea type="text" className="form-control" rows="2" style={{wordBreak: 'break-all'}}
+                placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
+            </Col>
           </Form.Group>
           {this.state.responseMessage}
           <Accordion className="my-2">
