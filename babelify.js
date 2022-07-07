@@ -2,7 +2,7 @@ const fs = require('fs');
 const browserify = require('browserify');
 
 const srcList = [
-  'utils.js', 'ctx-menu.js', 'modal-extract-subtitles.js',
+  'utils.js', 'ctx-menu.js', './modal/extract-subtitles.js',
   './modal/mkdir.js', './modal/move.js', './modal/remove.js',
   './modal/transcode.js', './modal/media-metadata.js',
   'offcanvas-server-info.js', 'manager.js', './viewer/video.js', './viewer/text.js'

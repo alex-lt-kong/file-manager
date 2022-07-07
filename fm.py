@@ -399,7 +399,7 @@ def extract_subtitles_thread(video_path: str, stream_no: int):
         with open(video_path + '_log.txt', 'w+') as f:
             f.write(f'===== return_code =====\n{p.returncode}\n\n\n')
             f.write(f'===== stdout (loglevel = {loglevel}) =====\n'
-                    '{stderr.decode("utf-8")}')
+                    f'{stderr.decode("utf-8")}')
 
 
 @app.route('/extract-subtitles/', methods=['POST'])

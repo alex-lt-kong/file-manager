@@ -1,6 +1,6 @@
 import {ModalMove} from './modal/move';
 import {ModalRemove} from './modal/remove';
-import {ModalExtractSubtitles} from './modal-extract-subtitles';
+import {ModalExtractSubtitles} from './modal/extract-subtitles';
 import {ModalMediaMetadata} from './modal/media-metadata';
 import {ModalTranscode} from './modal/transcode';
 import Dropdown from 'react-bootstrap/Dropdown';
@@ -68,13 +68,16 @@ class ContextMenu extends React.Component {
 
   onExtractSubtitlesButtonClick() {
     this.setState({
-      modalDialogue: (<ModalExtractSubtitles
-        assetDir={this.state.fileInfo.asset_dir}
-        dialogueShouldClose={this.dialogueShouldClose}
-        videoName={this.state.fileInfo.filename}
-        refreshFileList={this.state.refreshFileList} />)
+      modalDialogue: null
+    }, ()=> {
+      console.log(`onExtractSubtitlesButtonClick()`);
+      this.setState({
+        modalDialogue: (
+          <ModalExtractSubtitles assetDir={this.state.fileInfo.asset_dir} show={true}
+            videoName={this.state.fileInfo.filename} refreshFileList={this.state.refreshFileList} />
+        )
+      });
     });
-    this.forceUpdate();
   }
 
   onMediaMetadataButtonClick() {
