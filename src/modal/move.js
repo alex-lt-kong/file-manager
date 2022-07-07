@@ -148,15 +148,15 @@ class ModalMove extends React.Component {
             </strong> to:
           </label>
           <Form.Group as={Row} className="mb-1">
-            <Form.Label column sm={2}>Directory</Form.Label>
-            <Col sm={10}>
+            <Form.Label column xs={3}>Directory</Form.Label>
+            <Col xs={9}>
               <textarea type="text" className="form-control" rows="2" style={{wordBreak: 'break-all'}}
                 placeholder="Input new filename" value={this.state.newFileDir} onChange={this.onFileDirChange} />
             </Col>
           </Form.Group>
           <Form.Group as={Row} className="mb-3">
-            <Form.Label column sm={2}>Filename&nbsp;</Form.Label>
-            <Col sm={10}>
+            <Form.Label column xs={3}>Filename&nbsp;</Form.Label>
+            <Col xs={9}>
               <textarea type="text" className="form-control" rows="2" style={{wordBreak: 'break-all'}}
                 placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
             </Col>
