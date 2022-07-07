@@ -73,9 +73,10 @@ class FileManager extends React.Component {
   }
 
   onFileChange(event) {
+    const maxUploadFileSize = 1024 * 1024 * 1024 * 4;
     for (let i = 0; i < event.target.files.length; i++) {
-      if (event.target.files[0].size > 2048000000) {
-        alert('The file to be uploaded canNOT be larger than 2048 MB');
+      if (event.target.files[0].size > maxUploadFileSize) {
+        alert(`The file to be uploaded canNOT be larger than ${maxUploadFileSize / 1024 / 1024} MB`);
         return;
       };
       this.setState({

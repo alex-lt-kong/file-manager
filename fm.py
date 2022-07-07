@@ -953,7 +953,7 @@ def main(debug):
           log_socket_errors=False, threads=16)
     # You need the max_request_body_size to accept large upload file...
     # The default value of max_request_body_size is 1GB
-    # serve() will not explicit raise an exception is this parameter is NOT
+    # serve() will not explicitly raise an exception if this parameter is NOT
     # set but it will close the connection...
 
     # log_socket_errors is to avoid logging errors such as this one:

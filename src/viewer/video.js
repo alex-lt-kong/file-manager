@@ -9,6 +9,8 @@ import Accordion from 'react-bootstrap/Accordion';
 import Button from 'react-bootstrap/Button';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
+import Form from 'react-bootstrap/Form';
+import InputGroup from 'react-bootstrap/InputGroup'
 
 class VideoViewer extends React.Component {
   constructor(props) {
@@ -17,9 +19,9 @@ class VideoViewer extends React.Component {
       params: props.params,
       assetDir: props.params.asset_dir,
       jsonHTML: null,
-      subtitlesURL: `../download/?asset_dir=${encodeURIComponent(props.assetDir)}&` +
-        `filename=${encodeURIComponent(props.videoName)}.vtt`,
       videoName: props.params.filename,
+      subtitlesURL: `../download/?asset_dir=${encodeURIComponent(props.params.asset_dir)}&` +
+        `filename=${encodeURIComponent(props.params.filename)}.vtt`,
       videoPlaybackRate: 1,
       username: null,
       fileStats: {}
@@ -37,7 +39,6 @@ class VideoViewer extends React.Component {
   }
 
   onPlaybackSpeedInputChange(event) {
-    console.log('onPlaybackSpeedInputChange');
     if (isNaN(parseFloat(event.target.value)) || parseFloat(event.target.value) <= 0.2 ||
         parseFloat(event.target.value) > 10) {
       return;
@@ -162,28 +163,27 @@ class VideoViewer extends React.Component {
               Your browser does not support the video tag.
             </video>
 
-            <Container fluid px={0}>
+            <Container fluid className="px-0">
               <Row>
                 <Col xl={9}>
-                  <div className="input-group">
-                    <span className="input-group-text font-monospace">Subs&nbsp;</span>
-                    <textarea className="form-control" aria-label="With textarea" rows={screen.width > 1000 ? 1 : 3}
-                      style={{fontSize: '1em', wordBreak: 'break-all'}}
-                      onChange={this.onSubtitlesURLTextareaChange} value={this.state.subtitlesURL}></textarea>
-                  </div>
+                  <InputGroup>
+                    <InputGroup.Text className="font-monospace">Subs&nbsp;</InputGroup.Text>
+                    <Form.Control type="text" placeholder="subtitles url" value={this.state.subtitlesURL}
+                      onChange={this.onSubtitlesURLTextareaChange} />
+                  </InputGroup>
                 </Col>
                 <Col xl={3}>
-                  <div className="input-group">
-                    <span className="input-group-text font-monospace">Speed</span>
-                    <input type="text" className="form-control" placeholder="Playback speed"
-                      onChange={this.onPlaybackSpeedInputChange} value={this.state.videoPlaybackRate.toFixed(1)} />
+                  <InputGroup>
+                    <InputGroup.Text className="font-monospace">Speed</InputGroup.Text>
+                    <Form.Control type="text" placeholder="Playback speed"
+                      value={this.state.videoPlaybackRate.toFixed(1)} onChange={this.onPlaybackSpeedInputChange} />
                     <Button onClick={this.onPlaySlowerButtonClick}>
                       <i className="bi bi-chevron-double-left"></i>
                     </Button>
                     <Button onClick={this.onPlayFasterButtonClick}>
                       <i className="bi bi-chevron-double-right"></i>
                     </Button>
-                  </div>
+                  </InputGroup>
                 </Col>
               </Row>
             </Container>
