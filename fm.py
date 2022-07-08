@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 from collections import OrderedDict
-from urllib import response
 from flask import Flask, render_template, Response, request
 from typing import Dict, List, Union, Any
 from PIL import ImageFile
@@ -37,19 +36,19 @@ app_address = ''
 app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager'
 debug_mode = False
-direct_open_ext = None
+direct_open_ext: List[str] = []
 emailer = None
 external_script_dir = ''
 file_stat: Dict[str, Any]
 fs_path = ''
-image_extensions = None
+image_extensions: List[str] = []
 log_path = ''
 root_dir = ''
 stop_signal = False
 settings_path = os.path.join(app_dir, 'settings.json')
 thumbnails_path = ''
 thread_counter = 0
-video_extensions = None
+video_extensions: List[str] = []
 
 
 def get_file_id(path: str) -> str:
@@ -74,8 +73,7 @@ def get_file_id(path: str) -> str:
 @app.route('/get-server-info/', methods=['GET'])
 def get_server_info() -> Response:
 
-    info : Dict[str, Union[Dict[str, object], List[object]]]
-    info = {}
+    info: Dict[str, Any] = {}
     info['metadata'] = {}
     info['metadata']['timestamp'] = dt.datetime.now().strftime(
         "%Y-%m-%d %H:%M:%S")
@@ -158,15 +156,13 @@ def upload() -> Response:
     selected_files = flask.request.files.getlist("selected_files")
     for selected_file in selected_files:
         if selected_file.filename is None:
-            return Response('filename is empty', 400);
+            return Response('filename is empty', 400)
         basename, ext = os.path.splitext(selected_file.filename)
         if (ext.lower() not in allowed_ext):
             return Response(f'{ext} is not among the allowed extensions: '
                             f'{allowed_ext}', 400)
 
-
-        filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:],
-                                    selected_file.filename)
+        filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:], selected_file.filename)
         if filepath is None:
             return Response('Potential chroot escape', 400)
         # safe_join can prevent base directory escaping
@@ -241,7 +237,7 @@ def move() -> Response:
 
 
 @app.route('/remove/', methods=['POST'])
-def remove():
+def remove() -> Response:
 
     if ('filepath' not in request.form):
         return Response('filepath not specified', 400)
@@ -261,7 +257,7 @@ def remove():
             logging.info(f'Mountpoint [{real_filepath}] NOT removed')
             return Response(
                 (f'{filepath} is a mountpoint. The removal of mountpoints is '
-                 'disabled to prevent unexpected data loss'), 400)            
+                 'disabled to prevent unexpected data loss'), 400)
         elif os.path.islink(real_filepath):
             os.unlink(real_filepath)
             logging.debug(f'Symlink removed: [{real_filepath}]')
@@ -287,7 +283,7 @@ def remove():
 
 def video_transcoding_thread(input_path: str, output_path: str,
                              crf: int, resolution: int, audio_id: int,
-                             threads=0):
+                             threads: int = 0) -> None:
 
     start_at = dt.datetime.now()
 
@@ -365,7 +361,7 @@ def video_transcoding_thread(input_path: str, output_path: str,
         # for piping the output data to other programs.
 
 
-def raw_info_to_video_info(ri: Dict[str, object]) -> OrderedDict[str, object]:
+def raw_info_to_video_info(ri: Dict[str, Any]) -> OrderedDict[str, Any]:
 
     st = OrderedDict()
     # Having an OrderedDict() is not enough, you need to set
@@ -452,8 +448,7 @@ def get_media_info() -> Response:
     if asset_dir is None or media_filename is None:
         return Response('Parameters asset_dir or media_filename not specified', 400)
     try:
-        media_filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:],
-                                         media_filename)
+        media_filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:], media_filename)
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /;
         # otherwise safe_join will consider it a chroot escape attempt
@@ -491,7 +486,7 @@ def get_media_info() -> Response:
     # You canNOT simply return raw_info: it contains a lot of unexpected
     # sensitive information such as real filesystem path.
 
-    video_info = OrderedDict()
+    video_info: OrderedDict[str, Any] = OrderedDict()
     # Having an OrderedDict() is not enough, you need to set
     # app.config['JSON_SORT_KEYS'] = False to pass the order to the client.
     video_info['content'] = OrderedDict()
@@ -659,20 +654,25 @@ def get_thumbnail() -> Response:
         return Response('Parameter filename not specified', 400)
 
     filename = request.args.get('filename')
+    if filename is None:
+        return Response('File not found', 404)
     return flask.send_from_directory(directory=thumbnails_path, path=filename, as_attachment=False)
 
 
 @app.route('/download/', methods=['GET'])
 def download() -> Response:
 
-    if 'asset_dir' not in request.args or 'filename' not in request.args:
-        return Response('Parameters asset_dir or filename not specified', 400)
     asset_dir = request.args.get('asset_dir')
     filename = request.args.get('filename')
-
+    if asset_dir is None or filename is None:
+        return Response('Parameters asset_dir or filename not specified', 400)
     try:
         file_dir = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
+        if file_dir is None:
+            return Response('Potential chroot escape', 400)
         file_path = werkzeug.utils.safe_join(file_dir, filename)
+        if file_path is None:
+            return Response('Potential chroot escape', 400)
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /:
         # otherwise safe_join will consider it a chroot escape attempt
@@ -742,7 +742,7 @@ def download() -> Response:
 # That is, allowing users to seek an html5 video.)
 
 
-def generate_file_list_json(abs_path: str, asset_dir: str):
+def generate_file_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
 
     # file_type == 0: ordinary directory
     # file_type == 1: ordinary file
@@ -835,7 +835,7 @@ def get_file_list() -> Response:
     try:
         asset_dir = request.args.get('asset_dir')
         if asset_dir is None:
-          return Response('parameter [asset_dir] not specified', 400)
+            return Response('parameter [asset_dir] not specified', 400)
         abs_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
         if abs_path is None:
             return Response('Potential chroot escape', 400)
