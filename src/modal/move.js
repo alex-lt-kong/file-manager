@@ -79,12 +79,7 @@ class ModalMove extends React.Component {
 
   onFileDirChange(event) {
     const newVal = event.target.value.replace('\n', '').replace('\r', '');
-    if (newVal.endsWith('/')) {
-      this.setState({
-        responseMessage: null,
-        disableSubmitByDirName: false
-      });
-    } else {
+    if (newVal.endsWith('/') === false) {
       this.setState({
         responseMessage: (
           <Alert variant="warning" mb={3} style={{wordBreak: 'break-word'}}>
@@ -97,6 +92,21 @@ class ModalMove extends React.Component {
           </Alert>
         ),
         disableSubmitByDirName: true
+      });
+    } else if (newVal.startsWith('/') === false) {
+      this.setState({
+        responseMessage: (
+          <Alert variant="warning" mb={3} style={{wordBreak: 'break-word'}}>
+            New directory <strong style={{wordBreak: 'break-all'}}>{newVal}</strong>&nbsp;
+            does not start with a <code>/</code>. This syntax is considered invalid.
+          </Alert>
+        ),
+        disableSubmitByDirName: true
+      });
+    } else {
+      this.setState({
+        responseMessage: null,
+        disableSubmitByDirName: false
       });
     }
     this.setState({

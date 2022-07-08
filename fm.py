@@ -3,6 +3,7 @@
 from collections import OrderedDict
 from urllib import response
 from flask import Flask, render_template, Response, request
+from typing import Dict, List, Union, Any
 from PIL import ImageFile
 
 import click
@@ -29,7 +30,7 @@ app.config['JSON_SORT_KEYS'] = False
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 thread_lock = threading.Lock()
 
-allowed_ext = None
+allowed_ext: List[str]
 # app_address: the app's address on the Internet
 app_address = ''
 # app_dir: the app's real address on the filesystem
@@ -39,7 +40,7 @@ debug_mode = False
 direct_open_ext = None
 emailer = None
 external_script_dir = ''
-file_stat = None
+file_stat: Dict[str, Union[object, Dict[str, object]]]
 fs_path = ''
 image_extensions = None
 log_path = ''
@@ -51,7 +52,7 @@ thread_counter = 0
 video_extensions = None
 
 
-def get_file_id(path: str):
+def get_file_id(path: str) -> str:
 
     if os.path.isfile(path) is False:
         # Have to raise FileNotFoundError the right way!
@@ -71,10 +72,10 @@ def get_file_id(path: str):
 
 
 @app.route('/get-server-info/', methods=['GET'])
-def get_server_info():
+def get_server_info() -> Response:
 
+    info : Dict[str, Union[Dict[str, object], List[object]]]
     info = {}
-
     info['metadata'] = {}
     info['metadata']['timestamp'] = dt.datetime.now().strftime(
         "%Y-%m-%d %H:%M:%S")
@@ -114,7 +115,7 @@ def get_server_info():
 
 
 @app.route('/make-dir/', methods=['POST'])
-def create_folder():
+def create_folder() -> Response:
 
     if 'asset_dir' not in request.form or 'folder_name' not in request.form:
         return Response('asset_dir or not folder_name specified', 400)
@@ -143,7 +144,7 @@ def create_folder():
 
 
 @app.route('/upload/', methods=['POST'])
-def upload():
+def upload() -> Response:
 
     if 'asset_dir' not in request.form:
         return Response('asset_dir not specified', 400)
@@ -156,15 +157,17 @@ def upload():
     asset_dir = request.form['asset_dir']
     selected_files = flask.request.files.getlist("selected_files")
     for selected_file in selected_files:
+        if selected_file.filename is None:
+            return Response('filename is empty', 400);
         basename, ext = os.path.splitext(selected_file.filename)
         if (ext.lower() not in allowed_ext):
             return Response(f'{ext} is not among the allowed extensions: '
                             f'{allowed_ext}', 400)
 
-        try:
-            filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:],
-                                       selected_file.filename)
-        except werkzeug.exceptions.NotFound:
+
+        filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:],
+                                    selected_file.filename)
+        if filepath is None:
             return Response('Potential chroot escape', 400)
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /
@@ -184,7 +187,7 @@ def upload():
 
 
 @app.route('/move/', methods=['POST'])
-def move():
+def move() -> Response:
 
     if ('old_filepath' not in request.form or
             'new_filepath' not in request.form):
@@ -206,6 +209,8 @@ def move():
         # to convert them into real_filepath on the server, a preceding slash
         # will make flask think that it is an escape attempt and raise a
         # NotFound exception.
+        if old_real_filepath is None or new_real_filepath is None:
+            return Response('Potential chroot escape', 400)
         if os.path.ismount(old_real_filepath):
             return Response(
                 (f'{old_filepath} is a mountpoint. The move of mountpoints is '
@@ -225,7 +230,9 @@ def move():
         logging.debug('File moved from'
                       f'[{old_real_filepath}] to [{new_real_filepath}]')
     except (FileNotFoundError, FileExistsError, werkzeug.exceptions.NotFound):
-        return Response('Client-side error', 400)
+        return Response(
+            'Client-side error (either FileNotFoundError, FileExistsError or werkzeug.exceptions.NotFound)', 400
+        )
     except Exception:
         logging.exception('')
         return Response('Internal Error', 500)
@@ -248,12 +255,13 @@ def remove():
         # to start with a slash. However, when we need to convert it into
         # real_filepath on the server, a preceding slash will make flask
         # think that it is an escape attempt and raise a NotFound exception.
-
+        if real_filepath is None:
+            return Response('Potential chroot escape', 400)
         if os.path.ismount(real_filepath):
+            logging.info(f'Mountpoint [{real_filepath}] NOT removed')
             return Response(
                 (f'{filepath} is a mountpoint. The removal of mountpoints is '
-                 'disabled to prevent unexpected data loss'), 400)
-            logging.info(f'Mountpoint [{real_filepath}] NOT removed')
+                 'disabled to prevent unexpected data loss'), 400)            
         elif os.path.islink(real_filepath):
             os.unlink(real_filepath)
             logging.debug(f'Symlink removed: [{real_filepath}]')
@@ -357,7 +365,7 @@ def video_transcoding_thread(input_path: str, output_path: str,
         # for piping the output data to other programs.
 
 
-def raw_info_to_video_info(ri):
+def raw_info_to_video_info(ri: Dict[str, object]) -> OrderedDict[str, object]:
 
     st = OrderedDict()
     # Having an OrderedDict() is not enough, you need to set
@@ -380,7 +388,7 @@ def raw_info_to_video_info(ri):
     return st
 
 
-def extract_subtitles_thread(video_path: str, stream_no: int):
+def extract_subtitles_thread(video_path: str, stream_no: int) -> None:
 
     loglevel = 'warning'
     ffmpeg_cmd = ['/usr/bin/ffmpeg', '-y', '-i', video_path,
@@ -403,7 +411,7 @@ def extract_subtitles_thread(video_path: str, stream_no: int):
 
 
 @app.route('/extract-subtitles/', methods=['POST'])
-def extract_subtitles():
+def extract_subtitles() -> Response:
 
     if (
             'asset_dir' not in request.form or
@@ -419,7 +427,8 @@ def extract_subtitles():
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /;
         # otherwise safe_join will consider it a chroot escape attempt
-
+        if video_path is None:
+            return Response('Potential chroot escape', 400)
         stream_no = int(request.form['stream_no'])
     except werkzeug.exceptions.NotFound:
         logging.exception(f'Parameters are {asset_dir}, {video_name}')
@@ -436,20 +445,20 @@ def extract_subtitles():
 
 
 @app.route('/get-media-info/', methods=['GET'])
-def get_media_info():
+def get_media_info() -> Response:
 
-    if 'asset_dir' not in request.args or 'media_filename' not in request.args:
-        return Response('Parameters asset_dir or media_filename not specified',
-                        400)
     asset_dir = request.args.get('asset_dir')
     media_filename = request.args.get('media_filename')
-
+    if asset_dir is None or media_filename is None:
+        return Response('Parameters asset_dir or media_filename not specified', 400)
     try:
         media_filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:],
                                          media_filename)
         # safe_join can prevent base directory escaping
         # [1:] is used to get rid of the initial /;
         # otherwise safe_join will consider it a chroot escape attempt
+        if media_filepath is None:
+            return Response('Potential chroot escape', 400)
     except werkzeug.exceptions.NotFound:
         logging.exception(f'Parameters are {asset_dir}, {media_filename}')
         return Response('Potential chroot escape', 400)
@@ -530,7 +539,7 @@ def get_media_info():
 
 
 @app.route('/video-transcode/', methods=['POST'])
-def video_transcode():
+def video_transcode() -> Response:
 
     if (
             'asset_dir' not in request.form or
@@ -563,8 +572,11 @@ def video_transcode():
         # that we keep the original resolution of the video.
 
         abs_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
-
+        if abs_path is None:
+            return Response('Potential chroot escape', 400)
         video_path = werkzeug.utils.safe_join(abs_path, video_name)
+        if video_path is None:
+            return Response('Potential chroot escape', 400)
         if os.path.isfile(video_path) is False:
             return Response(f'video {video_name} not found', 400)
 
@@ -596,16 +608,18 @@ def video_transcode():
 
 
 @app.route('/get-file-stats/', methods=['GET'])
-def get_file_stats():
-
-    if 'filename' not in request.args or 'asset_dir' not in request.args:
-        return Response('Parameter filename or asset_dir not specified', 400)
+def get_file_stats() -> Response:
 
     asset_dir = request.args.get('asset_dir')
     filename = request.args.get('filename')
-
+    if asset_dir is None or filename is None:
+        return Response('Parameter filename or asset_dir not specified', 400)
     file_dir = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
+    if file_dir is None:
+        return Response('Potential chroot escape', 400)
     file_path = werkzeug.utils.safe_join(file_dir, filename)
+    if file_path is None:
+        return Response('Potential chroot escape', 400)
     # safe_join can prevent base directory escaping. [1:] is used to get rid of the initial /;
     # otherwise safe_join will consider it a chroot escape attempt
     try:
@@ -743,7 +757,7 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
     # media_type == 0: not a media file
     # media_type == 1: image
     # media_type == 2: video
-    file_info = {}
+    file_info: Dict[str, Any] = {}
     file_info['metadata'] = {}
     file_info['metadata']['asset_dir'] = asset_dir
     file_info['content'] = {}
@@ -786,7 +800,9 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
                 raise PermissionError('chroot escape attempt detected???')
             filesize = os.path.getsize(file_path)
             fic['size'] = filesize
-            if ext.lower() in video_extensions:
+            if ext is None:
+                fic['media_type'] = 0
+            elif ext.lower() in video_extensions:
                 fic['media_type'] = 2
             elif ext.lower() in image_extensions:
                 fic['media_type'] = 1
@@ -815,13 +831,14 @@ def generate_file_list_json(abs_path: str, asset_dir: str):
 
 
 @app.route('/get-file-list/', methods=['GET'])
-def get_file_list():
-
-    if 'asset_dir' not in request.args:
-        return Response('parameter [asset_dir] not specified', 400)
+def get_file_list() -> Response:
     try:
         asset_dir = request.args.get('asset_dir')
+        if asset_dir is None:
+          return Response('parameter [asset_dir] not specified', 400)
         abs_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
+        if abs_path is None:
+            return Response('Potential chroot escape', 400)
         asset_dir = abs_path[len(root_dir):]
 
         if asset_dir == '/.':
@@ -834,9 +851,6 @@ def get_file_list():
         # to be unavoidable...
 
         file_info = generate_file_list_json(abs_path, asset_dir)
-    except werkzeug.exceptions.NotFound:
-        logging.exception('')
-        return Response('Potential chroot escape', 400)
     except OSError:
         logging.exception('')
         return Response('OSError', 400)
@@ -849,14 +863,10 @@ def get_file_list():
 
 
 @app.route('/', methods=['GET'])
-def index():
+def index() -> Union[Response, str]:
 
     global app_address, debug_mode
-    if 'page' not in request.args:
-        return render_template('manager.html',
-                           app_address=app_address,
-                           mode='development' if debug_mode else 'production')
-
+    page = request.args.get('page')
     params_str = ''
     if 'params' in request.args:
         try:
@@ -865,13 +875,17 @@ def index():
         except Exception:
             logging.exception('')
             return flask.Response(f'Failed to parse params [{params_str}] as a JSON object', 400)
-    if request.args['page'] == 'viewer-text':
+    if page == 'viewer-text':
         return render_template('viewer/text.html', params=params_str)
-    if request.args['page'] == 'viewer-video':
+    elif page == 'viewer-video':
         return render_template('viewer/video.html', params=params_str)
+    else:
+        return render_template('manager.html',
+                           app_address=app_address,
+                           mode='development' if debug_mode else 'production')
 
 
-def stop_signal_handler(*args):
+def stop_signal_handler(*args: Any) -> None:
 
     global stop_signal
     stop_signal = True
@@ -881,7 +895,7 @@ def stop_signal_handler(*args):
 
 @click.command()
 @click.option('--debug', is_flag=True)
-def main(debug):
+def main(debug) -> None:
 
     local_port = -1
     global allowed_ext, app_address, debug_mode, direct_open_ext, emailer
