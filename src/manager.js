@@ -9,8 +9,10 @@ class FileManager extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      addressBar: '',
+      addressBar: '/',
       currentPath: '/',
+      // CanNOT use currentPath as addressBar's value--addressBar's value has to change as user types while
+      // currentPath should be set only after user presses Enter.
       fileInfo: null,
       modalDialogue: null,
       pathStack: [],
@@ -30,7 +32,7 @@ class FileManager extends React.Component {
     this.onNewFolderClick = this.onNewFolderClick.bind(this);
     this.onServerInfoClick = this.onServerInfoClick.bind(this);
     this.fetchDataFromServer = this.fetchDataFromServer.bind(this);
-    this.onCurrentPathChanged = this.onCurrentPathChanged.bind(this);
+    this.fileListShouldRefresh = this.fileListShouldRefresh.bind(this);
     this.serverInfoPanel;
     this.navigationBar = null;
   }
@@ -38,17 +40,6 @@ class FileManager extends React.Component {
 
   onServerInfoClick(event) {
     this.fetchServerInfo();
-  }
-
-  onCurrentPathChanged(newCurrentPath) {
-    let formattedNewCurrentPath = path.resolve(newCurrentPath);
-    formattedNewCurrentPath += (formattedNewCurrentPath.endsWith('/') ? '' : '/');
-    this.setState({
-      currentPath: formattedNewCurrentPath,
-      addressBar: formattedNewCurrentPath
-    }, ()=> {
-      this.fetchDataFromServer();
-    });
   }
 
   onFileChange(event) {
@@ -124,9 +115,19 @@ class FileManager extends React.Component {
     });
   }
 
-  fileListShouldRefresh = () => {
-    console.log(`fileListShouldRefresh = () =>`);
-    this.fetchDataFromServer();
+  fileListShouldRefresh(newCurrentPath) {
+    if (newCurrentPath === null) {
+      this.fetchDataFromServer();
+    } else {
+      let formattedNewCurrentPath = path.resolve(newCurrentPath);
+      formattedNewCurrentPath += (formattedNewCurrentPath.endsWith('/') ? '' : '/');
+      this.setState({
+        currentPath: formattedNewCurrentPath,
+        addressBar: formattedNewCurrentPath
+      }, ()=> {
+        this.fetchDataFromServer();
+      });
+    }
   }
 
   dialogueShouldClose() {
@@ -366,7 +367,7 @@ class FileManager extends React.Component {
                 menu. If we set minHeight == 60vh, the content height will never to too small to accomodate
                 the context menu.*/}
             <FileItems fileInfo={this.state.fileInfo} refreshFileList={this.fileListShouldRefresh}
-              onCurrentPathChanged={this.onCurrentPathChanged} currentPath={this.state.currentPath}/>
+              currentPath={this.state.currentPath}/>
           </ul>
         </div>
         {this.state.modalDialogue}

@@ -12,7 +12,6 @@ class ContextMenu extends React.Component {
     super(props);
     this.state = {
       modalDialogue: null,
-      refreshFileList: props.refreshFileList,
       fileInfo: props.fileInfo
     };
     this.dialogueShouldClose = this.dialogueShouldClose.bind(this);
@@ -50,7 +49,7 @@ class ContextMenu extends React.Component {
     }, ()=> {
       this.setState({
         modalDialogue: (
-          <ModalRemove fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList} show={true} />
+          <ModalRemove fileInfo={this.state.fileInfo} refreshFileList={this.props.refreshFileList} show={true} />
         )
       });
     });
@@ -74,7 +73,7 @@ class ContextMenu extends React.Component {
       this.setState({
         modalDialogue: (
           <ModalExtractSubtitles assetDir={this.state.fileInfo.asset_dir} show={true}
-            videoName={this.state.fileInfo.filename} refreshFileList={this.state.refreshFileList} />
+            videoName={this.state.fileInfo.filename} refreshFileList={this.props.refreshFileList} />
         )
       });
     });
@@ -99,7 +98,7 @@ class ContextMenu extends React.Component {
     }, ()=> {
       this.setState({
         modalDialogue: (
-          <ModalMove fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList} show={true} />
+          <ModalMove fileInfo={this.state.fileInfo} refreshFileList={this.props.refreshFileList} show={true} />
         )
       });
     });
@@ -111,7 +110,7 @@ class ContextMenu extends React.Component {
     }, ()=> {
       this.setState({
         modalDialogue: (
-          <ModalTranscode fileInfo={this.state.fileInfo} refreshFileList={this.state.refreshFileList} show={true} />
+          <ModalTranscode fileInfo={this.state.fileInfo} refreshFileList={this.props.refreshFileList} show={true} />
         )
       });
     });
@@ -163,8 +162,8 @@ class ContextMenu extends React.Component {
 }
 
 ContextMenu.propTypes = {
-  refreshFileList: PropTypes.func,
   fileInfo: PropTypes.object,
+  refreshFileList: PropTypes.func,
   enableUpload: PropTypes.bool
 };
 

@@ -849,7 +849,8 @@ def get_file_list() -> Response:
         # client side, it is considered the real root; on the server side,
         # it is just an ordinary directory), some special treatment seems
         # to be unavoidable...
-
+        if os.path.exists(abs_path) is False:
+            return Response(f'Directory "{asset_dir}" does not exist', 404)
         file_info = generate_file_list_json(abs_path, asset_dir)
     except OSError:
         logging.exception('')

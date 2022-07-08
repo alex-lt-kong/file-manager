@@ -1,36 +1,20 @@
-import {ModalMove} from './modal/move';
-import {ModalRemove} from './modal/remove';
-import {ModalExtractSubtitles} from './modal/extract-subtitles';
-import {ModalMediaMetadata} from './modal/media-metadata';
-import {ModalTranscode} from './modal/transcode';
-import Dropdown from 'react-bootstrap/Dropdown';
 import React from 'react';
 import {ContextMenu} from './ctx-menu.js';
 import PropTypes from 'prop-types';
 
-/**
- * Format bytes as human-readable text.
- * 
- * @param bytes Number of bytes.
- * @param si True to use metric (SI) units, aka powers of 1000. False to use 
- *       binary (IEC), aka powers of 1024.
- * @param dp Number of decimal places to display.
- * 
- * @return Formatted string.
- */
- function humanFileSize(bytes, si=false, dp=1) {
+function humanFileSize(bytes, si=false, dp=1) {
   const thresh = si ? 1000 : 1024;
 
   if (Math.abs(bytes) < thresh) {
     return bytes + ' B';
   }
 
-  const units = si 
-    ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
-    : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+  const units = si ?
+  ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] :
+  ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
   let u = -1;
   const r = 10**dp;
-  
+
   do {
     bytes /= thresh;
     ++u;
@@ -44,16 +28,12 @@ class FileItems extends React.Component {
     super(props);
     this.state = {
       fileInfo: props.fileInfo,
-      currentPath: props.currentPath,
-      refreshFileList: props.refreshFileList
+      currentPath: props.currentPath
     };
-    this.onClickItem = this.onClickItem.bind(this);
+    this.onFileItemClicked = this.onFileItemClicked.bind(this);
   }
 
   componentDidUpdate(prevProps) {
-    // If you component <ContextMenu /> as an object, React could re-use an existing
-    // <ContextMenu /> for different file items. Therefore, we canNOT rely on
-    // ContextMenu's constructor to fill in the fileInfo member.
     if (prevProps.fileInfo !== this.props.fileInfo || prevProps.currentPath !== this.props.currentPath) {
       this.setState({
         fileInfo: this.props.fileInfo,
@@ -62,19 +42,13 @@ class FileItems extends React.Component {
     }
   }
 
-  onClickItem(value) {
+  onFileItemClicked(value) {
     if (this.state.fileInfo.content[value].file_type != 1) {
-      if (this.props.onCurrentPathChanged === null) {
-        logging.onError(`Callback function this.state.fetchDataFromServer is null, this should be impossible!`);
+      if (this.props.refreshFileList === null) {
+        logging.error(`Callback function this.state.fetchDataFromServer is null, this should be impossible!`);
       } else {
-        this.props.onCurrentPathChanged(this.state.currentPath + value + '/');
+        this.props.refreshFileList(this.state.currentPath + value + '/');
       }
-    /*  this.setState(prevState => ({
-        currentPath: prevState.currentPath + value + '/'
-      }), () => this.fetchDataFromServer(this.state.currentPath));
-
-      No, you canNOT set currentPath here--sometimes tthe fetchDataFromServer() will fail.
-      In this situtaion, we want to keep the original currentPath. */
     } else if (this.state.fileInfo.content[value].file_type === 1) {
       if (this.state.fileInfo.content[value].media_type < 2) {
         window.open('./download/?asset_dir=' + encodeURIComponent(this.state.fileInfo.metadata.asset_dir) +
@@ -95,99 +69,105 @@ class FileItems extends React.Component {
   generateThumbnailAndMetaData(key, content) {
     let thumbnail = null;
     let fileMetaData = null;
-      /* The following block is about thumbnail generation and formatting. It is tricky because:
+    /* The following block is about thumbnail generation and formatting. It is tricky because:
         1. For those files with preview, we want the thumbnail to be large so that we can take a good look;
-        2. For those files withOUT preview, we want the thumbnaul to be small since we dont have anything to look anyway;
-        3. The aspect ratios of preview and default icons are different--default icons tend to have a lower aspect ratio
-           movies and images tend to have a higher aspect ratio...If we fixed the width of thumbnail according to one type of
-           typical 
+        2. For those files withOUT preview, we want the thumbnaul to be small since we dont have anything to
+           look anyway;
+        3. The aspect ratios of preview and default icons are different--default icons tend to have a lower
+           aspect ratio movies and images tend to have a higher aspect ratio...If we fixed the width of
+           thumbnail according to one type of typical.
         4. We want the layout to be consistent.
         These three goals cannot be achieved in the same time. The compromise turns out to be hard to find.
       */
     if (content.file_type === 0) { // file_type == 0: ordinary directory
       thumbnail = (
         <img src={`./static/icons/folder.svg`} style={{width: '100%', cursor: 'pointer'}}
-              onClick={() => this.onClickItem(key)} />
-        );
-        // For svg <img>, we specify width: 100%;
-        // For ordinary image we specify maxWidth: 100%
+          onClick={() => this.onFileItemClicked(key)} />
+      );
+      // For svg <img>, we specify width: 100%;
+      // For ordinary image we specify maxWidth: 100%
     } else if (content.file_type === 1) { // file_type == 1: ordinary file
       if (content.media_type === 1) { // image
         thumbnail = (
           <img src={`./get-thumbnail/?filename=${encodeURIComponent(key)}_${content.size}.jpg`}
-              style={{ maxWidth: '100%', maxHeight: '90vh', 'display':'block', cursor: 'pointer' }}
-              onClick={() => this.onClickItem(key)}
-              onError={(e)=>{e.target.onerror = null; e.target.src='./static/icons/image.svg'; e.target.style='width: 100%'}} />);
-            // For svg <img>, we specify width: 100%;
-            // For ordinary image we specify maxWidth: 100%;
-            // Note for onError we need to specify a special style;
+            style={{maxWidth: '100%', maxHeight: '90vh', display: 'block', cursor: 'pointer'}}
+            onClick={() => this.onFileItemClicked(key)}
+            onError={(e)=>{
+              e.target.onerror = null; e.target.src='./static/icons/image.svg'; e.target.style='width: 100%';
+            }} />);
+        // For svg <img>, we specify width: 100%;
+        // For ordinary image we specify maxWidth: 100%;
+        // Note for onError we need to specify a special style;
       } else if (content.media_type === 2) { // video
         thumbnail = (
           <img src={`./get-thumbnail/?filename=${encodeURIComponent(key)}_${content.size}.jpg`}
-              style={{maxWidth: '100%', cursor: 'pointer'}}
-              onClick={() => this.onClickItem(key)}
-              onError={(e)=>{e.target.onerror = null; e.target.src = './static/icons/video.svg'; e.target.style='width: 100%'}} />);
-            // For svg <img>, we specify width: 100%;
-            // For ordinary image we specify maxWidth: 100%;
-            // Note for onError we need to specify a special style;
+            style={{maxWidth: '100%', cursor: 'pointer'}} onClick={() => this.onFileItemClicked(key)}
+            onError={(e)=>{
+              e.target.onerror = null; e.target.src = './static/icons/video.svg'; e.target.style='width: 100%';
+            }} />);
+        // For svg <img>, we specify width: 100%;
+        // For ordinary image we specify maxWidth: 100%;
+        // Note for onError we need to specify a special style;
       } else if (content.media_type === 0) { // not a media file
         let url = null;
         if (['.doc', '.docx', '.odt', '.rtf', '.docm', '.docx', 'wps'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/word.svg'; 
+          url = './static/icons/word.svg';
         } else if (['.htm', '.html', '.mht', '.xml'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/ml.svg'; 
+          url = './static/icons/ml.svg';
         } else if (['.csv', '.xls', '.xlsm', '.xlsx'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/xls.svg'; 
+          url = './static/icons/xls.svg';
         } else if (['.pdf'].includes(content.extension.toLowerCase())) {
           url = './static/icons/pdf.svg';
         } else if (['.7z', '.zip', '.rar', '.tar', '.gz'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/archive.svg'; 
+          url = './static/icons/archive.svg';
         } else if (['.mka', '.mp3', '.wma', '.wav', '.ogg', '.flac'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/music.svg'; 
+          url = './static/icons/music.svg';
         } else if (['.c'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/c.svg'; 
+          url = './static/icons/c.svg';
         } else if (['.py', '.pyc', '.ipynb'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/python.svg'; 
+          url = './static/icons/python.svg';
         } else if (['.apk', '.whl', '.rpm', '.deb'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/package.svg'; 
+          url = './static/icons/package.svg';
         } else if (['.exe', '.bat'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/exe.svg'; 
+          url = './static/icons/exe.svg';
         } else if (['.css'].includes(content.extension.toLowerCase())) {
-          url = './static/icons/css.svg'; 
+          url = './static/icons/css.svg';
         } else {
-          url = './static/icons/misc.svg'; 
+          url = './static/icons/misc.svg';
         }
-        thumbnail = (<img src={url} style={{ width: '100%', 'display':'block', float:'left', cursor: 'pointer' }}
-                  onClick={() => this.onClickItem(key)} />);
-              // For svg <img>, we specify width: 100%;
-              // For ordinary image we specify maxWidth: 100%
+        thumbnail = (
+          <img src={url} style={{width: '100%', display: 'block', float: 'left', cursor: 'pointer'}}
+            onClick={() => this.onFileItemClicked(key)} />
+        );
+        // For svg <img>, we specify width: 100%;
+        // For ordinary image we specify maxWidth: 100%
       }
       fileMetaData = (<span><b>size:</b> {humanFileSize(content.size)}, <b>views</b>: {content.stat.downloads}</span>);
     } else if (content.file_type === 2) { // file_type == 2: mountpoint
       fileMetaData = 'mountpoint';
       thumbnail = (
-        <img src={`./static/icons/special-folder.svg`} style={{ width: '100%', cursor: 'pointer' }}
-              onClick={() => this.onClickItem(key)} />
-        );
-        // For svg <img>, we specify width: 100%;
-        // For ordinary image we specify maxWidth: 100%
+        <img src={`./static/icons/special-folder.svg`} style={{width: '100%', cursor: 'pointer'}}
+          onClick={() => this.onFileItemClicked(key)} />
+      );
+      // For svg <img>, we specify width: 100%;
+      // For ordinary image we specify maxWidth: 100%
     } else if (content.file_type === 3) { // file_type == 3: symbolic link
       fileMetaData = 'symbolic link';
       thumbnail = (
-        <img src={`./static/icons/special-folder.svg`} style={{ width: '100%', cursor: 'pointer' }}
-              onClick={() => this.onClickItem(key)} />
-        );
+        <img src={`./static/icons/special-folder.svg`} style={{width: '100%', cursor: 'pointer'}}
+          onClick={() => this.onFileItemClicked(key)} />
+      );
     } else {
       fileMetaData = '??Unknown file type??';
       thumbnail = (
-        <img src={`./static/icons/special-folder.svg`} style={{ width: '100%', cursor: 'pointer' }}
-              onClick={() => this.onClickItem(key)} />
-        );
+        <img src={`./static/icons/special-folder.svg`} style={{width: '100%', cursor: 'pointer'}}
+          onClick={() => this.onFileItemClicked(key)} />
+      );
     }
 
     return {
       thumbnail: thumbnail,
-      fileMetaData: fileMetaData,
+      fileMetaData: fileMetaData
     };
   }
 
@@ -212,7 +192,7 @@ class FileItems extends React.Component {
             <div className='col' style={{display: 'flex', flexFlow: 'column'}} >
               <div style={{flex: '1 1 auto', wordBreak: 'break-all'}}>
                 <a value={key} style={{textDecoration: 'none', display: 'block', cursor: 'pointer'}}
-                  onClick={() => this.onClickItem(key)}>
+                  onClick={() => this.onFileItemClicked(key)}>
                   {key}
                 </a>
               </div>
@@ -221,7 +201,7 @@ class FileItems extends React.Component {
               </div>
             </div>
             <div className='col'>
-              <ContextMenu refreshFileList={this.state.refreshFileList} fileInfo={fic[key]} />
+              <ContextMenu refreshFileList={this.props.refreshFileList} fileInfo={fic[key]} />
             </div>
           </div>
         </li>
@@ -234,5 +214,11 @@ class FileItems extends React.Component {
     return this.generateFilesList();
   }
 }
+
+FileItems.propTypes = {
+  refreshFileList: PropTypes.func,
+  currentPath: PropTypes.string,
+  fileInfo: PropTypes.object
+};
 
 export {FileItems};
