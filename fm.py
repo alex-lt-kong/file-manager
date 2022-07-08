@@ -40,7 +40,7 @@ debug_mode = False
 direct_open_ext = None
 emailer = None
 external_script_dir = ''
-file_stat: Dict[str, Union[object, Dict[str, object]]]
+file_stat: Dict[str, Any]
 fs_path = ''
 image_extensions = None
 log_path = ''
@@ -653,7 +653,7 @@ def get_file_stats() -> Response:
 
 
 @app.route('/get-thumbnail/', methods=['GET'])
-def get_thumbnail():
+def get_thumbnail() -> Response:
 
     if 'filename' not in request.args:
         return Response('Parameter filename not specified', 400)
@@ -663,7 +663,7 @@ def get_thumbnail():
 
 
 @app.route('/download/', methods=['GET'])
-def download():
+def download() -> Response:
 
     if 'asset_dir' not in request.args or 'filename' not in request.args:
         return Response('Parameters asset_dir or filename not specified', 400)
@@ -880,9 +880,9 @@ def index() -> Union[Response, str]:
     elif page == 'viewer-video':
         return render_template('viewer/video.html', params=params_str)
     else:
-        return render_template('manager.html',
-                           app_address=app_address,
-                           mode='development' if debug_mode else 'production')
+        return render_template(
+            'manager.html', app_address=app_address, mode='development' if debug_mode else 'production'
+        )
 
 
 def stop_signal_handler(*args: Any) -> None:
@@ -895,7 +895,7 @@ def stop_signal_handler(*args: Any) -> None:
 
 @click.command()
 @click.option('--debug', is_flag=True)
-def main(debug) -> None:
+def main(debug: bool) -> None:
 
     local_port = -1
     global allowed_ext, app_address, debug_mode, direct_open_ext, emailer
@@ -962,9 +962,11 @@ def main(debug) -> None:
                                         'delay': 0 if debug_mode else 300})
     th_email.start()
 
-    waitress.serve(app, host=settings['flask']['interface'], port=local_port,
-          max_request_body_size=settings['flask']['max_upload_size'],
-          log_socket_errors=False, threads=16)
+    waitress.serve(
+        app, host=settings['flask']['interface'], port=local_port,
+        max_request_body_size=settings['flask']['max_upload_size'],
+        log_socket_errors=False, threads=16
+    )
     # You need the max_request_body_size to accept large upload file...
     # The default value of max_request_body_size is 1GB
     # serve() will not explicitly raise an exception if this parameter is NOT
