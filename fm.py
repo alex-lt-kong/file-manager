@@ -764,6 +764,8 @@ def generate_file_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
 
     if asset_dir != '/':
         file_info['content']['..'] = {}
+        file_info['content']['..']['asset_dir'] = asset_dir
+        file_info['content']['..']['filename'] = '..'
         file_info['content']['..']['file_type'] = 0
         file_info['content']['..']['media_type'] = -1
         file_info['content']['..']['extension'] = ''
