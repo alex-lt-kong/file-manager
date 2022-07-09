@@ -69,7 +69,6 @@ class ContextMenu extends React.Component {
     this.setState({
       modalDialogue: null
     }, ()=> {
-      console.log(`onExtractSubtitlesButtonClick()`);
       this.setState({
         modalDialogue: (
           <ModalExtractSubtitles assetDir={this.state.fileInfo.asset_dir} show={true}

@@ -6,6 +6,7 @@ from typing import Dict, List, Union, Any
 from PIL import ImageFile
 
 import click
+import copy
 import datetime as dt
 import errno
 import flask
@@ -742,7 +743,7 @@ def download() -> Response:
 # That is, allowing users to seek an html5 video.)
 
 
-def generate_file_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
+def generate_files_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
 
     # file_type == 0: ordinary directory
     # file_type == 1: ordinary file
@@ -757,79 +758,78 @@ def generate_file_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
     # media_type == 0: not a media file
     # media_type == 1: image
     # media_type == 2: video
-    file_info: Dict[str, Any] = {}
-    file_info['metadata'] = {}
-    file_info['metadata']['asset_dir'] = asset_dir
-    file_info['content'] = {}
-
+    files_list: Dict[str, Any] = {
+        'metadata': {
+            'asset_dir': asset_dir
+        },
+        'content': []
+    }
+    file_info_template: Dict[str, Any] = {
+        'filename': '',
+        'file_type': 4,
+        'asset_dir': asset_dir,
+        # the design decision is that we repeat asset_dir for each fo, so that the front-end can retrieve
+        # the asset_dir from each fo without going up a level.
+        'media_type': -1,
+        'extension': '',
+        'size': -1,
+        'stat': {
+            'downloads': 0,
+            'last_download': '1970-01-01 00:00:00'
+        }
+    }
     if asset_dir != '/':
-        file_info['content']['..'] = {}
-        file_info['content']['..']['asset_dir'] = asset_dir
-        file_info['content']['..']['filename'] = '..'
-        file_info['content']['..']['file_type'] = 0
-        file_info['content']['..']['media_type'] = -1
-        file_info['content']['..']['extension'] = ''
+        parent_dir_file = copy.deepcopy(file_info_template)
+        parent_dir_file['asset_dir'] = asset_dir
+        parent_dir_file['filename'] = '..'
+        parent_dir_file['file_type'] = 0
+        parent_dir_file['asset_dir'] = asset_dir
+        files_list['content'].append(parent_dir_file)
 
     entries = list(os.scandir(abs_path))
-    entries.sort(key=lambda x: x.name)
     for entry in entries:
         # entry has is_dir(), is_file() and is_symlink() methods but it does
         # not has a is_mountpoint() method. To keep the result consistent,
         # here we use method under os.path to do the job.
-        fn = entry.name
-        file_info['content'][fn] = {}
-        fic = file_info['content'][fn]
-        fic['filename'] = fn
-        # Repeat the name here so that we can just pass an
-        # file_info['content'][fn] object.
-        fic['file_type'] = 4
-        fic['asset_dir'] = asset_dir
-        fic['media_type'] = -1
-        fic['extension'] = ''
+        fo = copy.deepcopy(file_info_template)
+        fo['filename'] = entry.name
+        # fo means file_object, file_info_template.copy() is shallow copy.
 
         if os.path.ismount(entry.path):
-            fic['file_type'] = 2
+            fo['file_type'] = 2
         elif os.path.islink(entry.path):
-            fic['file_type'] = 3
+            fo['file_type'] = 3
         elif os.path.isfile(entry.path):
-            fic['file_type'] = 1
-            basename, ext = os.path.splitext(fn)
-            fic['basename'] = basename
-            fic['extension'] = ext
-            file_path = werkzeug.utils.safe_join(abs_path, fn)
+            fo['file_type'] = 1
+            basename, ext = os.path.splitext(fo['filename'])
+            fo['basename'] = basename
+            fo['extension'] = ext
+            file_path = werkzeug.utils.safe_join(abs_path, str(fo['filename']))
             if file_path is None:
                 # implies chroot escape attempt!
                 raise PermissionError('chroot escape attempt detected???')
-            filesize = os.path.getsize(file_path)
-            fic['size'] = filesize
+            fo['size'] = os.path.getsize(file_path)
             if ext is None:
-                fic['media_type'] = 0
+                fo['media_type'] = 0
             elif ext.lower() in video_extensions:
-                fic['media_type'] = 2
+                fo['media_type'] = 2
             elif ext.lower() in image_extensions:
-                fic['media_type'] = 1
+                fo['media_type'] = 1
             else:
-                fic['media_type'] = 0
+                fo['media_type'] = 0
 
             fid = get_file_id(file_path)
             # Tried using crc32 and partial crc32 here...
-            # It turned out that any content-based checksum is just too
-            # expensive to use...
-            fic['stat'] = {}
-
-            if fid not in file_stat['content']:
-                fic['stat']['downloads'] = 0
-                fic['stat']['last_download'] = ''
-            else:
-                fic['stat']['downloads'] = (
-                    file_stat['content'][fid]['downloads'])
-                fic['stat']['last_download'] = (
-                    file_stat['content'][fid]['last_download'])
+            # It turned out that any content-based checksum is just too expensive to use...
+            if fid in file_stat['content']:
+                fo['stat']['downloads'] = (file_stat['content'][fid]['downloads'])
+                fo['stat']['last_download'] = (file_stat['content'][fid]['last_download'])
 
         elif os.path.isdir(entry.path):
-            fic['file_type'] = 0
+            fo['file_type'] = 0
+        files_list['content'].append(fo)
 
-    return file_info
+    return files_list
 
 
 @app.route('/get-file-list/', methods=['GET'])
@@ -853,7 +853,7 @@ def get_file_list() -> Response:
         # to be unavoidable...
         if os.path.exists(abs_path) is False:
             return Response(f'Directory "{asset_dir}" does not exist', 404)
-        file_info = generate_file_list_json(abs_path, asset_dir)
+        files_list_json = generate_files_list_json(abs_path, asset_dir)
     except OSError:
         logging.exception('')
         return Response('OSError', 400)
@@ -862,7 +862,7 @@ def get_file_list() -> Response:
         logging.exception('')
         return Response('Internal Error', 500)
 
-    return flask.jsonify(file_info)
+    return flask.jsonify(files_list_json)
 
 
 @app.route('/', methods=['GET'])

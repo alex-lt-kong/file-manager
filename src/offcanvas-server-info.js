@@ -10,12 +10,6 @@ class OffcanvasServerInfo extends React.Component {
     };
   }
 
-  componentDidMount() {
-  //  $(this.offcanvas).offcanvas('show');
-    console.log('componentDidMount');
-  //  this.fetchServerInfo();
-  }
-
   fetchServerInfo() {
     this.setState({
       serverInfoPanel: (
@@ -70,7 +64,7 @@ class OffcanvasServerInfo extends React.Component {
           this.forceUpdate();
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
           alert('Unable to fetch server info:\n' + error.response.data);        
         });
   }

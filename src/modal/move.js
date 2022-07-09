@@ -64,7 +64,7 @@ class ModalMove extends React.Component {
           }
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
           this.setState({
             responseMessage: (
               <Alert variant="danger" my={2} style={{wordBreak: 'break-word'}}>

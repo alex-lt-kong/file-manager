@@ -14,7 +14,6 @@ class TextViewer extends React.Component {
       params: props.params,
       plainTextContent: null
     };
-    console.log(this.state.params);
     this.fetchDataFromServer();
   }
 

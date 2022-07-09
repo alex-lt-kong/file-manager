@@ -12,7 +12,6 @@ class ModalRemove extends React.Component {
     this.state = {
       show: props.show,
       fileInfo: props.fileInfo,
-      refreshFileList: props.refreshFileList,
       responseMessage: null
     };
     this.handleCloseClick = this.handleCloseClick.bind(this);
@@ -33,12 +32,13 @@ class ModalRemove extends React.Component {
     })
         .then((response) => {
           this.handleCloseClick();
-          if (this.state.refreshFileList != null) {
-            this.state.refreshFileList();
+          if (this.props.refreshFileList != null) {
+            console.log(`this.props.refreshFileList() fired`);
+            this.props.refreshFileList();
           }
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
           this.setState({
             responseMessage: (
               <Alert key='danger' className="my-2" style={{wordBreak: 'break-word'}}>

@@ -13,7 +13,7 @@ class FileManager extends React.Component {
       currentPath: '/',
       // CanNOT use currentPath as addressBar's value--addressBar's value has to change as user types while
       // currentPath should be set only after user presses Enter.
-      fileInfo: null,
+      filesInfo: null,
       modalDialogue: null,
       pathStack: [],
       selectedFile: null,
@@ -90,7 +90,7 @@ class FileManager extends React.Component {
           // to make it simpler, I just remove the auto refresh function.
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
           alert('Unable to upload files:\n' + error.response.data);
         });
   }
@@ -116,9 +116,7 @@ class FileManager extends React.Component {
   }
 
   fileListShouldRefresh(newCurrentPath) {
-    if (newCurrentPath === null) {
-      this.fetchDataFromServer();
-    } else {
+    if (typeof newCurrentPath === 'string') {
       let formattedNewCurrentPath = path.resolve(newCurrentPath);
       formattedNewCurrentPath += (formattedNewCurrentPath.endsWith('/') ? '' : '/');
       this.setState({
@@ -127,6 +125,8 @@ class FileManager extends React.Component {
       }, ()=> {
         this.fetchDataFromServer();
       });
+    } else {
+      this.fetchDataFromServer();
     }
   }
 
@@ -140,7 +140,6 @@ class FileManager extends React.Component {
     this.setState({
       modalDialogue: null
     }, () => {
-      console.log('onNewFolderClick()\'s callback fired!');
       this.setState({
         modalDialogue: (
           <ModalMkdir assetDir={this.state.currentPath} refreshFileList={this.fileListShouldRefresh} show={true} />
@@ -227,7 +226,7 @@ class FileManager extends React.Component {
           });
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
           alert(`Unable to fetch server info. Reason:` +
           (error.response !== undefined) ? JSON.stringify(error.response): error);
         });
@@ -239,13 +238,13 @@ class FileManager extends React.Component {
     axios.get(URL)
         .then((response) => {
           this.setState((prevState) => ({
-            fileInfo: response.data,
+            filesInfo: response.data,
             pathStack: [...prevState.pathStack, response.data.metadata.asset_dir]
           }));
         })
         .catch((error) => {
           console.error(error);
-          alert('Unable to fetch fileInfo:\n' + error.response.data);
+          alert('Unable to fetch filesInfo:\n' + error.response.data);
         });
   }
 
@@ -324,8 +323,8 @@ class FileManager extends React.Component {
               {/* d-flex and justify-content-between keep components in one line*/}
               <span className="input-group-text" id="basic-addon1"></span>
               <input type="text" className="form-control" placeholder="Address"
-                  aria-label="Recipient's username" aria-describedby="button-addon2"
-                  value={this.state.addressBar} onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress}  id="address-input" />
+                aria-label="Recipient's username" aria-describedby="button-addon2"
+                value={this.state.addressBar} onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress}  id="address-input" />
               <button className="btn btn-primary" type="button" onClick={this.onClickAddressBarGo} htmlFor="address-input" >
                 <i className="bi bi-caret-right-fill"></i>
               </button>
@@ -338,10 +337,9 @@ class FileManager extends React.Component {
 
 
   render() {
-    if (this.state.fileInfo === null) {
+    if (this.state.filesInfo === null) {
       return null;
     }
-   // let fileList = this.generateFilesList(this.state.fileInfo.content);
     this.renderNavigationBar();
 
     return (
@@ -366,7 +364,7 @@ class FileManager extends React.Component {
                 forcing the browser to show a scrollbar in order to accommodate the height of the context
                 menu. If we set minHeight == 60vh, the content height will never to too small to accomodate
                 the context menu.*/}
-            <FileItems fileInfo={this.state.fileInfo} refreshFileList={this.fileListShouldRefresh}
+            <FileItems filesInfo={this.state.filesInfo} refreshFileList={this.fileListShouldRefresh}
               currentPath={this.state.currentPath}/>
           </ul>
         </div>

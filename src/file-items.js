@@ -76,7 +76,10 @@ class FileItem extends React.Component {
       } else if (this.state.fileMetadata.media_type === 2) { // video
         thumbnail = (
           <img
-            src={`./get-thumbnail/?filename=${encodeURIComponent(this.state.fileMetadata.filename)}_${this.state.fileMetadata.size}.jpg`}
+            src={
+              `./get-thumbnail/?filename=` +
+              `${encodeURIComponent(this.state.fileMetadata.filename)}_${this.state.fileMetadata.size}.jpg`
+            }
             style={{maxWidth: '100%', cursor: 'pointer'}}
             onClick={() => this.onFileItemClicked(this.state.fileMetadata.filename)}
             onError={(e)=>{
@@ -87,7 +90,11 @@ class FileItem extends React.Component {
         // Note for onError we need to specify a special style;
       } else if (this.state.fileMetadata.media_type === 0) { // not a media file
         let url = null;
-        if (['.doc', '.docx', '.odt', '.rtf', '.docm', '.docx', 'wps'].includes(this.state.fileMetadata.extension.toLowerCase())) {
+        if (
+          ['.doc', '.docx', '.odt', '.rtf', '.docm', '.docx', 'wps'].includes(
+              this.state.fileMetadata.extension.toLowerCase()
+          )
+        ) {
           url = './static/icons/word.svg';
         } else if (['.htm', '.html', '.mht', '.xml'].includes(this.state.fileMetadata.extension.toLowerCase())) {
           url = './static/icons/ml.svg';
@@ -97,7 +104,9 @@ class FileItem extends React.Component {
           url = './static/icons/pdf.svg';
         } else if (['.7z', '.zip', '.rar', '.tar', '.gz'].includes(this.state.fileMetadata.extension.toLowerCase())) {
           url = './static/icons/archive.svg';
-        } else if (['.mka', '.mp3', '.wma', '.wav', '.ogg', '.flac'].includes(this.state.fileMetadata.extension.toLowerCase())) {
+        } else if (
+          ['.mka', '.mp3', '.wma', '.wav', '.ogg', '.flac'].includes(this.state.fileMetadata.extension.toLowerCase())
+        ) {
           url = './static/icons/music.svg';
         } else if (['.c'].includes(this.state.fileMetadata.extension.toLowerCase())) {
           url = './static/icons/c.svg';
@@ -218,45 +227,53 @@ class FileItems extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      fileInfo: props.fileInfo,
+      filesInfo: props.filesInfo,
       currentPath: props.currentPath
     };
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.fileInfo !== this.props.fileInfo || prevProps.currentPath !== this.props.currentPath) {
+    if (prevProps.filesInfo !== this.props.filesInfo || prevProps.currentPath !== this.props.currentPath) {
       this.setState({
-        fileInfo: this.props.fileInfo,
+        filesInfo: this.props.filesInfo,
         currentPath: this.props.currentPath
       });
     }
   }
 
-  generateFilesList() {
-    const fic = this.state.fileInfo.content;
-    console.log(fic);
-    const keys = Object.keys(fic);
-    const fileList = new Array(keys.length);
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
+  sortFileItems(classifyByFileType) {
+    return this.state.filesInfo.content.sort((a, b)=>{
+      if (classifyByFileType) {
+        if (a['file_type'] === b['file_type']) {
+          return (a['filename'] > b['filename']);
+        } else {
+          a['file_type'] > b['file_type'];
+        }
+      } else {
+        return (a['filename'] > b['filename']);
+      }
+    });
+  }
+
+  render() {
+    const fileList = new Array(this.state.filesInfo.content.length);
+    const sortedfilesInfo = this.sortFileItems(true);
+    for (let i = 0; i < fileList.length; ++i) {
       fileList[i] = (
         <li key={i} className='list-group-item'>
-          <FileItem refreshFileList={this.props.refreshFileList} fileMetadata={fic[key]}/>
+          <FileItem refreshFileList={this.props.refreshFileList} fileMetadata={sortedfilesInfo[i]}/>
         </li>
       );
     }
 
     return fileList;
   }
-  render() {
-    return this.generateFilesList();
-  }
 }
 
 FileItems.propTypes = {
   refreshFileList: PropTypes.func,
   currentPath: PropTypes.string,
-  fileInfo: PropTypes.object
+  filesInfo: PropTypes.object
 };
 
 export {FileItems};
