@@ -1,6 +1,9 @@
 import React from 'react';
 import {ContextMenu} from './ctx-menu.js';
 import PropTypes from 'prop-types';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import {DirectoryThumbnail, ImageThumbnail, VideoThumbnail} from './thumbnails';
 
 function humanFileSize(bytes, si=false, dp=1) {
   const thresh = si ? 1000 : 1024;
@@ -40,54 +43,31 @@ class FileItem extends React.Component {
     }
   }
 
-  generateThumbnailAndMetaData() {
+  generateThumbnailAndMetaDataComponents() {
     let thumbnail = null;
     let fileMetaData = null;
     /* The following block is about thumbnail generation and formatting. It is tricky because:
-        1. For those files with preview, we want the thumbnail to be large so that we can take a good look;
-        2. For those files withOUT preview, we want the thumbnaul to be small since we dont have anything to
-           look anyway;
+        1. For those files with a preview, we want the thumbnail to be large so that we can take a good look;
+        2. For those files withOUT a preview, we want the thumbnaul to be small since we dont have anything to
+           see anyway;
         3. The aspect ratios of preview and default icons are different--default icons tend to have a lower
-           aspect ratio movies and images tend to have a higher aspect ratio...If we fixed the width of
-           thumbnail according to one type of typical.
+           aspect ratio (i.e. a tall icon) but movies and images tend to have a higher aspect ratio
+           (i.e., a wide icon)...If we fixed the width of thumbnail according to one type of typical.
         4. We want the layout to be consistent.
-        These three goals cannot be achieved in the same time. The compromise turns out to be hard to find.
+        These goals cannot be achieved in the same time. The compromise turns out to be hard to find.
       */
-    if (this.state.fileMetadata.file_type === 0) { // file_type == 0: ordinary directory
-      thumbnail = (
-        <img src={`./static/icons/folder.svg`} style={{width: '100%', cursor: 'pointer'}}
-          onClick={() => this.onFileItemClicked()} />
-      );
-      // For svg <img>, we specify width: 100%;
-      // For ordinary image we specify maxWidth: 100%
+    if (this.state.fileMetadata.file_type === 0 || this.state.fileMetadata.file_type === -1) {
+      // file_type == -1: double-dot directory; file_type == 0: ordinary directory
+      thumbnail = <DirectoryThumbnail onFileItemClicked={this.onFileItemClicked}/>;
     } else if (this.state.fileMetadata.file_type === 1) { // file_type == 1: ordinary file
       if (this.state.fileMetadata.media_type === 1) { // image
         thumbnail = (
-          <img src={`./get-thumbnail/?filename=` +
-            `${encodeURIComponent(this.state.fileMetadata.filename)}_${this.state.fileMetadata.size}.jpg`}
-          style={{maxWidth: '100%', maxHeight: '90vh', display: 'block', cursor: 'pointer'}}
-          onClick={() => this.onFileItemClicked()}
-          onError={(e)=>{
-            e.target.onerror = null; e.target.src='./static/icons/image.svg'; e.target.style='width: 100%';
-          }} />);
-        // For svg <img>, we specify width: 100%;
-        // For ordinary image we specify maxWidth: 100%;
-        // Note for onError we need to specify a special style;
+          <ImageThumbnail fileMetadata={this.state.fileMetadata} onFileItemClicked={this.onFileItemClicked} />
+        );
       } else if (this.state.fileMetadata.media_type === 2) { // video
         thumbnail = (
-          <img
-            src={
-              `./get-thumbnail/?filename=` +
-              `${encodeURIComponent(this.state.fileMetadata.filename)}_${this.state.fileMetadata.size}.jpg`
-            }
-            style={{maxWidth: '100%', cursor: 'pointer'}}
-            onClick={() => this.onFileItemClicked(this.state.fileMetadata.filename)}
-            onError={(e)=>{
-              e.target.onerror = null; e.target.src = './static/icons/video.svg'; e.target.style='width: 100%';
-            }} />);
-        // For svg <img>, we specify width: 100%;
-        // For ordinary image we specify maxWidth: 100%;
-        // Note for onError we need to specify a special style;
+          <VideoThumbnail fileMetadata={this.state.fileMetadata} onFileItemClicked={this.onFileItemClicked} />
+        );
       } else if (this.state.fileMetadata.media_type === 0) { // not a media file
         let url = null;
         if (
@@ -187,18 +167,18 @@ class FileItem extends React.Component {
   }
 
   render() {
-    const retval = this.generateThumbnailAndMetaData();
+    const retval = this.generateThumbnailAndMetaDataComponents();
     const thumbnail = retval.thumbnail;
     const fileMetaData = retval.fileMetaData;
     return (
-      <div className='row' style={{display: 'grid', gridTemplateColumns: '8em 8fr 2.5em'}} >
+      <Row style={{display: 'grid', gridTemplateColumns: '8em 8fr 2.5em'}} >
         {/* Note that for gridTemplateColumns we canNOT use relative width for thumbnail. The reason is that
-          common monitors are wide screen but smartphones are usually tall screen, so the preferred thumbnail
+          common monitors are wide screen but smartphones usually have tall screen, so the preferred thumbnail
           size is not the same. */}
-        <div className='col d-flex align-items-center justify-content-center'>
+        <Col className='d-flex align-items-center justify-content-center'>
           {thumbnail}
-        </div>
-        <div className='col' style={{display: 'flex', flexFlow: 'column'}} >
+        </Col>
+        <Col style={{display: 'flex', flexFlow: 'column'}} >
           <div style={{flex: '1 1 auto', wordBreak: 'break-all'}}>
             <a value={this.state.fileMetadata.filename}
               style={{textDecoration: 'none', display: 'block', cursor: 'pointer'}}
@@ -209,11 +189,11 @@ class FileItem extends React.Component {
           <div style={{flex: '0 1 1.5em'}} >
             <div style={{fontSize: '0.8em', color: '#808080'}}>{fileMetaData}</div>
           </div>
-        </div>
-        <div className='col'>
+        </Col>
+        <Col>
           <ContextMenu refreshFileList={this.props.refreshFileList} fileInfo={this.state.fileMetadata} />
-        </div>
-      </div>
+        </Col>
+      </Row>
     );
   }
 }

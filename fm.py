@@ -745,6 +745,7 @@ def download() -> Response:
 
 def generate_files_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
 
+    # file_type == -1: the double-dot file
     # file_type == 0: ordinary directory
     # file_type == 1: ordinary file
     # file_type == 2: mountpoint
@@ -782,7 +783,7 @@ def generate_files_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
         parent_dir_file = copy.deepcopy(file_info_template)
         parent_dir_file['asset_dir'] = asset_dir
         parent_dir_file['filename'] = '..'
-        parent_dir_file['file_type'] = 0
+        parent_dir_file['file_type'] = -1
         parent_dir_file['asset_dir'] = asset_dir
         files_list['content'].append(parent_dir_file)
 
@@ -793,8 +794,7 @@ def generate_files_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
         # here we use method under os.path to do the job.
         fo = copy.deepcopy(file_info_template)
         fo['filename'] = entry.name
-        # fo means file_object, file_info_template.copy() is shallow copy.
-
+        fo['last_modified_at'] = entry.stat().st_mtime
         if os.path.ismount(entry.path):
             fo['file_type'] = 2
         elif os.path.islink(entry.path):
@@ -808,7 +808,7 @@ def generate_files_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
             if file_path is None:
                 # implies chroot escape attempt!
                 raise PermissionError('chroot escape attempt detected???')
-            fo['size'] = os.path.getsize(file_path)
+            fo['size'] = entry.stat().st_size
             if ext is None:
                 fo['media_type'] = 0
             elif ext.lower() in video_extensions:
