@@ -8,6 +8,9 @@ import Col from 'react-bootstrap/Col';
 import Dropdown from 'react-bootstrap/Dropdown';
 import {OffcanvasServerInfo} from './offcanvas/server-info.js';
 import {OffcanvasFileUpload} from './offcanvas/upload';
+import Button from 'react-bootstrap/Button';
+import InputGroup from 'react-bootstrap/InputGroup';
+import Form from 'react-bootstrap/Form';
 
 
 class NavigationBar extends React.Component {
@@ -15,7 +18,7 @@ class NavigationBar extends React.Component {
     super(props);
     this.state = {
       currentPath: props.currentPath,
-      addressBar: props.currentPath,
+      addressBarValue: props.currentPath,
       onFileItemClicked: props.onFileItemClicked,
       modalDialogue: null,
       offcanvasElement: null
@@ -25,13 +28,14 @@ class NavigationBar extends React.Component {
     this.onUploadFileClicked = this.onUploadFileClicked.bind(this);
     this.onClickAddressBarGo = this.onClickAddressBarGo.bind(this);
     this.onAddressBarEnterPress = this.onAddressBarEnterPress.bind(this);
+    this.onAddressBarChange = this.onAddressBarChange.bind(this);
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.currentPath !== this.props.currentPath) {
       this.setState({
         currentPath: this.props.currentPath,
-        addressBar: this.props.currentPath
+        addressBarValue: this.props.currentPath
       });
     }
   }
@@ -41,7 +45,7 @@ class NavigationBar extends React.Component {
       return;
     }
     this.setState({
-      currentPath: this.state.addressBar
+      currentPath: this.state.addressBarValue
     }, ()=>{
       this.props.refreshFileList();
     });
@@ -49,9 +53,9 @@ class NavigationBar extends React.Component {
 
   onClickAddressBarGo(event) {
     this.setState({
-      currentPath: this.state.addressBar
+      currentPath: this.state.addressBarValue
     }, ()=>{
-      this.props.refreshFileList();
+      this.props.refreshFileList(this.state.currentPath);
     });
   }
 
@@ -76,6 +80,12 @@ class NavigationBar extends React.Component {
           <OffcanvasFileUpload show={true} currentPath={this.state.currentPath}/>
         )
       });
+    });
+  }
+
+  onAddressBarChange(event) {
+    this.setState({
+      addressBarValue: event.target.value
     });
   }
 
@@ -119,18 +129,14 @@ class NavigationBar extends React.Component {
                 </Dropdown>
               </Col>
               <Col>
-                <div className="input-group d-flex justify-content-between mx-1 my-1">
+                <InputGroup className="d-flex justify-content-between mx-1 my-1">
                   {/* d-flex and justify-content-between keep components in one line*/}
-                  <span className="input-group-text" id="basic-addon1"></span>
-                  <input type="text" className="form-control" placeholder="Address"
-                    aria-label="Recipient's username" aria-describedby="button-addon2"
-                    value={this.state.addressBar} onChange={this.onAddressBarChange}
-                    onKeyPress={this.onAddressBarEnterPress} id="address-input" />
-                  <button className="btn btn-primary" type="button"
-                    onClick={this.onClickAddressBarGo} htmlFor="address-input" >
+                  <Form.Control type="text" size="sm" placeholder="Address" value={this.state.addressBarValue}
+                    onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress} />
+                  <Button onClick={this.onClickAddressBarGo} htmlFor="address-input" >
                     <i className="bi bi-caret-right-fill"></i>
-                  </button>
-                </div>
+                  </Button>
+                </InputGroup>
               </Col>
             </Row>
           </Container>

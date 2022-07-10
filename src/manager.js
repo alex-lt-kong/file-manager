@@ -20,7 +20,6 @@ class FileManager extends React.Component {
       uploadProgress: 0,
       username: null
     };
-    this.onAddressBarChange = this.onAddressBarChange.bind(this);
     this.onClickMore = this.onClickMore.bind(this);
     this.fetchFilesListFromServer = this.fetchFilesListFromServer.bind(this);
     this.refreshFileList = this.refreshFileList.bind(this);
@@ -59,12 +58,6 @@ class FileManager extends React.Component {
     } else {
       this.fetchFilesListFromServer();
     }
-  }
-
-  onAddressBarChange(event) {
-    this.setState({
-      addressBar: event.target.value
-    });
   }
 
   onClickMore(event) {
