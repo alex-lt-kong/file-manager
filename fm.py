@@ -121,12 +121,13 @@ def create_folder() -> Response:
     asset_dir = request.form['asset_dir']
     folder_name = request.form['folder_name']
 
-    try:
-        folder_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:], folder_name)
-        assert folder_path is not None
-    except werkzeug.exceptions.NotFound:
+    folder_parent_dir = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
+    if folder_parent_dir is None:
         return Response('Potential chroot escape', 400)
-    except AssertionError:
+    if os.path.isdir(folder_parent_dir) is False:
+        return Response(f'Parent directory [{asset_dir}] does not exist', 400)   
+    folder_path = werkzeug.utils.safe_join(root_dir, asset_dir[1:], folder_name)
+    if folder_path is None:
         return Response('Potential chroot escape', 400)
 
     if (os.path.isfile(folder_path) or os.path.isdir(folder_path) or
@@ -154,15 +155,21 @@ def upload() -> Response:
         return Response('No files are received', 400)
 
     asset_dir = request.form['asset_dir']
+    if asset_dir[0] != '/':
+        return Response(f'Invalid asset_dir [{asset_dir}]: it should start with "/"', 400)
     selected_files = flask.request.files.getlist("selected_files")
     for selected_file in selected_files:
         if selected_file.filename is None:
             return Response('filename is empty', 400)
         basename, ext = os.path.splitext(selected_file.filename)
         if (ext.lower() not in allowed_ext):
-            return Response(f'{ext} is not among the allowed extensions: '
+            return Response(f'[{ext}] is not among the allowed extensions: '
                             f'{allowed_ext}', 400)
-
+        filedir = werkzeug.utils.safe_join(root_dir, asset_dir[1:])
+        if filedir is None:
+            return Response('Potential chroot escape', 400)
+        if os.path.isdir(filedir) is False:
+            return Response(f'Directory [{asset_dir}] does not exist', 400)
         filepath = werkzeug.utils.safe_join(root_dir, asset_dir[1:], selected_file.filename)
         if filepath is None:
             return Response('Potential chroot escape', 400)
@@ -177,9 +184,8 @@ def upload() -> Response:
             # At least there could be one error:
             # OSError: [Errno 28] No space left on device
         except Exception:
-            return Response('Internal error', 500)
             logging.exception('')
-
+            return Response('Internal error', 500)
     return Response('Upload done', 200)
 
 

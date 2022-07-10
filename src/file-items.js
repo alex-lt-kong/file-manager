@@ -1,9 +1,15 @@
 import React from 'react';
 import {ContextMenu} from './ctx-menu.js';
 import PropTypes from 'prop-types';
+import moment from 'moment';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
-import {DirectoryThumbnail, ImageThumbnail, VideoThumbnail, NonMediaFileThumbnail} from './thumbnails';
+import {
+  DirectoryThumbnail,
+  ImageThumbnail,
+  VideoThumbnail,
+  NonMediaFileThumbnail,
+  SpecialDirectoryThumbnail} from './thumbnails';
 
 function humanFileSize(bytes, si=false, dp=1) {
   const thresh = si ? 1000 : 1024;
@@ -75,30 +81,20 @@ class FileItem extends React.Component {
       }
       fileMetaData = (
         <span>
-          <b>size:</b> {humanFileSize(this.state.fileMetadata.size)},
-          <b>views</b>: {this.state.fileMetadata.stat.downloads}
+          <b>size:</b>{humanFileSize(this.state.fileMetadata.size)},&nbsp;
+          <b>views:</b>{this.state.fileMetadata.stat.downloads},&nbsp;
+          <b>modified:</b>{moment.unix(this.state.fileMetadata.last_modified_at).format('YYYY-MM-DD hh:mm')}
         </span>
       );
     } else if (this.state.fileMetadata.file_type === 2) { // file_type == 2: mountpoint
       fileMetaData = 'mountpoint';
-      thumbnail = (
-        <img src={`./static/icons/special-folder.svg`} style={{width: '100%', cursor: 'pointer'}}
-          onClick={() => this.onFileItemClicked()} />
-      );
-      // For svg <img>, we specify width: 100%;
-      // For ordinary image we specify maxWidth: 100%
+      thumbnail = <SpecialDirectoryThumbnail onFileItemClicked={this.onFileItemClicked} />;
     } else if (this.state.fileMetadata.file_type === 3) { // file_type == 3: symbolic link
       fileMetaData = 'symbolic link';
-      thumbnail = (
-        <img src={`./static/icons/special-folder.svg`} style={{width: '100%', cursor: 'pointer'}}
-          onClick={() => this.onFileItemClicked()} />
-      );
+      thumbnail = <SpecialDirectoryThumbnail onFileItemClicked={this.onFileItemClicked} />;
     } else {
       fileMetaData = '??Unknown file type??';
-      thumbnail = (
-        <img src={`./static/icons/special-folder.svg`} style={{width: '100%', cursor: 'pointer'}}
-          onClick={() => this.onFileItemClicked()} />
-      );
+      thumbnail = <SpecialDirectoryThumbnail onFileItemClicked={this.onFileItemClicked} />;
     }
 
     return {
@@ -152,7 +148,7 @@ class FileItem extends React.Component {
             </a>
           </div>
           <div style={{flex: '0 1 1.5em'}} >
-            <div style={{fontSize: '0.8em', color: '#808080'}}>{fileMetaData}</div>
+            <div style={{fontSize: '0.7em', color: '#808080'}}>{fileMetaData}</div>
           </div>
         </Col>
         <Col>

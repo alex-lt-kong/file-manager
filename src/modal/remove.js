@@ -33,7 +33,6 @@ class ModalRemove extends React.Component {
         .then((response) => {
           this.handleCloseClick();
           if (this.props.refreshFileList != null) {
-            console.log(`this.props.refreshFileList() fired`);
             this.props.refreshFileList();
           }
         })

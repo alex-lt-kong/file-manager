@@ -13,7 +13,6 @@ class ModalMkdir extends React.Component {
       show: props.show,
       assetDir: props.assetDir,
       folderName: 'New Folder',
-      refreshFileList: props.refreshFileList,
       responseMessage: null
     };
     this.handleCloseClick = this.handleCloseClick.bind(this);
@@ -42,8 +41,8 @@ class ModalMkdir extends React.Component {
     })
         .then((response) => {
           this.handleCloseClick();
-          if (this.state.refreshFileList !== null) {
-            this.state.refreshFileList();
+          if (this.props.refreshFileList !== null) {
+            this.props.refreshFileList();
           }
         })
         .catch((error) => {

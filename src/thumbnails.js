@@ -29,6 +29,21 @@ class DirectoryThumbnail extends Thumbnail {
   }
 }
 
+class SpecialDirectoryThumbnail extends Thumbnail {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    return (
+      <img src={`./static/icons/special-folder.svg`} style={{width: '100%', cursor: 'pointer'}}
+        onClick={() => this.onFileItemClicked()} />
+    );
+    // For svg <img>, we specify width: 100%;
+    // For ordinary image we specify maxWidth: 100%
+  }
+}
+
 class FileThumbnail extends Thumbnail {
   constructor(props) {
     super(props);
@@ -146,4 +161,4 @@ class NonMediaFileThumbnail extends FileThumbnail {
   }
 }
 
-export {DirectoryThumbnail, ImageThumbnail, VideoThumbnail, NonMediaFileThumbnail};
+export {DirectoryThumbnail, ImageThumbnail, VideoThumbnail, NonMediaFileThumbnail, SpecialDirectoryThumbnail};
