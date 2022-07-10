@@ -12,7 +12,7 @@ class TextViewer extends React.Component {
     super(props);
     this.state = {
       params: props.params,
-      plainTextContent: null
+      plainTextContent: '<text loading...>'
     };
     this.fetchDataFromServer();
   }
@@ -22,6 +22,15 @@ class TextViewer extends React.Component {
       `&filename=${encodeURIComponent(this.state.params.filename)}&as_attachment=0`;
     axios.get(fileUrl)
         .then((response) => {
+          const fileSizeLimit = 10 * 1024 * 1024;
+          if (response.data.length > fileSizeLimit) {
+            alert(
+                `Due to common browser limit, file that is larger than ` +
+                `${fileSizeLimit / 1024 / 1024} MB will not be loaded.`
+            );
+            return;
+          }
+
           if (typeof response.data === 'string' || response.data instanceof String) {
             this.setState({
               plainTextContent: response.data
@@ -38,12 +47,13 @@ class TextViewer extends React.Component {
         })
         .catch((error) => {
           console.error(error);
+          alert(error);
         });
   }
 
   detectLanguageFromFilename() {
     if (this.state.params.filename[0] === '.') {
-      console.log(`filename ${this.state.params.filename} starts with ".", we will assume it to be a bash script`);
+      console.warn(`filename ${this.state.params.filename} starts with ".", we will assume it to be a bash script`);
       return 'bash';
     }
     const fileExt = this.state.params.filename.split('.').pop().toLowerCase();
@@ -55,16 +65,17 @@ class TextViewer extends React.Component {
       ini: 'ini',
       js: 'javascript',
       json: 'json',
+      log: 'text',
       md: 'markdown',
       php: 'php',
       ps1: 'powershell',
       py: 'python',
       pyi: 'python',
       sql: 'sql',
+      txt: 'text',
       xml: 'xml'
     };
     if (extLangMapping.hasOwnProperty(fileExt)) {
-      console.log(`fileExt is ${fileExt} and it is mapped to ${extLangMapping[fileExt]}`);
       return extLangMapping[fileExt];
     }
     console.warn(`fileExt ${fileExt} does not have a defined mapping, returning text`);

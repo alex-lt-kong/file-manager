@@ -3,7 +3,7 @@ import {ContextMenu} from './ctx-menu.js';
 import PropTypes from 'prop-types';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
-import {DirectoryThumbnail, ImageThumbnail, VideoThumbnail} from './thumbnails';
+import {DirectoryThumbnail, ImageThumbnail, VideoThumbnail, NonMediaFileThumbnail} from './thumbnails';
 
 function humanFileSize(bytes, si=false, dp=1) {
   const thresh = si ? 1000 : 1024;
@@ -69,44 +69,9 @@ class FileItem extends React.Component {
           <VideoThumbnail fileMetadata={this.state.fileMetadata} onFileItemClicked={this.onFileItemClicked} />
         );
       } else if (this.state.fileMetadata.media_type === 0) { // not a media file
-        let url = null;
-        if (
-          ['.doc', '.docx', '.odt', '.rtf', '.docm', '.docx', 'wps'].includes(
-              this.state.fileMetadata.extension.toLowerCase()
-          )
-        ) {
-          url = './static/icons/word.svg';
-        } else if (['.htm', '.html', '.mht', '.xml'].includes(this.state.fileMetadata.extension.toLowerCase())) {
-          url = './static/icons/ml.svg';
-        } else if (['.csv', '.xls', '.xlsm', '.xlsx'].includes(this.state.fileMetadata.extension.toLowerCase())) {
-          url = './static/icons/xls.svg';
-        } else if (['.pdf'].includes(this.state.fileMetadata.extension.toLowerCase())) {
-          url = './static/icons/pdf.svg';
-        } else if (['.7z', '.zip', '.rar', '.tar', '.gz'].includes(this.state.fileMetadata.extension.toLowerCase())) {
-          url = './static/icons/archive.svg';
-        } else if (
-          ['.mka', '.mp3', '.wma', '.wav', '.ogg', '.flac'].includes(this.state.fileMetadata.extension.toLowerCase())
-        ) {
-          url = './static/icons/music.svg';
-        } else if (['.c'].includes(this.state.fileMetadata.extension.toLowerCase())) {
-          url = './static/icons/c.svg';
-        } else if (['.py', '.pyc', '.ipynb'].includes(this.state.fileMetadata.extension.toLowerCase())) {
-          url = './static/icons/python.svg';
-        } else if (['.apk', '.whl', '.rpm', '.deb'].includes(this.state.fileMetadata.extension.toLowerCase())) {
-          url = './static/icons/package.svg';
-        } else if (['.exe', '.bat'].includes(this.state.fileMetadata.extension.toLowerCase())) {
-          url = './static/icons/exe.svg';
-        } else if (['.css'].includes(this.state.fileMetadata.extension.toLowerCase())) {
-          url = './static/icons/css.svg';
-        } else {
-          url = './static/icons/misc.svg';
-        }
         thumbnail = (
-          <img src={url} style={{width: '100%', display: 'block', float: 'left', cursor: 'pointer'}}
-            onClick={() => this.onFileItemClicked()} />
+          <NonMediaFileThumbnail fileMetadata={this.state.fileMetadata} onFileItemClicked={this.onFileItemClicked} />
         );
-        // For svg <img>, we specify width: 100%;
-        // For ordinary image we specify maxWidth: 100%
       }
       fileMetaData = (
         <span>
