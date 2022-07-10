@@ -2,10 +2,11 @@ const fs = require('fs');
 const browserify = require('browserify');
 
 const srcList = [
-  'utils.js', 'ctx-menu.js', './modal/extract-subtitles.js',
-  './modal/mkdir.js', './modal/move.js', './modal/remove.js', './modal/media-metadata.js',
-  './modal/transcode.js', 'file-items.js', 'thumbnails.js',
-  'offcanvas-server-info.js', './viewer/video.js', './viewer/text.js', 'navbar.js', 'manager.js'
+  'utils.js', 'file-items.js', 'thumbnails.js', 'ctx-menu.js', 'navbar.js', 'manager.js',
+  './modal/extract-subtitles.js', './modal/mkdir.js', './modal/move.js',
+  './modal/remove.js', './modal/media-metadata.js', './modal/transcode.js',
+  './viewer/video.js', './viewer/text.js',
+  './offcanvas/server-info.js'
 ];
 
 if (process.argv.length !== 3 || (process.argv[2] !== '--prod' && process.argv[2] !== '--dev')) {

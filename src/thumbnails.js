@@ -37,7 +37,7 @@ class SpecialDirectoryThumbnail extends Thumbnail {
   render() {
     return (
       <img src={`./static/icons/special-folder.svg`} style={{width: '100%', cursor: 'pointer'}}
-        onClick={() => this.onFileItemClicked()} />
+        onClick={() => this.state.onFileItemClicked()} />
     );
     // For svg <img>, we specify width: 100%;
     // For ordinary image we specify maxWidth: 100%
@@ -66,7 +66,7 @@ class ImageThumbnail extends FileThumbnail {
             `${encodeURIComponent(this.state.fileMetadata.filename)}_${this.state.fileMetadata.size}.jpg`
         }
         style={{maxWidth: '100%', cursor: 'pointer'}}
-        onClick={() => this.onFileItemClicked()}
+        onClick={() => this.state.onFileItemClicked()}
         onError={(e)=>{
           e.target.onerror = null;
           e.target.src='./static/icons/image.svg';
@@ -93,7 +93,7 @@ class VideoThumbnail extends FileThumbnail {
           `${encodeURIComponent(this.state.fileMetadata.filename)}_${this.state.fileMetadata.size}.jpg`
         }
         style={{maxWidth: '100%', cursor: 'pointer'}}
-        onClick={() => this.onFileItemClicked(this.state.fileMetadata.filename)}
+        onClick={() => this.state.onFileItemClicked(this.state.fileMetadata.filename)}
         onError={(e)=>{
           e.target.onerror = null;
           e.target.src = './static/icons/video.svg';
@@ -154,7 +154,7 @@ class NonMediaFileThumbnail extends FileThumbnail {
     }
     return (
       <img src={url} style={{width: '100%', display: 'block', float: 'left', cursor: 'pointer'}}
-        onClick={() => this.onFileItemClicked()} />
+        onClick={() => this.state.onFileItemClicked()} />
     );
     // For svg <img>, we specify width: 100%;
     // For ordinary image we specify maxWidth: 100%
