@@ -4,6 +4,7 @@ stats.json
 resources/files
 static/js/*.js
 static/js/viewer/*.js
+static/js/offcanvas/*.js
 # just in case files can be a mountpoint or a syslink
 resources/files.json
 resources/thumbnail-rotate.state
