@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import moment from 'moment';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
+import ListGroup from 'react-bootstrap/ListGroup';
 import {
   DirectoryThumbnail,
   ImageThumbnail,
@@ -201,9 +202,9 @@ class FileItems extends React.Component {
     const sortedfilesInfo = this.sortFileItems(true);
     for (let i = 0; i < fileList.length; ++i) {
       fileList[i] = (
-        <li key={i} className='list-group-item'>
+        <ListGroup.Item key={i}>
           <FileItem refreshFileList={this.props.refreshFileList} fileMetadata={sortedfilesInfo[i]}/>
-        </li>
+        </ListGroup.Item>
       );
     }
 

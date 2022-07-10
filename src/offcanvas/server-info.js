@@ -79,7 +79,7 @@ class OffcanvasServerInfo extends React.Component {
     }
 
     return (
-      <Offcanvas show={this.state.show} onHide={this.handleClose} placement="bottom" backdrop="static">
+      <Offcanvas show={this.state.show} onHide={this.handleClose} placement="bottom">
         <Offcanvas.Header closeButton>
           <Offcanvas.Title>Server Info</Offcanvas.Title>
         </Offcanvas.Header>

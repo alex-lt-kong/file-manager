@@ -43675,8 +43675,7 @@ var OffcanvasServerInfo = /*#__PURE__*/function (_React$Component) {
       return /*#__PURE__*/_react["default"].createElement(_Offcanvas["default"], {
         show: this.state.show,
         onHide: this.handleClose,
-        placement: "bottom",
-        backdrop: "static"
+        placement: "bottom"
       }, /*#__PURE__*/_react["default"].createElement(_Offcanvas["default"].Header, {
         closeButton: true
       }, /*#__PURE__*/_react["default"].createElement(_Offcanvas["default"].Title, null, "Server Info")), /*#__PURE__*/_react["default"].createElement(_Offcanvas["default"].Body, {

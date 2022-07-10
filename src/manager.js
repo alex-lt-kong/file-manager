@@ -4,6 +4,8 @@ import {createRoot} from 'react-dom/client';
 import {FileItems} from './file-items';
 import path from 'path';
 import {NavigationBar} from './navbar';
+import ListGroup from 'react-bootstrap/ListGroup';
+import Offcanvas from 'react-bootstrap/Offcanvas';
 
 class FileManager extends React.Component {
   constructor(props) {
@@ -80,43 +82,22 @@ class FileManager extends React.Component {
         });
   }
 
-  ListItemLink(props) {
-    return <ListItem button component="a" {...props} />;
-  }
-
-
   render() {
     if (this.state.filesInfo === null) {
       return null;
     }
 
     return (
-      <div>
+      <>
         <NavigationBar currentPath={this.state.currentPath} refreshFileList={this.refreshFileList}/>
         <div>
-          <ul className="list-group overflow-auto"
-            style={{
-              maxWidth: '1000px', maxHeight: '100%', minHeight: '60vh', marginLeft: 'auto', marginRight: 'auto'
-            }}>
-            {/* The maxHeight: 100% is used to solve a very nasty bug. The bug is like this:
-                First, it only happens on smartphone and will not happen on desktop browser.
-                On a mobile device, if you have a long file list and you try to open the
-                menu for the file items shown on the last page of the list (i.e. not necessarily
-                the last one, but the ones could be shown on the last page of the screen) you will
-                notice that the poge will scroll up a little bit at the moment you click the
-                "more" button. I failed to find any solutions or even references to this bug online.
-                After a lot of trial-and-error, it turns out that if we set the maxHeight of the file
-                list to the height of the monitor, the bug disappears...
-                minHeight is used to fix another issue: suppose we set maxHeight only, if the content
-                height is too small, the context menu can actually be higher than the content height,
-                forcing the browser to show a scrollbar in order to accommodate the height of the context
-                menu. If we set minHeight == 60vh, the content height will never to too small to accomodate
-                the context menu.*/}
+          <ListGroup className="overflow-auto"
+            style={{maxWidth: '1000px', marginLeft: 'auto', marginRight: 'auto'}}>
             <FileItems filesInfo={this.state.filesInfo} refreshFileList={this.refreshFileList}
               currentPath={this.state.currentPath}/>
-          </ul>
+          </ListGroup>
         </div>
-      </div>
+      </>
     );
   }
 }
