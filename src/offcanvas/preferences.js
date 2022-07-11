@@ -27,17 +27,17 @@ class OffcanvasPreferences extends React.Component {
 
   onThumbnailSizeChanged(event) {
     const parsedValue = parseInt(event.target.value);
-    console.log(`parsedValue: ${parsedValue}, typeof parsedValue === ${typeof parsedValue}`);
     if (isNaN(parsedValue)) {
       return;
     }
     if (parsedValue === this.state.thumbnailSize || parsedValue < 1 || parsedValue > 12) {
       return;
     }
-    localStorage.setItem('thumbnailSize', parsedValue);
-    this.props.updateThumbnailSize(parsedValue);
     this.setState({
       thumbnailSize: parsedValue
+    }, ()=> {
+      localStorage.setItem('thumbnailSize', parsedValue);
+      this.props.updateThumbnailSize(parsedValue);
     });
   }
 
@@ -54,12 +54,12 @@ class OffcanvasPreferences extends React.Component {
           <Offcanvas.Title>Preferences</Offcanvas.Title>
         </Offcanvas.Header>
         <Offcanvas.Body style={{fontSize: '0.85em'}}>
-          <Container>
+          <Container style={{maxSize: '1280px'}}>
             <Form.Group as={Row} style={{maxWidth: '1280px'}}>
               <Form.Label column sm={2}>Thumbnail Size</Form.Label>
               <Col sm={10}>
-                <Form.Control type="number" placeholder="Thumbnail size" value={parseInt(this.state.thumbnailSize)}
-                  onChange={this.onThumbnailSizeChanged} />
+                <Form.Range value={this.state.thumbnailSize}
+                  onChange={this.onThumbnailSizeChanged} min={1} max={12}/>
               </Col>
             </Form.Group>
           </Container>

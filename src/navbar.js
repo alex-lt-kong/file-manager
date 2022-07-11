@@ -34,10 +34,14 @@ class NavigationBar extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.currentPath !== this.props.currentPath) {
+    if (
+      prevProps.currentPath !== this.props.currentPath ||
+      prevProps.thumbnailSize !== this.props.thumbnailSize
+    ) {
       this.setState({
         currentPath: this.props.currentPath,
-        addressBarValue: this.props.currentPath
+        addressBarValue: this.props.currentPath,
+        thumbnailSize: this.props.thumbnailSize
       });
     }
   }
