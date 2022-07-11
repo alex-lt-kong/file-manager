@@ -46,10 +46,11 @@ class NavigationBar extends React.Component {
     if (event.key !== 'Enter') {
       return;
     }
+    console.log(`Enter pressed!`);
     this.setState({
       currentPath: this.state.addressBarValue
     }, ()=>{
-      this.props.refreshFileList();
+      this.props.refreshFileList(this.state.currentPath);
     });
   }
 
