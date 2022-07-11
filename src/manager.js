@@ -5,27 +5,21 @@ import {FileItems} from './file-items';
 import path from 'path';
 import {NavigationBar} from './navbar';
 import ListGroup from 'react-bootstrap/ListGroup';
-import Offcanvas from 'react-bootstrap/Offcanvas';
 
 class FileManager extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      addressBar: '/',
       currentPath: '/',
-      // CanNOT use currentPath as addressBar's value--addressBar's value has to change as user types while
-      // currentPath should be set only after user presses Enter.
       filesInfo: null,
       pathStack: [],
-      serverInfo: null,
-      showNewFolderModal: false,
-      uploadProgress: 0,
-      username: null
+      username: null,
+      thumbnailSize: 8
     };
     this.onClickMore = this.onClickMore.bind(this);
     this.fetchFilesListFromServer = this.fetchFilesListFromServer.bind(this);
     this.refreshFileList = this.refreshFileList.bind(this);
-    this.serverInfoPanel;
+    this.updateThumbnailSize = this.updateThumbnailSize.bind(this);
   }
 
   componentDidMount() {
@@ -52,13 +46,20 @@ class FileManager extends React.Component {
       let formattedNewCurrentPath = path.resolve(newCurrentPath);
       formattedNewCurrentPath += (formattedNewCurrentPath.endsWith('/') ? '' : '/');
       this.setState({
-        currentPath: formattedNewCurrentPath,
-        addressBar: formattedNewCurrentPath
+        currentPath: formattedNewCurrentPath
       }, ()=> {
         this.fetchFilesListFromServer();
       });
     } else {
       this.fetchFilesListFromServer();
+    }
+  }
+
+  updateThumbnailSize(newThumbnailSize) {
+    if (typeof newThumbnailSize !== 'undefined') {
+      this.setState({
+        thumbnailSize: parseInt(newThumbnailSize)
+      });
     }
   }
 
@@ -89,12 +90,13 @@ class FileManager extends React.Component {
 
     return (
       <>
-        <NavigationBar currentPath={this.state.currentPath} refreshFileList={this.refreshFileList}/>
+        <NavigationBar currentPath={this.state.currentPath} refreshFileList={this.refreshFileList}
+          updateThumbnailSize={this.updateThumbnailSize}/>
         <div>
           <ListGroup className="overflow-auto"
             style={{maxWidth: '1000px', marginLeft: 'auto', marginRight: 'auto'}}>
             <FileItems filesInfo={this.state.filesInfo} refreshFileList={this.refreshFileList}
-              currentPath={this.state.currentPath}/>
+              currentPath={this.state.currentPath} thumbnailSize={this.state.thumbnailSize} />
           </ListGroup>
         </div>
       </>

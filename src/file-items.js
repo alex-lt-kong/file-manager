@@ -37,15 +37,17 @@ class FileItem extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      fileMetadata: props.fileMetadata
+      fileMetadata: props.fileMetadata,
+      thumbnailSize: props.thumbnailSize
     };
     this.onFileItemClicked = this.onFileItemClicked.bind(this);
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.fileMetadata !== this.props.fileMetadata) {
+    if (prevProps.fileMetadata !== this.props.fileMetadata || prevProps.thumbnailSize !== this.props.thumbnailSize) {
       this.setState({
-        fileMetadata: this.props.fileMetadata
+        fileMetadata: this.props.fileMetadata,
+        thumbnailSize: this.props.thumbnailSize
       });
     }
   }
@@ -133,7 +135,7 @@ class FileItem extends React.Component {
     const thumbnail = retval.thumbnail;
     const fileMetaData = retval.fileMetaData;
     return (
-      <Row style={{display: 'grid', gridTemplateColumns: '8em 8fr 2.5em'}} >
+      <Row style={{display: 'grid', gridTemplateColumns: `${this.state.thumbnailSize}em 8fr 2.5em`}} >
         {/* Note that for gridTemplateColumns we canNOT use relative width for thumbnail. The reason is that
           common monitors are wide screen but smartphones usually have tall screen, so the preferred thumbnail
           size is not the same. */}
@@ -162,7 +164,8 @@ class FileItem extends React.Component {
 
 FileItem.propTypes = {
   refreshFileList: PropTypes.func,
-  fileMetadata: PropTypes.object
+  fileMetadata: PropTypes.object,
+  thumbnailSize: PropTypes.number
 };
 
 class FileItems extends React.Component {
@@ -170,14 +173,20 @@ class FileItems extends React.Component {
     super(props);
     this.state = {
       filesInfo: props.filesInfo,
-      currentPath: props.currentPath
+      currentPath: props.currentPath,
+      thumbnailSize: props.thumbnailSize
     };
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.filesInfo !== this.props.filesInfo || prevProps.currentPath !== this.props.currentPath) {
+    if (
+      prevProps.filesInfo !== this.props.filesInfo ||
+      prevProps.thumbnailSize !== this.props.thumbnailSize ||
+      prevProps.currentPath !== this.props.currentPath
+    ) {
       this.setState({
         filesInfo: this.props.filesInfo,
+        thumbnailSize: this.props.thumbnailSize,
         currentPath: this.props.currentPath
       });
     }
@@ -207,7 +216,8 @@ class FileItems extends React.Component {
     for (let i = 0; i < fileList.length; ++i) {
       fileList[i] = (
         <ListGroup.Item key={i}>
-          <FileItem refreshFileList={this.props.refreshFileList} fileMetadata={sortedfilesInfo[i]}/>
+          <FileItem refreshFileList={this.props.refreshFileList} fileMetadata={sortedfilesInfo[i]}
+            thumbnailSize={this.state.thumbnailSize}/>
         </ListGroup.Item>
       );
     }
@@ -219,7 +229,8 @@ class FileItems extends React.Component {
 FileItems.propTypes = {
   refreshFileList: PropTypes.func,
   currentPath: PropTypes.string,
-  filesInfo: PropTypes.object
+  filesInfo: PropTypes.object,
+  thumbnailSize: PropTypes.number
 };
 
 export {FileItems};

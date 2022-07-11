@@ -8,6 +8,7 @@ import Col from 'react-bootstrap/Col';
 import Dropdown from 'react-bootstrap/Dropdown';
 import {OffcanvasServerInfo} from './offcanvas/server-info.js';
 import {OffcanvasFileUpload} from './offcanvas/upload';
+import {OffcanvasPreferences} from './offcanvas/preferences';
 import Button from 'react-bootstrap/Button';
 import InputGroup from 'react-bootstrap/InputGroup';
 import Form from 'react-bootstrap/Form';
@@ -18,12 +19,15 @@ class NavigationBar extends React.Component {
     this.state = {
       currentPath: props.currentPath,
       addressBarValue: props.currentPath,
+      updateThumbnailSize: props.updateThumbnailSize,
       onFileItemClicked: props.onFileItemClicked,
       modalDialogue: null,
       offcanvasElement: null
     };
     this.onNewFolderClick = this.onNewFolderClick.bind(this);
     this.onServerInfoClick = this.onServerInfoClick.bind(this);
+    this.onPreferencesClick = this.onPreferencesClick.bind(this);
+    //this.updateThumbnailSize = this.updateThumbnailSize.bind(this);
     this.onUploadFileClicked = this.onUploadFileClicked.bind(this);
     this.onClickAddressBarGo = this.onClickAddressBarGo.bind(this);
     this.onAddressBarEnterPress = this.onAddressBarEnterPress.bind(this);
@@ -65,6 +69,19 @@ class NavigationBar extends React.Component {
       this.setState({
         offcanvasElement: (
           <OffcanvasServerInfo show={true}/>
+        )
+      });
+    });
+  }
+
+  onPreferencesClick(event) {
+    this.setState({
+      offcanvasElement: null
+    }, ()=> {
+      this.setState({
+        offcanvasElement: (
+          <OffcanvasPreferences show={true} updateThumbnailSize={this.state.updateThumbnailSize}
+            thumbnailSize={this.state.thumbnailSize} />
         )
       });
     });
@@ -126,8 +143,11 @@ class NavigationBar extends React.Component {
                     <Dropdown.Item onClick={this.onNewFolderClick}>
                       <i className="bi bi-folder-plus"></i>  Create Folder
                     </Dropdown.Item>
+                    <Dropdown.Item onClick={this.onPreferencesClick}>
+                      <i className="bi bi-sliders"></i>  Preferences
+                    </Dropdown.Item>
                     <Dropdown.Item onClick={this.onServerInfoClick}>
-                      <i className="bi bi-gear"></i>  Server Info
+                      <i className="bi bi-info-circle"></i>  Server Info
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
@@ -144,7 +164,8 @@ class NavigationBar extends React.Component {
 NavigationBar.propTypes = {
   onFileItemClicked: PropTypes.func,
   refreshFileList: PropTypes.func,
-  currentPath: PropTypes.string
+  currentPath: PropTypes.string,
+  updateThumbnailSize: PropTypes.func
 };
 
 export {NavigationBar};
