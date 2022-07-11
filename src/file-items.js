@@ -183,18 +183,22 @@ class FileItems extends React.Component {
     }
   }
 
-  sortFileItems(classifyByFileType) {
-    return this.state.filesInfo.content.sort((a, b)=>{
-      if (classifyByFileType) {
+  sortFileItems(sortByFileTypeFirst) {
+    const filesInfoCopy = this.state.filesInfo.content.slice();
+    if (sortByFileTypeFirst === true) {
+      filesInfoCopy.sort((a, b)=>{
         if (a['file_type'] === b['file_type']) {
-          return (a['filename'] > b['filename']);
+          return a['filename'] > b['filename'] ? 1 : -1;
         } else {
-          a['file_type'] > b['file_type'];
+          return a['file_type'] - b['file_type'];
         }
-      } else {
-        return (a['filename'] > b['filename']);
-      }
-    });
+      });
+    } else {
+      filesInfoCopy.sort((a, b)=>{
+        return a['filename'] > b['filename'] ? 1 : -1;
+      });
+    }
+    return filesInfoCopy;
   }
 
   render() {
