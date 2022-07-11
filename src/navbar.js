@@ -12,7 +12,6 @@ import Button from 'react-bootstrap/Button';
 import InputGroup from 'react-bootstrap/InputGroup';
 import Form from 'react-bootstrap/Form';
 
-
 class NavigationBar extends React.Component {
   constructor(props) {
     super(props);
@@ -108,10 +107,17 @@ class NavigationBar extends React.Component {
         <Navbar bg="light" variant="light">
           <Container>
             <Row className="container-fluid pe-3" style={{maxWidth: '1680px'}}>
-              <Col xs="auto">
-                <Dropdown>
+              <Col>
+                <InputGroup>
+                  <Form.Control type="text" placeholder="Address" value={this.state.addressBarValue}
+                    onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress} />
+                  <Button onClick={this.onClickAddressBarGo} ><i className="bi bi-caret-right-fill"></i></Button>
+                </InputGroup>
+              </Col>
+              <Col xs="auto" className="px-0">
+                <Dropdown align="end">
                   <Dropdown.Toggle variant="primary">
-                    Menu
+                    <i className="bi bi-list"></i>
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item onClick={this.onUploadFileClicked}>
@@ -125,13 +131,6 @@ class NavigationBar extends React.Component {
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
-              </Col>
-              <Col className="px-0">
-                <InputGroup>
-                  <Form.Control type="text" placeholder="Address" value={this.state.addressBarValue}
-                    onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress} />
-                  <Button onClick={this.onClickAddressBarGo} ><i className="bi bi-caret-right-fill"></i></Button>
-                </InputGroup>
               </Col>
             </Row>
           </Container>

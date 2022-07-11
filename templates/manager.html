@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="shortcut icon" href="{{app_address}}/static/img/favicon.svg">
-<link rel="stylesheet" href="{{app_address}}/static/css/json.css">
-<link rel="stylesheet" href="{{app_address}}/static/css/bootstrap-icons.{{mode}}-1.5.0.css">
-<link rel="stylesheet" href="{{app_address}}/static/css/bootstrap/5.1.3/bootstrap.min.css">
-<script src="{{app_address}}/static/js/lib/jquery-3.6.0.{{mode}}.js"></script>
+<link rel="shortcut icon" href="./static/img/favicon.svg">
+<link rel="stylesheet" href="./static/css/json.css">
+<link rel="stylesheet" href="./static/css/bootstrap-icons/1.8.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="./static/css/bootstrap/5.1.3/bootstrap.min.css">
+<script src="./static/js/lib/jquery-3.6.0.{{mode}}.js"></script>
 
 <html>
 <head>
@@ -16,13 +16,21 @@
   body {
     padding-right: 0 !important;
   }
+  /*
+    used to fixed the bug mentioned in the following link:
+    https://github.com/twbs/bootstrap/issues/27071
+    But the solution is found from this link:
+    https://stackoverflow.com/questions/32862394/bootstrap-modals-keep-adding-padding-right-to-body-after-closed
+  */
+  .dropdown-toggle::after {
+    display: none !important; 
+  }
+  /*
+  used to remove the dropdown caret next to a dropdown button
+  https://stackoverflow.com/questions/69639680/remove-dropdown-arrow-in-react-bootstrap
+  */
 </style>
-<!-- 
-  This style is used to fixed the bug mentioned in the following link:
-  https://github.com/twbs/bootstrap/issues/27071
-  But the solution is found from this link:
-  https://stackoverflow.com/questions/32862394/bootstrap-modals-keep-adding-padding-right-to-body-after-closed
--->
+
 <body>
   <script>
   window.app_address = "{{ app_address | safe }}";
