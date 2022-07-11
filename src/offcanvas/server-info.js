@@ -29,7 +29,6 @@ class OffcanvasServerInfo extends React.Component {
   }
 
   handleClose() {
-    console.log('handleClose() fired!');
     this.setState({
       show: false
     });

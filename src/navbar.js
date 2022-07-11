@@ -19,7 +19,7 @@ class NavigationBar extends React.Component {
     this.state = {
       currentPath: props.currentPath,
       addressBarValue: props.currentPath,
-      updateThumbnailSize: props.updateThumbnailSize,
+      thumbnailSize: props.thumbnailSize,
       onFileItemClicked: props.onFileItemClicked,
       modalDialogue: null,
       offcanvasElement: null
@@ -27,7 +27,6 @@ class NavigationBar extends React.Component {
     this.onNewFolderClick = this.onNewFolderClick.bind(this);
     this.onServerInfoClick = this.onServerInfoClick.bind(this);
     this.onPreferencesClick = this.onPreferencesClick.bind(this);
-    //this.updateThumbnailSize = this.updateThumbnailSize.bind(this);
     this.onUploadFileClicked = this.onUploadFileClicked.bind(this);
     this.onClickAddressBarGo = this.onClickAddressBarGo.bind(this);
     this.onAddressBarEnterPress = this.onAddressBarEnterPress.bind(this);
@@ -80,7 +79,7 @@ class NavigationBar extends React.Component {
     }, ()=> {
       this.setState({
         offcanvasElement: (
-          <OffcanvasPreferences show={true} updateThumbnailSize={this.state.updateThumbnailSize}
+          <OffcanvasPreferences show={true} updateThumbnailSize={this.props.updateThumbnailSize}
             thumbnailSize={this.state.thumbnailSize} />
         )
       });
@@ -165,7 +164,8 @@ NavigationBar.propTypes = {
   onFileItemClicked: PropTypes.func,
   refreshFileList: PropTypes.func,
   currentPath: PropTypes.string,
-  updateThumbnailSize: PropTypes.func
+  updateThumbnailSize: PropTypes.func,
+  thumbnailSize: PropTypes.number
 };
 
 export {NavigationBar};

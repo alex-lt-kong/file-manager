@@ -9,14 +9,17 @@ import ListGroup from 'react-bootstrap/ListGroup';
 class FileManager extends React.Component {
   constructor(props) {
     super(props);
+    let cachedThumbnailSize = parseInt(localStorage.getItem('thumbnailSize'));
+    if (typeof cachedThumbnailSize !== 'number' || isNaN(cachedThumbnailSize)) {
+      cachedThumbnailSize = 2;
+    }
     this.state = {
       currentPath: '/',
       filesInfo: null,
       pathStack: [],
       username: null,
-      thumbnailSize: 8
+      thumbnailSize: cachedThumbnailSize
     };
-    this.onClickMore = this.onClickMore.bind(this);
     this.fetchFilesListFromServer = this.fetchFilesListFromServer.bind(this);
     this.refreshFileList = this.refreshFileList.bind(this);
     this.updateThumbnailSize = this.updateThumbnailSize.bind(this);
@@ -56,16 +59,12 @@ class FileManager extends React.Component {
   }
 
   updateThumbnailSize(newThumbnailSize) {
-    if (typeof newThumbnailSize !== 'undefined') {
+    if (typeof newThumbnailSize === 'number') {
       this.setState({
-        thumbnailSize: parseInt(newThumbnailSize)
+        thumbnailSize: newThumbnailSize
       });
     }
   }
-
-  onClickMore(event) {
-    console.log('onClickMore!');
-  };
 
   fetchFilesListFromServer() {
     const URL = './get-file-list/?asset_dir=' + encodeURIComponent(this.state.currentPath);
@@ -91,7 +90,7 @@ class FileManager extends React.Component {
     return (
       <>
         <NavigationBar currentPath={this.state.currentPath} refreshFileList={this.refreshFileList}
-          updateThumbnailSize={this.updateThumbnailSize}/>
+          updateThumbnailSize={this.updateThumbnailSize} thumbnailSize={this.state.thumbnailSize} />
         <div>
           <ListGroup className="overflow-auto"
             style={{maxWidth: '1000px', marginLeft: 'auto', marginRight: 'auto'}}>

@@ -5,6 +5,7 @@ import moment from 'moment';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import ListGroup from 'react-bootstrap/ListGroup';
+import Container from 'react-bootstrap/Container';
 import {
   DirectoryThumbnail,
   ImageThumbnail,
@@ -135,27 +136,28 @@ class FileItem extends React.Component {
     const thumbnail = retval.thumbnail;
     const fileMetaData = retval.fileMetaData;
     return (
-      <Row style={{display: 'grid', gridTemplateColumns: `${this.state.thumbnailSize}em 8fr 2.5em`}} >
-        {/* Note that for gridTemplateColumns we canNOT use relative width for thumbnail. The reason is that
-          common monitors are wide screen but smartphones usually have tall screen, so the preferred thumbnail
-          size is not the same. */}
-        <Col className='d-flex align-items-center justify-content-center'>
+      <Row>
+        <Col xs={this.state.thumbnailSize} className='d-flex align-items-center justify-content-center'>
           {thumbnail}
         </Col>
         <Col style={{display: 'flex', flexFlow: 'column'}} >
-          <div style={{flex: '1 1 auto', wordBreak: 'break-all'}}>
-            <a value={this.state.fileMetadata.filename}
-              style={{textDecoration: 'none', display: 'block', cursor: 'pointer'}}
-              onClick={() => this.onFileItemClicked()}>
-              {this.state.fileMetadata.filename}
-            </a>
-          </div>
-          <div style={{flex: '0 1 1.5em'}} >
-            <div style={{fontSize: '0.7em', color: '#808080'}}>{fileMetaData}</div>
-          </div>
-        </Col>
-        <Col>
-          <ContextMenu refreshFileList={this.props.refreshFileList} fileInfo={this.state.fileMetadata} />
+          <Row>
+            <Col>
+              <div style={{flex: '1 1 auto', wordBreak: 'break-all'}}>
+                <a value={this.state.fileMetadata.filename}
+                  style={{textDecoration: 'none', display: 'block', cursor: 'pointer'}}
+                  onClick={() => this.onFileItemClicked()}>
+                  {this.state.fileMetadata.filename}
+                </a>
+              </div>
+              <div style={{flex: '0 1 1.5em'}} >
+                <div style={{fontSize: '0.7em', color: '#808080'}}>{fileMetaData}</div>
+              </div>
+            </Col>
+            <Col xs={1}>
+              <ContextMenu refreshFileList={this.props.refreshFileList} fileInfo={this.state.fileMetadata} />
+            </Col>
+          </Row>
         </Col>
       </Row>
     );

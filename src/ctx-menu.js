@@ -117,7 +117,7 @@ class ContextMenu extends React.Component {
 
   render() {
     const ContextMenuToggle = React.forwardRef(({onClick}, ref) => (
-      <a href="" ref={ref} onClick={(e) => {
+      <a href="" className="float-end" ref={ref} onClick={(e) => {
         e.preventDefault();
         onClick(e);
       }}
