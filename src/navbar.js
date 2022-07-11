@@ -107,12 +107,10 @@ class NavigationBar extends React.Component {
         {this.state.offcanvasElement}
         <Navbar bg="light" variant="light">
           <Container>
-            {this.state.modalDialogue}
-            <Row className="container-fluid">
-              <Col md="auto">
-                {/* Use col-{breakpoint}-auto classes to size columns based on the natural width of their content. */}
+            <Row className="container-fluid pe-3" style={{maxWidth: '1680px'}}>
+              <Col xs="auto">
                 <Dropdown>
-                  <Dropdown.Toggle variant="primary" id="dropdown-basic">
+                  <Dropdown.Toggle variant="primary">
                     Menu
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
@@ -128,18 +126,16 @@ class NavigationBar extends React.Component {
                   </Dropdown.Menu>
                 </Dropdown>
               </Col>
-              <Col>
-                <InputGroup className="d-flex justify-content-between mx-1 my-1">
-                  {/* d-flex and justify-content-between keep components in one line*/}
-                  <Form.Control type="text" size="sm" placeholder="Address" value={this.state.addressBarValue}
+              <Col className="px-0">
+                <InputGroup>
+                  <Form.Control type="text" placeholder="Address" value={this.state.addressBarValue}
                     onChange={this.onAddressBarChange} onKeyPress={this.onAddressBarEnterPress} />
-                  <Button onClick={this.onClickAddressBarGo} htmlFor="address-input" >
-                    <i className="bi bi-caret-right-fill"></i>
-                  </Button>
+                  <Button onClick={this.onClickAddressBarGo} ><i className="bi bi-caret-right-fill"></i></Button>
                 </InputGroup>
               </Col>
             </Row>
           </Container>
+          {this.state.modalDialogue}
         </Navbar>
       </>
     );
