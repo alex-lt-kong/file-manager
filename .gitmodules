@@ -1,0 +1,3 @@
+[submodule "emailer"]
+	path = emailer
+	url = https://github.com/alex-lt-kong/emailer.git

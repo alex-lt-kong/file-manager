@@ -119,7 +119,7 @@ class NonMediaFileThumbnail extends FileThumbnail {
       url = './static/icons/word.svg';
     } else if (['.htm', '.html', '.mht', '.xml'].includes(fileExtLowerCase)) {
       url = './static/icons/ml.svg';
-    } else if (['.csv', '.xls', '.xlsm', '.xlsx'].includes(fileExtLowerCase)) {
+    } else if (['.csv', '.xls', '.xlsm', '.xlsx', 'ods'].includes(fileExtLowerCase)) {
       url = './static/icons/xls.svg';
     } else if (['.pdf'].includes(fileExtLowerCase)) {
       url = './static/icons/pdf.svg';

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from collections import OrderedDict
+from emailer import emailer
 from flask import Flask, render_template, Response, request
 from typing import Dict, List, Union, Any
 from PIL import ImageFile
@@ -10,7 +11,6 @@ import copy
 import datetime as dt
 import errno
 import flask
-import importlib.machinery
 import json
 import logging
 import os
@@ -38,7 +38,6 @@ app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager'
 debug_mode = False
 direct_open_ext: List[str] = []
-emailer = None
 external_script_dir = ''
 file_stat: Dict[str, Any]
 fs_path = ''
@@ -907,7 +906,7 @@ def stop_signal_handler(*args: Any) -> None:
 def main(debug: bool) -> None:
 
     local_port = -1
-    global allowed_ext, app_address, debug_mode, direct_open_ext, emailer
+    global allowed_ext, app_address, debug_mode, direct_open_ext
     global root_dir, external_script_dir, file_stat, fs_path, log_path
     global thumbnails_path, image_extensions, video_extensions
 
@@ -920,11 +919,6 @@ def main(debug: bool) -> None:
         allowed_ext = settings['app']['allowed_ext']
         app_address = settings['app']['address']
         direct_open_ext = settings['app']['direct_open_extensions']
-        loader = importlib.machinery.SourceFileLoader(
-                    'emailer',
-                    settings['email']['path']
-                )
-        emailer = loader.load_module()
         external_script_dir = settings['app']['external_script_dir']
         fs_path = settings['app']['files_statistics']
         image_extensions = settings['app']['image_extensions']

@@ -97,7 +97,8 @@ class NavigationBar extends React.Component {
     }, ()=> {
       this.setState({
         offcanvasElement: (
-          <OffcanvasFileUpload show={true} currentPath={this.state.currentPath}/>
+          <OffcanvasFileUpload show={true} currentPath={this.state.currentPath}
+            refreshFileList={this.props.refreshFileList}/>
         )
       });
     });

@@ -17,7 +17,6 @@
         "image_extensions": [".jpg", ".jpeg", ".tiff", ".tif", ".gif", ".bmp", ".png", ".webp"]
     },
     "email": {
-        "path": "/root/bin/emailer/emailer.py",
         "from_host": "localhost",
         "from_port": 587,
         "from_address": "media@localhost",
@@ -27,7 +26,7 @@
         "to_name": "Admin Account"
     },
     "flask" :{
-        "max_upload_size": 2048000000,
+        "max_upload_size": 4096000000,
         "local_port": 31415
     }
 }
