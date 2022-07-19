@@ -143,7 +143,7 @@ class NavigationBar extends React.Component {
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item onClick={this.onUploadFileClicked}>
-                      <i className="bi bi-upload"></i>  Upload File
+                      <i className="bi bi-upload"></i>  Upload Files
                     </Dropdown.Item>
                     <Dropdown.Item onClick={this.onNewFolderClick}>
                       <i className="bi bi-folder-plus"></i>  Create Folder

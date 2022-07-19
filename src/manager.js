@@ -91,13 +91,11 @@ class FileManager extends React.Component {
       <>
         <NavigationBar currentPath={this.state.currentPath} refreshFileList={this.refreshFileList}
           updateThumbnailSize={this.updateThumbnailSize} thumbnailSize={this.state.thumbnailSize} />
-        <div>
-          <ListGroup className="overflow-auto"
-            style={{maxWidth: '1000px', marginLeft: 'auto', marginRight: 'auto'}}>
-            <FileItems filesInfo={this.state.filesInfo} refreshFileList={this.refreshFileList}
-              currentPath={this.state.currentPath} thumbnailSize={this.state.thumbnailSize} />
-          </ListGroup>
-        </div>
+        <ListGroup className="overflow-auto"
+          style={{maxWidth: '1000px', marginLeft: 'auto', marginRight: 'auto', minHeight: 'calc(100vh - 64px)'}}>
+          <FileItems filesInfo={this.state.filesInfo} refreshFileList={this.refreshFileList}
+            currentPath={this.state.currentPath} thumbnailSize={this.state.thumbnailSize} />
+        </ListGroup>
       </>
     );
   }
