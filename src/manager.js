@@ -4,25 +4,32 @@ import {createRoot} from 'react-dom/client';
 import {FileItems} from './file-items';
 import path from 'path';
 import {NavigationBar} from './navbar';
-import ListGroup from 'react-bootstrap/ListGroup';
+import {Container} from 'react-bootstrap';
+import Row from 'react-bootstrap/Row';
 
 class FileManager extends React.Component {
   constructor(props) {
     super(props);
     let cachedThumbnailSize = parseInt(localStorage.getItem('thumbnailSize'));
+    let cachedFilesPerRowIndex = parseInt(localStorage.getItem('filesPerRowIndex'));
     if (typeof cachedThumbnailSize !== 'number' || isNaN(cachedThumbnailSize)) {
       cachedThumbnailSize = 2;
+    }
+    if (typeof cachedFilesPerRowIndex !== 'number' || isNaN(cachedFilesPerRowIndex)) {
+      cachedFilesPerRowIndex = 0;
     }
     this.state = {
       currentPath: '/',
       filesInfo: null,
       pathStack: [],
       username: null,
-      thumbnailSize: cachedThumbnailSize
+      thumbnailSize: cachedThumbnailSize,
+      filesPerRowIndex: cachedFilesPerRowIndex
     };
     this.fetchFilesListFromServer = this.fetchFilesListFromServer.bind(this);
     this.refreshFileList = this.refreshFileList.bind(this);
     this.updateThumbnailSize = this.updateThumbnailSize.bind(this);
+    this.updateFilesPerRowIndex = this.updateFilesPerRowIndex.bind(this);
   }
 
   componentDidMount() {
@@ -66,6 +73,15 @@ class FileManager extends React.Component {
     }
   }
 
+  updateFilesPerRowIndex(newFilesPerRowIndex) {
+    console.log(`updateFilesPerRowIndex(newFilesPerRowIndex)@manager.js fired!`);
+    if (typeof newFilesPerRowIndex === 'number') {
+      this.setState({
+        filesPerRowIndex: newFilesPerRowIndex
+      });
+    }
+  }
+
   fetchFilesListFromServer() {
     const URL = './get-file-list/?asset_dir=' + encodeURIComponent(this.state.currentPath);
 
@@ -90,12 +106,15 @@ class FileManager extends React.Component {
     return (
       <>
         <NavigationBar currentPath={this.state.currentPath} refreshFileList={this.refreshFileList}
-          updateThumbnailSize={this.updateThumbnailSize} thumbnailSize={this.state.thumbnailSize} />
-        <ListGroup className="overflow-auto"
+          updateThumbnailSize={this.updateThumbnailSize} thumbnailSize={this.state.thumbnailSize}
+          updateFilesPerRowIndex={this.updateFilesPerRowIndex} filesPerRowIndex={this.state.filesPerRowIndex}/>
+        <Row className="overflow-auto"
           style={{maxWidth: '1000px', marginLeft: 'auto', marginRight: 'auto', minHeight: 'calc(100vh - 64px)'}}>
           <FileItems filesInfo={this.state.filesInfo} refreshFileList={this.refreshFileList}
-            currentPath={this.state.currentPath} thumbnailSize={this.state.thumbnailSize} />
-        </ListGroup>
+            currentPath={this.state.currentPath} thumbnailSize={this.state.thumbnailSize}
+            filesPerRowIndex={this.state.filesPerRowIndex}
+          />
+        </Row>
       </>
     );
   }

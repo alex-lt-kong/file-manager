@@ -11,10 +11,12 @@ class OffcanvasPreferences extends React.Component {
     super(props);
     this.state = {
       show: props.show,
-      thumbnailSize: props.thumbnailSize
+      thumbnailSize: props.thumbnailSize,
+      filesPerRowIndex: props.filesPerRowIndex
     };
     this.handleClose = this.handleClose.bind(this);
     this.onThumbnailSizeChanged = this.onThumbnailSizeChanged.bind(this);
+    this.onFilesPerRowIndexChanged = this.onFilesPerRowIndexChanged.bind(this);
   }
 
   componentDidUpdate(prevProps) {
@@ -41,6 +43,24 @@ class OffcanvasPreferences extends React.Component {
     });
   }
 
+  onFilesPerRowIndexChanged(event) {
+    console.log(`onFilesPerRowIndexChanged(event) fired!`);
+    const parsedValue = parseInt(event.target.value);
+    if (isNaN(parsedValue)) {
+      console.error(`isNan(${event.target.value}) === true`);
+      return;
+    }
+    if (parsedValue === this.state.filesPerRowIndex || parsedValue < 0 || parsedValue > 5) {
+      return;
+    }
+    this.setState({
+      filesPerRowIndex: parsedValue
+    }, ()=> {
+      localStorage.setItem('filesPerRowIndex', parsedValue);
+      this.props.updateFilesPerRowIndex(parsedValue);
+    });
+  }
+
   handleClose() {
     this.setState({
       show: false
@@ -61,6 +81,11 @@ class OffcanvasPreferences extends React.Component {
                 <Form.Range value={this.state.thumbnailSize}
                   onChange={this.onThumbnailSizeChanged} min={1} max={12}/>
               </Col>
+              <Form.Label column sm={2}>Files per row</Form.Label>
+              <Col sm={10}>
+                <Form.Range value={this.state.filesPerRowIndex}
+                  onChange={this.onFilesPerRowIndexChanged} min={0} max={5}/>
+              </Col>
             </Form.Group>
           </Container>
         </Offcanvas.Body>
@@ -72,7 +97,9 @@ class OffcanvasPreferences extends React.Component {
 OffcanvasPreferences.propTypes = {
   show: PropTypes.bool,
   thumbnailSize: PropTypes.number,
-  updateThumbnailSize: PropTypes.func
+  filesPerRowIndex: PropTypes.number,
+  updateThumbnailSize: PropTypes.func,
+  updateFilesPerRowIndex: PropTypes.func
 };
 
 export {OffcanvasPreferences};

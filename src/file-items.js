@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import moment from 'moment';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
-import ListGroup from 'react-bootstrap/ListGroup';
 import {
   DirectoryThumbnail,
   ImageThumbnail,
@@ -38,7 +37,8 @@ class FileItem extends React.Component {
     super(props);
     this.state = {
       fileMetadata: props.fileMetadata,
-      thumbnailSize: props.thumbnailSize
+      thumbnailSize: props.thumbnailSize,
+      filesPerRowIndex: props.filesPerRowIndex
     };
     this.onFileItemClicked = this.onFileItemClicked.bind(this);
   }
@@ -166,6 +166,7 @@ class FileItem extends React.Component {
 FileItem.propTypes = {
   refreshFileList: PropTypes.func,
   fileMetadata: PropTypes.object,
+  filesPerRowIndex: PropTypes.number,
   thumbnailSize: PropTypes.number
 };
 
@@ -175,7 +176,8 @@ class FileItems extends React.Component {
     this.state = {
       filesInfo: props.filesInfo,
       currentPath: props.currentPath,
-      thumbnailSize: props.thumbnailSize
+      thumbnailSize: props.thumbnailSize,
+      filesPerRowIndex: props.filesPerRowIndex
     };
   }
 
@@ -183,12 +185,14 @@ class FileItems extends React.Component {
     if (
       prevProps.filesInfo !== this.props.filesInfo ||
       prevProps.thumbnailSize !== this.props.thumbnailSize ||
-      prevProps.currentPath !== this.props.currentPath
+      prevProps.currentPath !== this.props.currentPath ||
+      prevProps.filesPerRowIndex !== this.props.filesPerRowIndex
     ) {
       this.setState({
         filesInfo: this.props.filesInfo,
         thumbnailSize: this.props.thumbnailSize,
-        currentPath: this.props.currentPath
+        currentPath: this.props.currentPath,
+        filesPerRowIndex: this.props.filesPerRowIndex
       });
     }
   }
@@ -212,14 +216,16 @@ class FileItems extends React.Component {
   }
 
   render() {
+    console.log(`render()'ing @file-items.js, this.state.filesPerRowIndex=${this.state.filesPerRowIndex}`);
+    const t = [12, 6, 4, 3, 2, 1];
     const fileList = new Array(this.state.filesInfo.content.length);
     const sortedfilesInfo = this.sortFileItems(true);
     for (let i = 0; i < fileList.length; ++i) {
       fileList[i] = (
-        <ListGroup.Item key={i}>
+        <Col key={i} sm={t[this.state.filesPerRowIndex]}>
           <FileItem refreshFileList={this.props.refreshFileList} fileMetadata={sortedfilesInfo[i]}
-            thumbnailSize={this.state.thumbnailSize}/>
-        </ListGroup.Item>
+            thumbnailSize={this.state.thumbnailSize} filePerRowIndex={this.state.filePerRowIndex}/>
+        </Col>
       );
     }
 
@@ -231,6 +237,7 @@ FileItems.propTypes = {
   refreshFileList: PropTypes.func,
   currentPath: PropTypes.string,
   filesInfo: PropTypes.object,
+  filesPerRowIndex: PropTypes.number,
   thumbnailSize: PropTypes.number
 };
 

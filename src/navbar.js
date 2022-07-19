@@ -84,8 +84,11 @@ class NavigationBar extends React.Component {
     }, ()=> {
       this.setState({
         offcanvasElement: (
-          <OffcanvasPreferences show={true} updateThumbnailSize={this.props.updateThumbnailSize}
-            thumbnailSize={this.state.thumbnailSize} />
+          <OffcanvasPreferences show={true}
+            updateThumbnailSize={this.props.updateThumbnailSize} thumbnailSize={this.state.thumbnailSize}
+            updateFilesPerRowIndex={this.props.updateFilesPerRowIndex}
+            filesPerRowIndex={this.props.filesPerRowIndex}
+          />
         )
       });
     });
@@ -171,7 +174,9 @@ NavigationBar.propTypes = {
   refreshFileList: PropTypes.func,
   currentPath: PropTypes.string,
   updateThumbnailSize: PropTypes.func,
-  thumbnailSize: PropTypes.number
+  updateFilesPerRowIndex: PropTypes.func,
+  thumbnailSize: PropTypes.number,
+  filesPerRowIndex: PropTypes.number
 };
 
 export {NavigationBar};
