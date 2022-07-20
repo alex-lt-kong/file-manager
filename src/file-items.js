@@ -130,34 +130,42 @@ class FileItem extends React.Component {
     }
   }
 
+  getNonThumbnailComponents(fileMetaData) {
+    const mainBody = (
+      <Row>
+        <Col>
+          <div style={{flex: '1 1 auto', wordBreak: 'break-all'}}>
+            <a value={this.state.fileMetadata.filename}
+              style={{textDecoration: 'none', display: 'block', cursor: 'pointer'}}
+              onClick={() => this.onFileItemClicked()}>
+              {this.state.fileMetadata.filename}
+            </a>
+          </div>
+          <div style={{flex: '0 1 1.5em'}} >
+            <div style={{fontSize: '0.7em', color: '#808080'}}>{fileMetaData}</div>
+          </div>
+        </Col>
+        <Col>
+          <ContextMenu refreshFileList={this.props.refreshFileList} fileInfo={this.state.fileMetadata} />
+        </Col>
+      </Row>
+    );
+    if (this.state.thumbnailSize <= 4) {
+      return (<Col>{mainBody}</Col>);
+    } else {
+      return mainBody;
+    }
+  }
+
   render() {
     const retval = this.generateThumbnailAndMetaDataComponents();
     const thumbnail = retval.thumbnail;
-    const fileMetaData = retval.fileMetaData;
     return (
       <Row>
         <Col xs={this.state.thumbnailSize} className='d-flex align-items-center justify-content-center'>
           {thumbnail}
         </Col>
-        <Col style={{display: 'flex', flexFlow: 'column'}} >
-          <Row>
-            <Col>
-              <div style={{flex: '1 1 auto', wordBreak: 'break-all'}}>
-                <a value={this.state.fileMetadata.filename}
-                  style={{textDecoration: 'none', display: 'block', cursor: 'pointer'}}
-                  onClick={() => this.onFileItemClicked()}>
-                  {this.state.fileMetadata.filename}
-                </a>
-              </div>
-              <div style={{flex: '0 1 1.5em'}} >
-                <div style={{fontSize: '0.7em', color: '#808080'}}>{fileMetaData}</div>
-              </div>
-            </Col>
-            <Col xs={1}>
-              <ContextMenu refreshFileList={this.props.refreshFileList} fileInfo={this.state.fileMetadata} />
-            </Col>
-          </Row>
-        </Col>
+        {this.getNonThumbnailComponents(retval.fileMetaData)}
       </Row>
     );
   }

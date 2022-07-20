@@ -32,7 +32,7 @@ class OffcanvasPreferences extends React.Component {
     if (isNaN(parsedValue)) {
       return;
     }
-    if (parsedValue === this.state.thumbnailSize || parsedValue < 1 || parsedValue > 12) {
+    if (parsedValue === this.state.thumbnailSize || parsedValue < 1 || parsedValue > 10) {
       return;
     }
     this.setState({
@@ -79,7 +79,7 @@ class OffcanvasPreferences extends React.Component {
               <Form.Label column sm={2}>Thumbnail Size</Form.Label>
               <Col sm={10}>
                 <Form.Range value={this.state.thumbnailSize}
-                  onChange={this.onThumbnailSizeChanged} min={1} max={12}/>
+                  onChange={this.onThumbnailSizeChanged} min={1} max={10}/>
               </Col>
               <Form.Label column sm={2}>Files per row</Form.Label>
               <Col sm={10}>
