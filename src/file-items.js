@@ -141,11 +141,15 @@ class FileItem extends React.Component {
               {this.state.fileMetadata.filename}
             </a>
           </div>
-          <div style={{flex: '0 1 1.5em'}} >
-            <div style={{fontSize: '0.7em', color: '#808080'}}>{fileMetaData}</div>
-          </div>
+          {
+            this.state.thumbnailSize <= 4 ?
+            <div style={{flex: '0 1 1.5em'}} >
+              <div style={{fontSize: '0.7em', color: '#808080'}}>{fileMetaData}</div>
+            </div> :
+            null
+          }
         </Col>
-        <Col>
+        <Col sm={1}>
           <ContextMenu refreshFileList={this.props.refreshFileList} fileInfo={this.state.fileMetadata} />
         </Col>
       </Row>
@@ -230,7 +234,7 @@ class FileItems extends React.Component {
     const sortedfilesInfo = this.sortFileItems(true);
     for (let i = 0; i < fileList.length; ++i) {
       fileList[i] = (
-        <Col key={i} sm={t[this.state.filesPerRowIndex]}>
+        <Col key={i} xs={t[this.state.filesPerRowIndex]}>
           <FileItem refreshFileList={this.props.refreshFileList} fileMetadata={sortedfilesInfo[i]}
             thumbnailSize={this.state.thumbnailSize} filePerRowIndex={this.state.filePerRowIndex}/>
         </Col>
