@@ -11,6 +11,8 @@ import {
   NonMediaFileThumbnail,
   SpecialDirectoryThumbnail} from './thumbnails';
 
+const filesPerRowArray = [12, 6, 4, 3, 2, 1];
+
 function humanFileSize(bytes, si=false, dp=1) {
   const thresh = si ? 1000 : 1024;
 
@@ -149,12 +151,12 @@ class FileItem extends React.Component {
             null
           }
         </Col>
-        <Col sm={1}>
+        <Col xs={1}>
           <ContextMenu refreshFileList={this.props.refreshFileList} fileInfo={this.state.fileMetadata} />
         </Col>
       </Row>
     );
-    if (this.state.thumbnailSize <= 4) {
+    if (this.state.thumbnailSize <= 4 && filesPerRowArray[this.state.filesPerRowIndex] <= 3) {
       return (<Col>{mainBody}</Col>);
     } else {
       return mainBody;
@@ -228,15 +230,13 @@ class FileItems extends React.Component {
   }
 
   render() {
-    console.log(`render()'ing @file-items.js, this.state.filesPerRowIndex=${this.state.filesPerRowIndex}`);
-    const t = [12, 6, 4, 3, 2, 1];
     const fileList = new Array(this.state.filesInfo.content.length);
     const sortedfilesInfo = this.sortFileItems(true);
     for (let i = 0; i < fileList.length; ++i) {
       fileList[i] = (
-        <Col key={i} xs={t[this.state.filesPerRowIndex]}>
+        <Col key={i} xs={filesPerRowArray[this.state.filesPerRowIndex]}>
           <FileItem refreshFileList={this.props.refreshFileList} fileMetadata={sortedfilesInfo[i]}
-            thumbnailSize={this.state.thumbnailSize} filePerRowIndex={this.state.filePerRowIndex}/>
+            thumbnailSize={this.state.thumbnailSize} filesPerRowIndex={this.state.filesPerRowIndex}/>
         </Col>
       );
     }

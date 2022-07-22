@@ -76,15 +76,23 @@ class OffcanvasPreferences extends React.Component {
         <Offcanvas.Body style={{fontSize: '0.85em'}}>
           <Container style={{maxSize: '1280px'}}>
             <Form.Group as={Row} style={{maxWidth: '1280px'}}>
-              <Form.Label column sm={2}>Thumbnail Size</Form.Label>
-              <Col sm={10}>
-                <Form.Range value={this.state.thumbnailSize}
-                  onChange={this.onThumbnailSizeChanged} min={1} max={10}/>
+              <Col>
+                <Row>
+                  <Form.Label column sm={3}>Thumbnail Size</Form.Label>
+                  <Col md={9}>
+                    <Form.Range value={this.state.thumbnailSize}
+                      onChange={this.onThumbnailSizeChanged} min={1} max={10}/>
+                  </Col>
+                </Row>
               </Col>
-              <Form.Label column sm={2}>Files per row</Form.Label>
-              <Col sm={10}>
-                <Form.Range value={this.state.filesPerRowIndex}
-                  onChange={this.onFilesPerRowIndexChanged} min={0} max={5}/>
+              <Col>
+                <Row>
+                  <Form.Label column sm={3}>Files per row</Form.Label>
+                  <Col md={9}>
+                    <Form.Range value={this.state.filesPerRowIndex}
+                      onChange={this.onFilesPerRowIndexChanged} min={0} max={5}/>
+                  </Col>
+                </Row>
               </Col>
             </Form.Group>
           </Container>

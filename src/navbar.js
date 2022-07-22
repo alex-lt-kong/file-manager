@@ -129,9 +129,9 @@ class NavigationBar extends React.Component {
     return (
       <>
         {this.state.offcanvasElement}
-        <Navbar bg="light" variant="light">
+        <Navbar bg="light" variant="light" sticky="top">
           <Container>
-            <Row className="container-fluid pe-3" style={{maxWidth: '1680px'}}>
+            <Row className="container px-0" style={{maxWidth: '1280px'}}>
               <Col>
                 <InputGroup>
                   <Form.Control type="text" placeholder="Address" value={this.state.addressBarValue}
@@ -139,7 +139,7 @@ class NavigationBar extends React.Component {
                   <Button onClick={this.onClickAddressBarGo} ><i className="bi bi-caret-right-fill"></i></Button>
                 </InputGroup>
               </Col>
-              <Col xs="auto" className="px-0">
+              <Col xs={1} className="px-0">
                 <Dropdown align="end">
                   <Dropdown.Toggle variant="primary">
                     <i className="bi bi-list"></i>
