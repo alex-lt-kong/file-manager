@@ -60,7 +60,7 @@ def resize_image(basewidth: int, src_path: str, dst_path: str):
         img = Image.open(src_path)
         wpercent = (basewidth / float(img.size[0]))
         hsize = int((float(img.size[1]) * float(wpercent)))
-        img = img.resize((basewidth, hsize), Image.ANTIALIAS)
+        img = img.resize((basewidth, hsize))
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
         img.save(dst_path)
