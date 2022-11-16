@@ -38,7 +38,6 @@ app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager'
 debug_mode = False
 direct_open_ext: List[str] = []
-external_script_dir = ''
 file_stat: Dict[str, Any]
 fs_path = ''
 image_extensions: List[str] = []
@@ -907,7 +906,7 @@ def main(debug: bool) -> None:
 
     local_port = -1
     global allowed_ext, app_address, debug_mode, direct_open_ext
-    global root_dir, external_script_dir, file_stat, fs_path, log_path
+    global root_dir, file_stat, fs_path, log_path
     global thumbnails_path, image_extensions, video_extensions
 
     debug_mode = debug
@@ -919,7 +918,6 @@ def main(debug: bool) -> None:
         allowed_ext = settings['app']['allowed_ext']
         app_address = settings['app']['address']
         direct_open_ext = settings['app']['direct_open_extensions']
-        external_script_dir = settings['app']['external_script_dir']
         fs_path = settings['app']['files_statistics']
         image_extensions = settings['app']['image_extensions']
         root_dir = settings['app']['root_dir']

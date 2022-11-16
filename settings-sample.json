@@ -8,7 +8,6 @@
                         ".sqlite", ".tar",  ".tif", ".tiff", ".ttf", ".txt", ".vtt", ".wav", ".m4a", ".webm",
                         ".wma", ".wmv", ".xls", ".xlsx", ".xml", ".zip"],
         "direct_open_extensions": [".bmp", ".gif", ".jpg", ".jpeg", ".log-does-not-work", ".mp3", ".mp4", ".pdf", ".png", ".srt", ".txt", ".vtt-does-not-work", ".webm", ".webp"],
-        "external_script_dir": "https://localhost//resources",
         "files_statistics": "/var/fm/stats.json",
         "log_path": "/var/log/file-manager.log",
         "root_dir": "/var/fm/files",
