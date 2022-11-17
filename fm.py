@@ -4,7 +4,7 @@ from collections import OrderedDict
 from emailer import emailer
 from flask import Flask, render_template, Response, request
 from typing import Dict, List, Union, Any
-from PIL import ImageFile  # type: ignore
+from PIL import ImageFile
 
 import click
 import copy

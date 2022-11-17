@@ -22,7 +22,7 @@ class DirectoryThumbnail extends Thumbnail {
   render() {
     return (
       <img src={`./static/icons/folder.svg`} style={{width: '100%', cursor: 'pointer'}}
-        onClick={() => this.state.onFileItemClicked()} />
+        onClick={() => this.props.onFileItemClicked()} />
       // For svg <img>, we specify width: 100%;
       // For ordinary image we specify maxWidth: 100%
     );
@@ -37,7 +37,7 @@ class SpecialDirectoryThumbnail extends Thumbnail {
   render() {
     return (
       <img src={`./static/icons/special-folder.svg`} style={{width: '100%', cursor: 'pointer'}}
-        onClick={() => this.state.onFileItemClicked()} />
+        onClick={() => this.props.onFileItemClicked()} />
     );
     // For svg <img>, we specify width: 100%;
     // For ordinary image we specify maxWidth: 100%
@@ -47,9 +47,6 @@ class SpecialDirectoryThumbnail extends Thumbnail {
 class FileThumbnail extends Thumbnail {
   constructor(props) {
     super(props);
-    this.state = {
-      fileMetadata: props.fileMetadata
-    };
   }
 }
 
@@ -63,10 +60,10 @@ class ImageThumbnail extends FileThumbnail {
       <img
         src={
           `./get-thumbnail/?filename=` +
-            `${encodeURIComponent(this.state.fileMetadata.filename)}_${this.state.fileMetadata.size}.jpg`
+            `${encodeURIComponent(this.props.fileMetadata.filename)}_${this.props.fileMetadata.size}.jpg`
         }
         style={{maxWidth: '100%', cursor: 'pointer'}}
-        onClick={() => this.state.onFileItemClicked()}
+        onClick={() => this.props.onFileItemClicked()}
         onError={(e)=>{
           e.target.onerror = null;
           e.target.src='./static/icons/image.svg';
@@ -86,14 +83,15 @@ class VideoThumbnail extends FileThumbnail {
   }
 
   render() {
+    console.log(`VideoThumbnail.render(): ${this.props.fileMetadata.filename}`);
     return (
       <img
         src={
           `./get-thumbnail/?filename=` +
-          `${encodeURIComponent(this.state.fileMetadata.filename)}_${this.state.fileMetadata.size}.jpg`
+          `${encodeURIComponent(this.props.fileMetadata.filename)}_${this.props.fileMetadata.size}.jpg`
         }
         style={{maxWidth: '100%', cursor: 'pointer'}}
-        onClick={() => this.state.onFileItemClicked(this.state.fileMetadata.filename)}
+        onClick={() => this.props.onFileItemClicked(this.props.fileMetadata.filename)}
         onError={(e)=>{
           e.target.onerror = null;
           e.target.src = './static/icons/video.svg';
@@ -113,7 +111,7 @@ class NonMediaFileThumbnail extends FileThumbnail {
   }
 
   render() {
-    const fileExtLowerCase = this.state.fileMetadata.extension.toLowerCase();
+    const fileExtLowerCase = this.props.fileMetadata.extension.toLowerCase();
     let url = null;
     if (['.doc', '.docx', '.odt', '.rtf', '.docm', '.docx', 'wps'].includes(fileExtLowerCase)) {
       url = './static/icons/word.svg';
@@ -154,7 +152,7 @@ class NonMediaFileThumbnail extends FileThumbnail {
     }
     return (
       <img src={url} style={{width: '100%', display: 'block', float: 'left', cursor: 'pointer'}}
-        onClick={() => this.state.onFileItemClicked()} />
+        onClick={() => this.props.onFileItemClicked()} />
     );
     // For svg <img>, we specify width: 100%;
     // For ordinary image we specify maxWidth: 100%
