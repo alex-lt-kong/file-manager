@@ -18,6 +18,7 @@ class ModalMove extends React.Component {
       disableSubmitByFileName: false,
       disableSubmitBySubmit: false,
       fileInfo: props.fileInfo,
+      keepFileAfterMove: false,
       newFileDir: props.fileInfo.asset_dir,
       newFileName: props.fileInfo.filename,
       refreshFileList: props.refreshFileList,
@@ -28,6 +29,7 @@ class ModalMove extends React.Component {
     this.handleSubmitClick = this.handleSubmitClick.bind(this);
     this.onFileDirChange = this.onFileDirChange.bind(this);
     this.onFileNameChange = this.onFileNameChange.bind(this);
+    this.onKeepFileAfterMoveChange = this.onKeepFileAfterMoveChange.bind(this);
   }
 
   handleSubmitClick() {
@@ -52,6 +54,7 @@ class ModalMove extends React.Component {
     const payload = new FormData();
     payload.append('old_filepath', this.state.fileInfo.asset_dir + this.state.fileInfo.filename);
     payload.append('new_filepath', this.state.newFileDir + this.state.newFileName);
+    payload.append('is_copy', this.state.keepFileAfterMove);
     axios({
       method: 'post',
       url: './move/',
@@ -138,6 +141,12 @@ class ModalMove extends React.Component {
     });
   }
 
+  onKeepFileAfterMoveChange(event) {
+    this.setState({
+      keepFileAfterMove: event.target.checked
+    });
+  }
+
   handleCloseClick() {
     this.setState({
       show: false
@@ -152,7 +161,7 @@ class ModalMove extends React.Component {
         </Modal.Header>
         <Modal.Body md={3}>
           <label className="form-label" style={{wordBreak: 'break-word'}}>
-            Move the file from
+            Move the file from&nbsp;
             <strong style={{wordBreak: 'break-all'}}>
               {this.state.fileInfo.asset_dir + this.state.fileInfo.filename}
             </strong> to:
@@ -171,6 +180,9 @@ class ModalMove extends React.Component {
                 placeholder="Input new filename" value={this.state.newFileName} onChange={this.onFileNameChange} />
             </Col>
           </Form.Group>
+          <Form.Check type='checkbox' label='Keep file after move' checked={this.state.keepFileAfterMove}
+            onChange={this.onKeepFileAfterMoveChange}
+          />
           {this.state.responseMessage}
           <Accordion className="my-2">
             <Accordion.Item eventKey="0">

@@ -136,7 +136,7 @@ class ContextMenu extends React.Component {
               this.state.fileInfo.file_type !== 1 ? null : // 1 means it is an ordinary file
               <><Dropdown.Item onClick={this.onViewTextButtonClick}>View As Text</Dropdown.Item><Dropdown.Divider /></>
             }
-            <Dropdown.Item onClick={this.onMoveButtonClick}>Move</Dropdown.Item>
+            <Dropdown.Item onClick={this.onMoveButtonClick}>Copy/Move</Dropdown.Item>
             <Dropdown.Item onClick={this.onRemoveButtonClick}>Remove</Dropdown.Item>
             {
               (this.state.fileInfo.file_type === 1 && // 1 means it is an ordinary file

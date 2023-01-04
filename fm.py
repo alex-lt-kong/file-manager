@@ -197,6 +197,7 @@ def move() -> Response:
     try:
         old_filepath = request.form['old_filepath']
         new_filepath = request.form['new_filepath']
+        is_copy = bool(request.form['is_copy'])
         old_filepath = old_filepath.replace('\n', '').replace('\r', '')
         new_filepath = new_filepath.replace('\n', '').replace('\r', '')
         # send_from_directory() will raise ValueError if it detects
@@ -223,7 +224,13 @@ def move() -> Response:
                 os.path.isdir(new_real_filepath)):
             return Response(f'{new_filepath} occupied', 400)
 
-        shutil.move(src=old_real_filepath, dst=new_real_filepath)
+        if is_copy is False:
+            shutil.move(src=old_real_filepath, dst=new_real_filepath)
+        else:
+            if os.path.isfile(old_real_filepath):
+                shutil.copy(src=old_real_filepath, dst=new_real_filepath)
+            elif os.path.isdir(old_real_filepath):
+                shutil.copytree(src=old_real_filepath, dst=new_real_filepath)
         # If the destination is on the current filesystem, then os.rename()
         # is used. Otherwise, src is copied to dst and then removed. In case
         # of symlinks, a new symlink pointing to the target of src will be
@@ -232,7 +239,7 @@ def move() -> Response:
                       f'[{old_real_filepath}] to [{new_real_filepath}]')
     except (FileNotFoundError, FileExistsError, werkzeug.exceptions.NotFound):
         return Response(
-            'Client-side error (either FileNotFoundError, FileExistsError or werkzeug.exceptions.NotFound)', 400
+            'Server-side error (either FileNotFoundError, FileExistsError or werkzeug.exceptions.NotFound)', 400
         )
     except Exception:
         logging.exception('')

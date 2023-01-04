@@ -55,12 +55,10 @@ class FileItem extends React.Component {
         fileMetadata: this.props.fileMetadata,
         thumbnailSize: this.props.thumbnailSize
       });
-      console.log(`componentDidUpdate(): ${this.props.fileMetadata.filename}`);
     }
   }
 
   generateThumbnailAndMetaDataComponents() {
-    console.log(`generateThumbnailAndMetaDataComponents(): ${this.state.fileMetadata.filename}`);
     let thumbnail = null;
     let fileMetaData = null;
     /* The following block is about thumbnail generation and formatting. It is tricky because:
@@ -239,7 +237,6 @@ class FileItems extends React.Component {
     const fileList = new Array(this.state.filesInfo.content.length);
     const sortedfilesInfo = this.sortFileItems(true);
     for (let i = 0; i < fileList.length; ++i) {
-      console.log(`${sortedfilesInfo[i].filename}: sortedfilesInfo[i].filename`);
       fileList[i] = (
         <Col key={i} xs={filesPerRowArray[this.state.filesPerRowIndex]}>
           <FileItem refreshFileList={this.props.refreshFileList} fileMetadata={sortedfilesInfo[i]}
