@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 from collections import OrderedDict
-from emailer import emailer
 from flask import Flask, render_template, Response, request
 from typing import Dict, List, Union, Any
 from PIL import ImageFile
@@ -32,7 +31,7 @@ thread_lock = threading.Lock()
 
 allowed_ext: List[str]
 # app_address: the app's address on the Internet
-app_address = ''
+advertised_address = ''
 # app_dir: the app's real address on the filesystem
 app_dir = os.path.dirname(os.path.realpath(__file__))
 app_name = 'file-manager'
@@ -43,7 +42,6 @@ fs_path = ''
 image_extensions: List[str] = []
 log_path = ''
 root_dir = ''
-stop_signal = False
 settings_path = os.path.join(app_dir, 'settings.json')
 thumbnails_path = ''
 thread_counter = 0
@@ -197,7 +195,11 @@ def move() -> Response:
     try:
         old_filepath = request.form['old_filepath']
         new_filepath = request.form['new_filepath']
-        is_copy = bool(request.form['is_copy'])
+        is_copy = str(request.form['is_copy']).lower() in [
+            'true', '1', 't', 'y', 'yes'
+        ]
+        # bool(request.form['is_copy']) will return True as long as
+        # request.form['is_copy'] is not empty
         old_filepath = old_filepath.replace('\n', '').replace('\r', '')
         new_filepath = new_filepath.replace('\n', '').replace('\r', '')
         # send_from_directory() will raise ValueError if it detects
@@ -780,7 +782,8 @@ def generate_files_list_json(abs_path: str, asset_dir: str) -> Dict[str, Any]:
         'filename': '',
         'file_type': 4,
         'asset_dir': asset_dir,
-        # the design decision is that we repeat asset_dir for each fo, so that the front-end can retrieve
+        # the design decision is that we repeat asset_dir for each fo,
+        # so that the front-end can retrieve
         # the asset_dir from each fo without going up a level.
         'media_type': -1,
         'extension': '',
@@ -879,7 +882,7 @@ def get_file_list() -> Response:
 @app.route('/', methods=['GET'])
 def index() -> Union[Response, str]:
 
-    global app_address, debug_mode
+    global advertised_address, debug_mode
     page = request.args.get('page')
     params_str = ''
     if 'params' in request.args:
@@ -888,31 +891,26 @@ def index() -> Union[Response, str]:
             json.loads(params_str)
         except Exception:
             logging.exception('')
-            return flask.Response(f'Failed to parse params [{params_str}] as a JSON object', 400)
+            return flask.Response(
+                f'Failed to parse params [{params_str}] as a JSON object', 400
+            )
     if page == 'viewer-text':
         return render_template('viewer/text.html', params=params_str)
     elif page == 'viewer-video':
         return render_template('viewer/video.html', params=params_str)
     else:
         return render_template(
-            'manager.html', app_address=app_address, mode='development' if debug_mode else 'production'
+            'manager.html',
+            app_address=advertised_address,
+            mode='development' if debug_mode else 'production'
         )
-
-
-def stop_signal_handler(*args: Any) -> None:
-
-    global stop_signal
-    stop_signal = True
-    logging.info(f'Signal [{args[0]}] received, exiting')
-    sys.exit(0)
 
 
 @click.command()
 @click.option('--debug', is_flag=True)
 def main(debug: bool) -> None:
 
-    local_port = -1
-    global allowed_ext, app_address, debug_mode, direct_open_ext
+    global allowed_ext, advertised_address, debug_mode, direct_open_ext
     global root_dir, file_stat, fs_path, log_path
     global thumbnails_path, image_extensions, video_extensions
 
@@ -921,9 +919,8 @@ def main(debug: bool) -> None:
         with open(settings_path, 'r') as json_file:
             json_str = json_file.read()
             settings = json.loads(json_str)
-        local_port = settings['flask']['local_port']
         allowed_ext = settings['app']['allowed_ext']
-        app_address = settings['app']['address']
+        advertised_address = settings['app']['advertised_address']
         direct_open_ext = settings['app']['direct_open_extensions']
         fs_path = settings['app']['files_statistics']
         image_extensions = settings['app']['image_extensions']
@@ -960,18 +957,9 @@ def main(debug: bool) -> None:
     else:
         logging.info('Running in production mode')
 
-    signal.signal(signal.SIGINT, stop_signal_handler)
-    signal.signal(signal.SIGTERM, stop_signal_handler)
-
-    th_email = threading.Thread(target=emailer.send_service_start_notification,
-                                kwargs={'settings_path': settings_path,
-                                        'service_name': f'{app_name}',
-                                        'path_of_logs_to_send': log_path,
-                                        'delay': 0 if debug_mode else 300})
-    th_email.start()
-
     waitress.serve(
-        app, host=settings['flask']['interface'], port=local_port,
+        app, host=settings['flask']['interface'],
+        port=settings['flask']['local_port'],
         max_request_body_size=settings['flask']['max_upload_size'],
         log_socket_errors=False, threads=16
     )

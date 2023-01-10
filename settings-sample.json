@@ -1,6 +1,6 @@
 {
     "app": {
-        "address": "https://localhost/",
+        "advertised_address": "https://localhost:12345/",
         "allowed_ext": [".7z", ".apk", ".avi", ".bmp", ".conf", ".crt", ".csv", ".doc", ".docx",
                         ".flv", ".gif", ".ico", ".iso", ".jpeg", ".jpg", ".key", ".log", ".mp3", ".mp4",
                         ".mkv", ".mov", ".mpg", ".mpeg", ".ods", ".odt", ".ovpn", ".pdf",
@@ -25,7 +25,8 @@
         "to_name": "Admin Account"
     },
     "flask" :{
-        "max_upload_size": 4096000000,
-        "local_port": 31415
+        "interface": "0.0.0.0",
+        "local_port": 12345,
+        "max_upload_size": 4096000000
     }
 }
