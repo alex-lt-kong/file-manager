@@ -142,7 +142,7 @@ class ContextMenu extends React.Component {
               (this.state.fileInfo.file_type === 1 && // 1 means it is an ordinary file
                 [
                   '.3gp', '.asf', '.avi', '.flv', '.m4v', '.mkv', '.mov', 'mp2', '.mp4', 'mpg', 'mpg', 'mpeg',
-                  '.rm', '.webm', '.wmv', '.rmvb', '.srt'
+                  '.rm', '.webm', '.wmv', '.rmvb', '.srt', '.ts'
                 ].includes(
                     this.state.fileInfo.extension.toLowerCase())
               ) ?
