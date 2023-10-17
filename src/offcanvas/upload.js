@@ -80,7 +80,7 @@ class OffcanvasFileUpload extends React.Component {
   }
 
   onSelectedFilesChanged(event) {
-    const maxUploadFileSize = 1024 * 1024 * 1024 * 4;
+    const maxUploadFileSize = 1024 * 1024 * 1024 * 8;
     const selectedFileSizes = new Array(this.state.selectedFileCount + event.target.files.length);
     const selectedFileNames = new Array(this.state.selectedFileCount + event.target.files.length);
     const selectedFiles = new Array(this.state.selectedFileCount + event.target.files.length);
