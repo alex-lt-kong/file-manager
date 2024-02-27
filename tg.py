@@ -80,7 +80,11 @@ def generate_thumbnails(root_dir: str):
 
         file_name = os.path.basename(file_path)
         file_ext = os.path.splitext(file_path)[1].lower()
-        file_size = os.path.getsize(file_path)
+        try:
+            file_size = os.path.getsize(file_path)
+        except Exception as ex:
+            logging.error(f'os.path.getsize({file_path}) failed: {ex}, skipping')
+            continue
 
         tn_path = os.path.join(thumbnails_path, f'{file_name}_{file_size}.jpg')
 
@@ -114,7 +118,7 @@ def generate_thumbnails(root_dir: str):
                 logging.debug(f'Wait for {delay:.1f} sec...')
                 time.sleep(delay)
 
-            ffmpeg_cmd = ['/usr/bin/ffmpeg', '-i', file_path,
+            ffmpeg_cmd = ['ffmpeg', '-i', file_path,
                           '-loglevel', 'warning',
                           '-ss', timestamp, '-vframes', '1', tn_path]
             p = subprocess.Popen(args=ffmpeg_cmd,
